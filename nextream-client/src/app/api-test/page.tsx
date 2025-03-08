@@ -2,12 +2,16 @@
 
 import { useState } from 'react';
 import api from '@/lib/axios';
+import axios from 'axios';
 import Navbar from '@/components/Navbar';
 
 export default function ApiTest() {
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [username, setUsername] = useState<string>('testuser');
+  const [email, setEmail] = useState<string>('test@example.com');
+  const [password, setPassword] = useState<string>('password123');
 
   const testApi = async () => {
     try {
@@ -43,6 +47,59 @@ export default function ApiTest() {
     }
   };
 
+  const testRegisterApi = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Generate a random email to avoid duplicate user errors
+      const randomEmail = `test${Math.floor(Math.random() * 10000)}@example.com`;
+      setEmail(randomEmail);
+      
+      // Test the register API with the custom axios instance
+      try {
+        const response = await api.post('/auth/register', {
+          username,
+          email: randomEmail,
+          password
+        });
+        
+        setResult(JSON.stringify({
+          method: 'api.post(/auth/register)',
+          data: response.data
+        }, null, 2));
+        return;
+      } catch (err: any) {
+        console.error('Register API Test Error (first attempt):', err);
+        
+        // If that fails, try with the direct URL
+        try {
+          const directResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+            username,
+            email: randomEmail,
+            password
+          });
+          
+          setResult(JSON.stringify({
+            method: 'axios.post(NEXT_PUBLIC_API_URL/api/auth/register)',
+            data: directResponse.data
+          }, null, 2));
+          return;
+        } catch (err2: any) {
+          console.error('Register API Test Error (second attempt):', err2);
+          
+          // If both fail, throw the original error
+          throw err;
+        }
+      }
+    } catch (err: any) {
+      console.error('Register API Test Error:', err);
+      setError(err.response?.data?.message || err.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gray-900">
       <Navbar />
@@ -53,7 +110,7 @@ export default function ApiTest() {
         <div className="bg-gray-800 p-6 rounded-lg mb-6">
           <h2 className="text-white text-xl font-semibold mb-4">Test API Connection</h2>
           
-          <div className="flex space-x-4 mb-4">
+          <div className="flex flex-wrap gap-4 mb-4">
             <button
               onClick={testApi}
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
@@ -69,6 +126,47 @@ export default function ApiTest() {
             >
               Test Auth API
             </button>
+            
+            <button
+              onClick={testRegisterApi}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+              disabled={loading}
+            >
+              Test Register API
+            </button>
+          </div>
+          
+          <div className="bg-gray-900 p-4 rounded mb-4">
+            <h3 className="text-white font-semibold mb-2">Test User Data:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-gray-400 mb-1">Username</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 mb-1">Password</label>
+                <input
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded"
+                />
+              </div>
+            </div>
           </div>
           
           {loading && (

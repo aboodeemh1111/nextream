@@ -38,7 +38,12 @@ api.interceptors.request.use(
     }
     
     // Log the request for debugging
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, config);
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+      url: config.url,
+      method: config.method,
+      baseURL: config.baseURL,
+      headers: config.headers
+    });
     
     return config;
   },
@@ -50,10 +55,20 @@ api.interceptors.request.use(
 // Add a response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
+    console.log('API Response:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
     return response;
   },
   (error) => {
-    console.error('API Error:', error.response?.data || error.message || error);
+    console.error('API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
     return Promise.reject(error);
   }
 );

@@ -80,13 +80,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       
-      // Use the custom axios instance for API calls
-      await api.post('/auth/register', { username, email, password });
+      console.log('Registering user with:', { username, email });
+      
+      // Try different API endpoints to handle potential path issues
+      try {
+        // First try with the direct API URL
+        await api.post('/auth/register', { username, email, password });
+        console.log('Registration successful with /auth/register');
+      } catch (err: any) {
+        console.error('First registration attempt failed:', err.response?.data || err.message);
+        
+        // If that fails, try with the /api prefix
+        try {
+          await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, { 
+            username, 
+            email, 
+            password 
+          });
+          console.log('Registration successful with /api/auth/register');
+        } catch (err2: any) {
+          console.error('Second registration attempt failed:', err2.response?.data || err2.message);
+          
+          // If both fail, throw the original error
+          throw err;
+        }
+      }
       
       router.push('/login');
     } catch (err: any) {
       console.error('Registration error:', err.response?.data || err);
-      setError(err.response?.data?.message || 'Something went wrong');
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
