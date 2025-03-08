@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
@@ -22,7 +22,8 @@ interface Movie {
   duration?: string;
 }
 
-export default function Watch() {
+// Component that uses useSearchParams
+function WatchContent() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,5 +117,23 @@ export default function Watch() {
         )}
       </div>
     </div>
+  );
+}
+
+// Loading fallback component
+function WatchLoading() {
+  return (
+    <div className="flex items-center justify-center h-screen bg-black">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+    </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function Watch() {
+  return (
+    <Suspense fallback={<WatchLoading />}>
+      <WatchContent />
+    </Suspense>
   );
 } 
