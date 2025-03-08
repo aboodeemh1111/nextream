@@ -39,12 +39,7 @@ const nextConfig = {
             destination: 'http://localhost:8800/api/:path*',
           },
         ]
-      : [
-          {
-            source: '/api/:path*',
-            destination: 'https://nextream-api.onrender.com/api/:path*',
-          },
-        ];
+      : [];  // In production, we'll use the axios instance with the correct baseURL
   },
   eslint: {
     // Warning: This allows production builds to successfully complete even if

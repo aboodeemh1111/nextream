@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import axios from 'axios';
+import api from '@/lib/axios'; // Import the custom axios instance
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -34,7 +35,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check if user is already logged in
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        // Set the token in axios headers
+        if (parsedUser?.accessToken) {
+          axios.defaults.headers.common['token'] = `Bearer ${parsedUser.accessToken}`;
+        }
+      } catch (err) {
+        console.error('Error parsing stored user:', err);
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
@@ -43,11 +54,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.post('/api/auth/login', { email, password });
+      
+      // Use the custom axios instance for API calls
+      const res = await api.post('/auth/login', { email, password });
+      
       setUser(res.data);
       localStorage.setItem('user', JSON.stringify(res.data));
+      
+      // Set the token in axios headers
+      if (res.data?.accessToken) {
+        axios.defaults.headers.common['token'] = `Bearer ${res.data.accessToken}`;
+      }
+      
       router.push('/');
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Something went wrong');
     } finally {
       setLoading(false);
@@ -58,9 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      await axios.post('/api/auth/register', { username, email, password });
+      
+      // Use the custom axios instance for API calls
+      await api.post('/auth/register', { username, email, password });
+      
       router.push('/login');
     } catch (err: any) {
+      console.error('Registration error:', err.response?.data || err);
       setError(err.response?.data?.message || 'Something went wrong');
     } finally {
       setLoading(false);
@@ -70,6 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    
+    // Remove the token from axios headers
+    delete axios.defaults.headers.common['token'];
+    
     router.push('/login');
   };
 
