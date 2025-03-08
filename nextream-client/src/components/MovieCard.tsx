@@ -3,7 +3,20 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FaPlay, FaPlus, FaThumbsUp, FaThumbsDown, FaInfoCircle, FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
+import axios from 'axios';
+import { useAuth } from '@/context/AuthContext';
+import { 
+  FaPlay, 
+  FaPlus, 
+  FaCheck, 
+  FaHeart, 
+  FaRegHeart, 
+  FaClock, 
+  FaRegClock,
+  FaInfoCircle, 
+  FaVolumeMute, 
+  FaVolumeUp 
+} from 'react-icons/fa';
 
 interface Movie {
   _id: string;
@@ -19,13 +32,32 @@ interface Movie {
   duration?: string;
 }
 
-const MovieCard = ({ movie }: { movie: Movie }) => {
+interface MovieCardProps {
+  movie: Movie;
+  inMyList?: boolean;
+  inFavorites?: boolean;
+  inWatchlist?: boolean;
+  onListChange?: () => void;
+}
+
+const MovieCard = ({ 
+  movie, 
+  inMyList = false, 
+  inFavorites = false, 
+  inWatchlist = false,
+  onListChange 
+}: MovieCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [isInMyList, setIsInMyList] = useState(inMyList);
+  const [isInFavorites, setIsInFavorites] = useState(inFavorites);
+  const [isInWatchlist, setIsInWatchlist] = useState(inWatchlist);
+  const [isLoading, setIsLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
+  const { user } = useAuth();
 
   useEffect(() => {
     return () => {
@@ -34,6 +66,12 @@ const MovieCard = ({ movie }: { movie: Movie }) => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    setIsInMyList(inMyList);
+    setIsInFavorites(inFavorites);
+    setIsInWatchlist(inWatchlist);
+  }, [inMyList, inFavorites, inWatchlist]);
 
   const handleMouseEnter = () => {
     // Add a small delay before showing the video to prevent flickering on quick mouse movements
@@ -75,6 +113,120 @@ const MovieCard = ({ movie }: { movie: Movie }) => {
 
   const handleVideoLoad = () => {
     setIsVideoLoaded(true);
+  };
+
+  const toggleMyList = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      
+      if (isInMyList) {
+        // Remove from My List
+        await axios.delete(`/api/users/mylist/${movie._id}`, {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
+        setIsInMyList(false);
+      } else {
+        // Add to My List
+        await axios.post('/api/users/mylist', 
+          { movieId: movie._id },
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+        setIsInMyList(true);
+      }
+      
+      // Notify parent component if needed
+      if (onListChange) onListChange();
+      
+    } catch (err) {
+      console.error('Error updating My List:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleFavorites = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      
+      if (isInFavorites) {
+        // Remove from Favorites
+        await axios.delete(`/api/users/favorites/${movie._id}`, {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
+        setIsInFavorites(false);
+      } else {
+        // Add to Favorites
+        await axios.post('/api/users/favorites', 
+          { movieId: movie._id },
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+        setIsInFavorites(true);
+      }
+      
+      // Notify parent component if needed
+      if (onListChange) onListChange();
+      
+    } catch (err) {
+      console.error('Error updating Favorites:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleWatchlist = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      
+      if (isInWatchlist) {
+        // Remove from Watchlist
+        await axios.delete(`/api/users/watchlist/${movie._id}`, {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
+        setIsInWatchlist(false);
+      } else {
+        // Add to Watchlist
+        await axios.post('/api/users/watchlist', 
+          { movieId: movie._id },
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+        setIsInWatchlist(true);
+      }
+      
+      // Notify parent component if needed
+      if (onListChange) onListChange();
+      
+    } catch (err) {
+      console.error('Error updating Watchlist:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -136,23 +288,43 @@ const MovieCard = ({ movie }: { movie: Movie }) => {
               <button
                 onClick={handlePlay}
                 className="bg-white text-black p-1 rounded-full hover:bg-opacity-80"
+                title="Play"
               >
                 <FaPlay />
               </button>
-              <button className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700">
-                <FaPlus />
+              
+              <button 
+                onClick={toggleMyList}
+                disabled={isLoading}
+                className={`${isInMyList ? 'bg-red-600 text-white' : 'border border-gray-400 text-white'} p-1 rounded-full hover:bg-gray-700`}
+                title={isInMyList ? "Remove from My List" : "Add to My List"}
+              >
+                {isInMyList ? <FaCheck /> : <FaPlus />}
               </button>
-              <button className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700">
-                <FaThumbsUp />
+              
+              <button 
+                onClick={toggleFavorites}
+                disabled={isLoading}
+                className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700"
+                title={isInFavorites ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                {isInFavorites ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
               </button>
-              <button className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700">
-                <FaThumbsDown />
+              
+              <button 
+                onClick={toggleWatchlist}
+                disabled={isLoading}
+                className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700"
+                title={isInWatchlist ? "Remove from Want to Watch" : "Add to Want to Watch"}
+              >
+                {isInWatchlist ? <FaClock className="text-blue-400" /> : <FaRegClock />}
               </button>
               
               {movie.trailer && (
                 <button 
                   onClick={toggleMute} 
                   className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700"
+                  title={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
                 </button>

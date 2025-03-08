@@ -6,7 +6,7 @@ import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import MovieCard from '@/components/MovieCard';
 import { useAuth } from '@/context/AuthContext';
-import { FaList } from 'react-icons/fa';
+import { FaHeart } from 'react-icons/fa';
 
 interface Movie {
   _id: string;
@@ -22,25 +22,25 @@ interface Movie {
   duration?: string;
 }
 
-export default function MyListPage() {
-  const [myList, setMyList] = useState<Movie[]>([]);
+export default function FavoritesPage() {
+  const [favorites, setFavorites] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
 
-  const fetchMyList = async () => {
+  const fetchFavorites = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/users/mylist', {
+      const res = await axios.get('/api/users/favorites', {
         headers: {
           token: `Bearer ${user?.accessToken}`,
         },
       });
-      setMyList(res.data);
+      setFavorites(res.data);
     } catch (err) {
-      console.error('Error fetching My List:', err);
-      setError('Failed to load your list');
+      console.error('Error fetching Favorites:', err);
+      setError('Failed to load your favorites');
     } finally {
       setLoading(false);
     }
@@ -52,11 +52,11 @@ export default function MyListPage() {
       return;
     }
 
-    fetchMyList();
+    fetchFavorites();
   }, [user, router]);
 
   const handleListChange = () => {
-    fetchMyList();
+    fetchFavorites();
   };
 
   if (!user) {
@@ -68,7 +68,7 @@ export default function MyListPage() {
       <Navbar />
       
       <div className="container mx-auto px-4 pt-24 pb-12">
-        <h1 className="text-white text-3xl font-bold mb-8">My List</h1>
+        <h1 className="text-white text-3xl font-bold mb-8">Favorites</h1>
         
         {loading ? (
           <div className="flex justify-center py-12">
@@ -76,12 +76,12 @@ export default function MyListPage() {
           </div>
         ) : error ? (
           <div className="text-white text-center py-12">{error}</div>
-        ) : myList.length === 0 ? (
+        ) : favorites.length === 0 ? (
           <div className="text-center py-12 bg-gray-800 rounded-lg">
-            <FaList className="text-gray-500 text-5xl mx-auto mb-4" />
-            <h2 className="text-white text-xl mb-2">Your list is empty</h2>
+            <FaHeart className="text-gray-500 text-5xl mx-auto mb-4" />
+            <h2 className="text-white text-xl mb-2">No favorites yet</h2>
             <p className="text-gray-400 mb-6">
-              Add shows and movies to your list to watch them later.
+              Add shows and movies to your favorites to find them easily.
             </p>
             <button 
               onClick={() => router.push('/')}
@@ -92,11 +92,11 @@ export default function MyListPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {myList.map((movie) => (
+            {favorites.map((movie) => (
               <div key={movie._id} className="h-[200px]">
                 <MovieCard 
                   movie={movie} 
-                  inMyList={true}
+                  inFavorites={true}
                   onListChange={handleListChange}
                 />
               </div>

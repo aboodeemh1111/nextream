@@ -6,7 +6,16 @@ import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Image from 'next/image';
-import { FaPlay, FaPlus, FaThumbsUp, FaThumbsDown, FaStar } from 'react-icons/fa';
+import { 
+  FaPlay, 
+  FaPlus, 
+  FaCheck, 
+  FaHeart, 
+  FaRegHeart, 
+  FaClock, 
+  FaRegClock, 
+  FaStar 
+} from 'react-icons/fa';
 
 interface Movie {
   _id: string;
@@ -27,10 +36,26 @@ interface Movie {
   director?: string;
 }
 
+interface UserLists {
+  myList: string[];
+  favorites: string[];
+  watchlist: string[];
+}
+
 export default function MovieDetails() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userLists, setUserLists] = useState<UserLists>({
+    myList: [],
+    favorites: [],
+    watchlist: []
+  });
+  const [isInMyList, setIsInMyList] = useState(false);
+  const [isInFavorites, setIsInFavorites] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
   const params = useParams();
   const movieId = params.id as string;
   const { user } = useAuth();
@@ -59,11 +84,134 @@ export default function MovieDetails() {
       }
     };
 
+    const getUserLists = async () => {
+      try {
+        const res = await axios.get('/api/users/profile', {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
+        
+        const lists = {
+          myList: res.data.myList.map((item: any) => item._id || item),
+          favorites: res.data.favorites.map((item: any) => item._id || item),
+          watchlist: res.data.watchlist.map((item: any) => item._id || item)
+        };
+        
+        setUserLists(lists);
+        setIsInMyList(lists.myList.includes(movieId));
+        setIsInFavorites(lists.favorites.includes(movieId));
+        setIsInWatchlist(lists.watchlist.includes(movieId));
+      } catch (err) {
+        console.error('Failed to load user lists:', err);
+      }
+    };
+
     getMovie();
+    getUserLists();
   }, [movieId, user, router]);
 
   const handlePlay = () => {
     router.push(`/watch?videoId=${movieId}`);
+  };
+
+  const toggleMyList = async () => {
+    if (!user || isUpdating) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      if (isInMyList) {
+        // Remove from My List
+        await axios.delete(`/api/users/mylist/${movieId}`, {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
+        setIsInMyList(false);
+      } else {
+        // Add to My List
+        await axios.post('/api/users/mylist', 
+          { movieId },
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+        setIsInMyList(true);
+      }
+    } catch (err) {
+      console.error('Error updating My List:', err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const toggleFavorites = async () => {
+    if (!user || isUpdating) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      if (isInFavorites) {
+        // Remove from Favorites
+        await axios.delete(`/api/users/favorites/${movieId}`, {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
+        setIsInFavorites(false);
+      } else {
+        // Add to Favorites
+        await axios.post('/api/users/favorites', 
+          { movieId },
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+        setIsInFavorites(true);
+      }
+    } catch (err) {
+      console.error('Error updating Favorites:', err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const toggleWatchlist = async () => {
+    if (!user || isUpdating) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      if (isInWatchlist) {
+        // Remove from Watchlist
+        await axios.delete(`/api/users/watchlist/${movieId}`, {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
+        setIsInWatchlist(false);
+      } else {
+        // Add to Watchlist
+        await axios.post('/api/users/watchlist', 
+          { movieId },
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+        setIsInWatchlist(true);
+      }
+    } catch (err) {
+      console.error('Error updating Watchlist:', err);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   if (!user) {
@@ -103,6 +251,7 @@ export default function MovieDetails() {
             src={movie.img}
             alt={movie.title}
             fill
+            sizes="100vw"
             className="object-cover"
             priority
           />
@@ -148,14 +297,32 @@ export default function MovieDetails() {
                 >
                   <FaPlay className="mr-2" /> Play
                 </button>
-                <button className="bg-gray-600 bg-opacity-70 text-white px-6 py-2 rounded flex items-center hover:bg-opacity-90 transition">
-                  <FaPlus className="mr-2" /> My List
+                
+                <button 
+                  onClick={toggleMyList}
+                  disabled={isUpdating}
+                  className={`${isInMyList ? 'bg-red-600' : 'bg-gray-600 bg-opacity-70'} text-white px-6 py-2 rounded flex items-center hover:bg-opacity-90 transition`}
+                >
+                  {isInMyList ? <FaCheck className="mr-2" /> : <FaPlus className="mr-2" />}
+                  {isInMyList ? 'Added to List' : 'My List'}
                 </button>
-                <button className="bg-gray-600 bg-opacity-70 text-white p-2 rounded-full flex items-center hover:bg-opacity-90 transition">
-                  <FaThumbsUp />
+                
+                <button 
+                  onClick={toggleFavorites}
+                  disabled={isUpdating}
+                  className="bg-gray-600 bg-opacity-70 text-white p-2 rounded-full flex items-center hover:bg-opacity-90 transition"
+                  title={isInFavorites ? "Remove from Favorites" : "Add to Favorites"}
+                >
+                  {isInFavorites ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
                 </button>
-                <button className="bg-gray-600 bg-opacity-70 text-white p-2 rounded-full flex items-center hover:bg-opacity-90 transition">
-                  <FaThumbsDown />
+                
+                <button 
+                  onClick={toggleWatchlist}
+                  disabled={isUpdating}
+                  className="bg-gray-600 bg-opacity-70 text-white p-2 rounded-full flex items-center hover:bg-opacity-90 transition"
+                  title={isInWatchlist ? "Remove from Want to Watch" : "Add to Want to Watch"}
+                >
+                  {isInWatchlist ? <FaClock className="text-blue-400" /> : <FaRegClock />}
                 </button>
               </div>
             </div>
