@@ -36,7 +36,7 @@ export default function Home() {
           `/api/lists${genre ? `?genre=${genre}` : ''}`,
           {
             headers: {
-              token: `Bearer ${user.accessToken}`,
+              token: `Bearer ${user?.accessToken}`,
             },
           }
         );

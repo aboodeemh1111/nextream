@@ -6,6 +6,9 @@ import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { use } from 'react';
+import { FaEdit, FaTrash, FaPlus, FaArrowLeft } from 'react-icons/fa';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface Movie {
   _id: string;
@@ -147,8 +150,8 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+        <div className="flex justify-center items-center min-h-screen bg-gray-50">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-600"></div>
         </div>
       </AdminLayout>
     );
@@ -157,9 +160,15 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
   if (!list) {
     return (
       <AdminLayout>
-        <div className="p-6">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            List not found
+        <div className="min-h-screen bg-gray-50 p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm">
+              <p className="font-medium">List not found</p>
+              <p className="mt-2 text-sm">The requested list could not be found. Please check the URL and try again.</p>
+              <Link href="/lists" className="mt-4 inline-flex items-center text-red-700 hover:text-red-900">
+                <FaArrowLeft className="mr-2" /> Back to Lists
+              </Link>
+            </div>
           </div>
         </div>
       </AdminLayout>
@@ -168,129 +177,148 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
 
   return (
     <AdminLayout>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Edit List</h1>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="mb-8">
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Title
-            </label>
-            <input
-              type="text"
-              value={list.title}
-              onChange={(e) => setList({ ...list, title: e.target.value })}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              required
-            />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <Link href="/lists" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+                <FaArrowLeft className="mr-2" /> Back to Lists
+              </Link>
+              <h1 className="text-3xl font-bold text-gray-900">Edit List</h1>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Type
-            </label>
-            <select
-              value={list.type}
-              onChange={(e) => setList({ ...list, type: e.target.value })}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            >
-              <option value="movie">Movie</option>
-              <option value="series">Series</option>
-              <option value="both">Both</option>
-            </select>
-          </div>
+          {error && (
+            <div className="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm">
+              <p className="font-medium">Error</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Genre
-            </label>
-            <input
-              type="text"
-              value={list.genre}
-              onChange={(e) => setList({ ...list, genre: e.target.value })}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            />
-          </div>
+          {success && (
+            <div className="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md shadow-sm">
+              <p className="font-medium">Success</p>
+              <p className="text-sm">{success}</p>
+            </div>
+          )}
 
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          >
-            Update List
-          </button>
-        </form>
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  List Title
+                </label>
+                <input
+                  type="text"
+                  value={list.title}
+                  onChange={(e) => setList({ ...list, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  required
+                />
+              </div>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-bold mb-4">Movies in List</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {list.content.map((movie) => (
-              <div
-                key={movie._id}
-                className="border rounded-lg p-4 flex items-center justify-between"
-              >
-                <div className="flex items-center">
-                  <img
-                    src={movie.img}
-                    alt={movie.title}
-                    className="w-16 h-16 object-cover rounded mr-4"
-                  />
-                  <div>
-                    <h3 className="font-semibold">{movie.title}</h3>
-                    <p className="text-sm text-gray-600">{movie.genre}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleRemoveMovie(movie._id)}
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Content Type
+                </label>
+                <select
+                  value={list.type}
+                  onChange={(e) => setList({ ...list, type: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
-                  Remove
+                  <option value="movie">Movies Only</option>
+                  <option value="series">Series Only</option>
+                  <option value="both">Movies & Series</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Genre
+                </label>
+                <input
+                  type="text"
+                  value={list.genre}
+                  onChange={(e) => setList({ ...list, genre: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
+                >
+                  Update List
                 </button>
               </div>
-            ))}
+            </form>
           </div>
-        </div>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-bold mb-4">Available Movies</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availableMovies
-              .filter((movie) => !list.content.find((m) => m._id === movie._id))
-              .map((movie) => (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Movies in List</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {list.content.map((movie) => (
                 <div
                   key={movie._id}
-                  className="border rounded-lg p-4 flex items-center justify-between"
+                  className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
                 >
-                  <div className="flex items-center">
-                    <img
+                  <div className="relative h-48 w-full">
+                    <Image
                       src={movie.img}
                       alt={movie.title}
-                      className="w-16 h-16 object-cover rounded mr-4"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
-                    <div>
-                      <h3 className="font-semibold">{movie.title}</h3>
-                      <p className="text-sm text-gray-600">{movie.genre}</p>
-                    </div>
                   </div>
-                  <button
-                    onClick={() => handleAddMovie(movie._id)}
-                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm"
-                  >
-                    Add
-                  </button>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 mb-1">{movie.title}</h3>
+                    <p className="text-sm text-gray-600 mb-4">{movie.genre}</p>
+                    <button
+                      onClick={() => handleRemoveMovie(movie._id)}
+                      className="w-full inline-flex items-center justify-center px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
+                    >
+                      <FaTrash className="mr-2" /> Remove
+                    </button>
+                  </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Available Movies</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {availableMovies
+                .filter((movie) => !list.content.find((m) => m._id === movie._id))
+                .map((movie) => (
+                  <div
+                    key={movie._id}
+                    className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
+                  >
+                    <div className="relative h-48 w-full">
+                      <Image
+                        src={movie.img}
+                        alt={movie.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">{movie.title}</h3>
+                      <p className="text-sm text-gray-600 mb-4">{movie.genre}</p>
+                      <button
+                        onClick={() => handleAddMovie(movie._id)}
+                        className="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
+                      >
+                        <FaPlus className="mr-2" /> Add to List
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         </div>
       </div>

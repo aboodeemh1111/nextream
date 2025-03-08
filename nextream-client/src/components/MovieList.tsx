@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import MovieCard from './MovieCard';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { useAuth } from '@/context/AuthContext';
 
 interface Movie {
   _id: string;
@@ -33,12 +34,17 @@ const MovieList = ({ listId }: { listId: string }) => {
   const [error, setError] = useState<string | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const getList = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`/api/lists/find/${listId}`);
+        const res = await axios.get(`/api/lists/find/${listId}`, {
+          headers: {
+            token: `Bearer ${user?.accessToken}`
+          }
+        });
         setList(res.data);
       } catch (err) {
         setError('Failed to load list');
@@ -48,8 +54,10 @@ const MovieList = ({ listId }: { listId: string }) => {
       }
     };
 
-    getList();
-  }, [listId]);
+    if (user) {
+      getList();
+    }
+  }, [listId, user]);
 
   const handleClick = (direction: 'left' | 'right') => {
     if (!listRef.current) return;

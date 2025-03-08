@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { FaPlay, FaInfoCircle } from 'react-icons/fa';
+import { useAuth } from '@/context/AuthContext';
 
 interface Movie {
   _id: string;
@@ -25,12 +26,17 @@ const Featured = ({ type }: { type?: string }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { user } = useAuth();
 
   useEffect(() => {
     const getRandomContent = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`/api/movies/random${type ? `?type=${type}` : ''}`);
+        const res = await axios.get(`/api/movies/random${type ? `?type=${type}` : ''}`, {
+          headers: {
+            token: `Bearer ${user?.accessToken}`
+          }
+        });
         setContent(res.data[0]);
       } catch (err) {
         setError('Failed to load featured content');
@@ -40,8 +46,10 @@ const Featured = ({ type }: { type?: string }) => {
       }
     };
 
-    getRandomContent();
-  }, [type]);
+    if (user) {
+      getRandomContent();
+    }
+  }, [type, user]);
 
   const handlePlay = () => {
     if (content?.trailer) {
@@ -79,6 +87,7 @@ const Featured = ({ type }: { type?: string }) => {
             src={content.img}
             alt={content.title}
             fill
+            sizes="100vw"
             className="object-cover"
             priority
           />
