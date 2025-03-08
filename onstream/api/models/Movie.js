@@ -14,7 +14,10 @@ const MovieSchema = new mongoose.Schema(
     genre: { type: String },
     isSeries: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    collection: 'movies'
+  }
 );
 
 module.exports = mongoose.model("Movie", MovieSchema);

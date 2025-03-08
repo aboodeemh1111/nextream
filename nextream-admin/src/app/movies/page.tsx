@@ -36,95 +36,25 @@ export default function MoviesPage() {
 
       try {
         setLoading(true);
-        console.log('Fetching movies...');
+        setError(null);
         
-        // Try fetching without authentication first for testing
-        try {
-          const directRes = await axios.get('http://localhost:8800/api/movies/');
-          console.log('Direct API response:', directRes.data);
-          
-          if (directRes.data && Array.isArray(directRes.data) && directRes.data.length > 0) {
-            setMovies(directRes.data);
-            console.log('Successfully loaded', directRes.data.length, 'movies directly');
-            setLoading(false);
-            return;
-          }
-        } catch (directErr: any) {
-          console.log('Direct fetch failed, trying with authentication:', directErr.message);
-        }
-        
-        // If direct fetch fails, try with authentication
         const headers = {
           token: `Bearer ${user.accessToken}`
         };
-        console.log('Request headers:', headers);
         
-        const res = await axios.get(
-          `/api/movies`,
-          {
-            headers
-          }
-        );
+        // Use the proxied endpoint only
+        const res = await axios.get('/api/movies', { headers });
         
-        console.log('Movies API response with auth:', res.data);
-        
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res.data && Array.isArray(res.data)) {
           setMovies(res.data);
-          console.log('Successfully loaded', res.data.length, 'movies with auth');
+          console.log('Successfully loaded', res.data.length, 'movies');
         } else {
-          console.log('No movies found or invalid response format:', res.data);
-          
-          // As a last resort, try fetching from the API directly with a different endpoint
-          try {
-            const allMoviesRes = await axios.get('http://localhost:8800/api/movies/all');
-            console.log('All movies response:', allMoviesRes.data);
-            
-            if (allMoviesRes.data && Array.isArray(allMoviesRes.data) && allMoviesRes.data.length > 0) {
-              setMovies(allMoviesRes.data);
-              console.log('Successfully loaded', allMoviesRes.data.length, 'movies from /all endpoint');
-              return;
-            }
-          } catch (allErr: any) {
-            console.log('All movies fetch failed:', allErr.message);
-          }
-          
-          // Use mock data if all attempts fail
-          setMovies([
-            {
-              _id: '1',
-              title: 'Stranger Things (Mock)',
-              desc: 'When a young boy disappears, his mother, a police chief, and his friends must confront terrifying forces in order to get him back.',
-              img: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
-              imgSm: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&q=80',
-              trailer: 'https://www.youtube.com/watch?v=b9EkMc79ZSU',
-              year: '2016',
-              limit: 16,
-              genre: 'Sci-Fi & Fantasy',
-              isSeries: true,
-              createdAt: '2023-01-10T08:30:00.000Z'
-            }
-          ]);
+          setError('Invalid data format received from server');
+          console.error('Invalid data format:', res.data);
         }
       } catch (err: any) {
         console.error('Error fetching movies:', err.response?.data || err.message);
-        setError('Failed to load movies');
-        
-        // Use mock data if API call fails
-        setMovies([
-          {
-            _id: '1',
-            title: 'Stranger Things (Mock)',
-            desc: 'When a young boy disappears, his mother, a police chief, and his friends must confront terrifying forces in order to get him back.',
-            img: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
-            imgSm: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&q=80',
-            trailer: 'https://www.youtube.com/watch?v=b9EkMc79ZSU',
-            year: '2016',
-            limit: 16,
-            genre: 'Sci-Fi & Fantasy',
-            isSeries: true,
-            createdAt: '2023-01-10T08:30:00.000Z'
-          }
-        ]);
+        setError(err.response?.data?.message || 'Failed to load movies');
       } finally {
         setLoading(false);
       }

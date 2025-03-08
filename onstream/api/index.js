@@ -14,10 +14,13 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
+    dbName: 'streamo'
   })
-  .then(() => console.log("DB Connection Successfull"))
+  .then(() => {
+    console.log("DB Connection Successful");
+  })
   .catch((err) => {
-    console.error(err);
+    console.error("MongoDB connection error:", err);
   });
 
 // Add CORS headers

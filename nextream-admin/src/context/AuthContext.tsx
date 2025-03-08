@@ -33,10 +33,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check if user is already logged in
     const storedUser = localStorage.getItem('admin');
-    if (storedUser) {
+    const storedToken = Cookies.get('admin');
+    
+    if (storedUser && storedToken) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        // Ensure the token in the user object matches the cookie
+        parsedUser.accessToken = storedToken;
+        
+        if (!parsedUser.isAdmin) {
+          console.error('Non-admin user found in storage');
+          localStorage.removeItem('admin');
+          Cookies.remove('admin');
+        } else {
+          setUser(parsedUser);
+          // Set default axios auth header
+          axios.defaults.headers.common['token'] = `Bearer ${storedToken}`;
+        }
       } catch (err) {
         console.error('Error parsing stored user:', err);
         localStorage.removeItem('admin');
@@ -50,10 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      console.log('Attempting login with:', { email });
       
       const res = await axios.post('/api/auth/login', { email, password });
-      console.log('Login response:', res.data);
       
       // Check if user is admin
       if (!res.data.isAdmin) {
@@ -62,16 +73,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      setUser(res.data);
-      
       // Store user in localStorage and cookies
       localStorage.setItem('admin', JSON.stringify(res.data));
       Cookies.set('admin', res.data.accessToken, { expires: 7 }); // Expires in 7 days
       
+      // Set default axios auth header
+      axios.defaults.headers.common['token'] = `Bearer ${res.data.accessToken}`;
+      
+      setUser(res.data);
       router.push('/');
     } catch (err: any) {
       console.error('Login error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Something went wrong');
+      setError(err.response?.data?.message || 'Invalid credentials');
+      localStorage.removeItem('admin');
+      Cookies.remove('admin');
+      delete axios.defaults.headers.common['token'];
     } finally {
       setLoading(false);
     }
@@ -81,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     localStorage.removeItem('admin');
     Cookies.remove('admin');
+    delete axios.defaults.headers.common['token'];
     router.push('/login');
   };
 
