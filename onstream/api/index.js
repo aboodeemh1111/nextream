@@ -27,7 +27,19 @@ mongoose
 
 // Add CORS headers
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  // Allow requests from your frontend domains
+  const allowedOrigins = [
+    'https://nextream-client.vercel.app',
+    'https://nextream-admin.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+  
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, token");
   
@@ -54,6 +66,12 @@ app.use("/api/lists", listRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/analytics", analyticsRoute);
 
-app.listen(8800, () => {
-  console.log("Backend server is running!");
+// Basic route for health check
+app.get('/', (req, res) => {
+  res.send('Nextream API is running');
+});
+
+const PORT = process.env.PORT || 8800;
+app.listen(PORT, () => {
+  console.log(`Backend server is running on port ${PORT}!`);
 });
