@@ -322,4 +322,27 @@ router.get("/", verify, async (req, res) => {
   }
 });
 
+// INCREMENT MOVIE VIEWS
+router.put("/views/:id", verify, async (req, res) => {
+  try {
+    const movie = await Movie.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
+    
+    if (!movie) {
+      return res.status(404).json("Movie not found");
+    }
+    
+    res.status(200).json({ views: movie.views });
+  } catch (err) {
+    console.error("Error incrementing movie views:", err);
+    res.status(500).json({
+      error: "Failed to increment movie views",
+      details: err.message
+    });
+  }
+});
+
 module.exports = router;

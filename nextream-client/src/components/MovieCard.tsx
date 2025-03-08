@@ -30,24 +30,27 @@ interface Movie {
   limit?: number;
   genre?: string;
   duration?: string;
+  progress?: number;
 }
 
-interface MovieCardProps {
+export interface MovieCardProps {
   movie: Movie;
+  size?: 'small' | 'medium' | 'large';
   inMyList?: boolean;
   inFavorites?: boolean;
   inWatchlist?: boolean;
-  onListChange?: () => void;
-  size?: 'small' | 'medium' | 'large';
+  showProgress?: boolean;
+  onListChange?: (movieId: string, listType: string, action: 'add' | 'remove') => void;
 }
 
 const MovieCard = ({ 
   movie, 
-  inMyList = false, 
-  inFavorites = false, 
-  inWatchlist = false,
-  onListChange,
-  size = 'medium'
+  size = 'medium',
+  inMyList, 
+  inFavorites, 
+  inWatchlist,
+  showProgress,
+  onListChange 
 }: MovieCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -183,7 +186,7 @@ const MovieCard = ({
       }
       
       // Notify parent component if needed
-      if (onListChange) onListChange();
+      if (onListChange) onListChange(movie._id, 'mylist', isInMyList ? 'remove' : 'add');
       
     } catch (err) {
       console.error('Error updating My List:', err);
@@ -221,7 +224,7 @@ const MovieCard = ({
       }
       
       // Notify parent component if needed
-      if (onListChange) onListChange();
+      if (onListChange) onListChange(movie._id, 'favorites', isInFavorites ? 'remove' : 'add');
       
     } catch (err) {
       console.error('Error updating Favorites:', err);
@@ -259,7 +262,7 @@ const MovieCard = ({
       }
       
       // Notify parent component if needed
-      if (onListChange) onListChange();
+      if (onListChange) onListChange(movie._id, 'watchlist', isInWatchlist ? 'remove' : 'add');
       
     } catch (err) {
       console.error('Error updating Watchlist:', err);
@@ -305,6 +308,16 @@ const MovieCard = ({
             loop
             onLoadedData={handleVideoLoad}
             playsInline
+          />
+        </div>
+      )}
+      
+      {/* Progress bar for currently watching */}
+      {showProgress && movie.progress !== undefined && (
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800">
+          <div 
+            className="h-full bg-red-600" 
+            style={{ width: `${movie.progress}%` }}
           />
         </div>
       )}

@@ -45,18 +45,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Non-admin user found in storage');
           localStorage.removeItem('admin');
           Cookies.remove('admin');
+          setLoading(false);
         } else {
-          setUser(parsedUser);
           // Set default axios auth header
           axios.defaults.headers.common['token'] = `Bearer ${storedToken}`;
+          console.log('Setting auth token:', `Bearer ${storedToken.substring(0, 15)}...`);
+          
+          // Verify token is valid by making a test request
+          axios.get('/api/users/profile', {
+            headers: {
+              token: `Bearer ${storedToken}`
+            }
+          })
+          .then(() => {
+            setUser(parsedUser);
+            console.log('User authenticated successfully');
+          })
+          .catch(err => {
+            console.error('Token validation failed:', err.response?.data || err.message);
+            localStorage.removeItem('admin');
+            Cookies.remove('admin');
+            delete axios.defaults.headers.common['token'];
+          })
+          .finally(() => {
+            setLoading(false);
+          });
         }
-      } catch (err) {
-        console.error('Error parsing stored user:', err);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
         localStorage.removeItem('admin');
         Cookies.remove('admin');
+        delete axios.defaults.headers.common['token'];
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -79,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Set default axios auth header
       axios.defaults.headers.common['token'] = `Bearer ${res.data.accessToken}`;
+      console.log('Setting auth token on login:', `Bearer ${res.data.accessToken.substring(0, 15)}...`);
       
       setUser(res.data);
       router.push('/');
@@ -94,10 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    setUser(null);
     localStorage.removeItem('admin');
     Cookies.remove('admin');
     delete axios.defaults.headers.common['token'];
+    setUser(null);
     router.push('/login');
   };
 

@@ -22,8 +22,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-600"></div>
       </div>
     );
   }
@@ -33,15 +33,21 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 flex flex-col overflow-hidden md:ml-64">
+      <div className="flex-1 flex flex-col w-full md:ml-64 transition-all duration-300 ease-in-out">
         <Header />
         
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
-          {children}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-6">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
+        
+        <footer className="bg-white border-t border-gray-200 py-4 px-6 text-center text-gray-500 text-sm">
+          <p>© {new Date().getFullYear()} Nextream Admin. All rights reserved.</p>
+        </footer>
       </div>
     </div>
   );

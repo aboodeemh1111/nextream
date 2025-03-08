@@ -93,8 +93,13 @@ export default function Home() {
           <div className="text-white text-center py-12">{error}</div>
         ) : (
           <div className="space-y-8">
-            {lists.map((list) => (
-              <MovieList key={list._id} listId={list._id} />
+            {lists.map((list, index) => (
+              <MovieList 
+                key={list._id} 
+                listId={list._id} 
+                title={list.title}
+                cardSize={index === 0 ? 'large' : 'medium'} 
+              />
             ))}
           </div>
         )}

@@ -3,8 +3,21 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
-import { FaUsers, FaFilm, FaListUl, FaEye, FaArrowUp, FaArrowDown, FaPlus } from 'react-icons/fa';
+import { 
+  FaUsers, 
+  FaFilm, 
+  FaListUl, 
+  FaEye, 
+  FaArrowUp, 
+  FaArrowDown, 
+  FaPlus,
+  FaChartBar,
+  FaCalendarAlt,
+  FaUserPlus,
+  FaExclamationTriangle
+} from 'react-icons/fa';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Stats {
   userCount: number;
@@ -13,7 +26,8 @@ interface Stats {
   totalViews: number;
   newUsers: number;
   newUsersChange: number;
-  popularMovies: { _id: string; title: string; views: number }[];
+  popularMovies: { _id: string; title: string; views: number; img?: string }[];
+  recentUsers: { _id: string; username: string; email: string; profilePic?: string; createdAt: string; isAdmin: boolean }[];
 }
 
 const Dashboard = () => {
@@ -24,10 +38,12 @@ const Dashboard = () => {
     totalViews: 0,
     newUsers: 0,
     newUsersChange: 0,
-    popularMovies: []
+    popularMovies: [],
+    recentUsers: []
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -36,36 +52,31 @@ const Dashboard = () => {
 
       try {
         setLoading(true);
-        // In a real application, you would fetch this data from your API
-        // This is mock data for demonstration purposes
         
-        // Mock API call
-        // const res = await axios.get('http://localhost:8800/api/stats', {
-        //   headers: {
-        //     token: `Bearer ${user.accessToken}`,
-        //   },
-        // });
-        // setStats(res.data);
-        
-        // Mock data
-        setStats({
-          userCount: 1243,
-          movieCount: 567,
-          listCount: 48,
-          totalViews: 45892,
-          newUsers: 124,
-          newUsersChange: 12.5,
-          popularMovies: [
-            { _id: '1', title: 'Stranger Things', views: 12453 },
-            { _id: '2', title: 'The Witcher', views: 9876 },
-            { _id: '3', title: 'Money Heist', views: 8765 },
-            { _id: '4', title: 'Dark', views: 7654 },
-            { _id: '5', title: 'Breaking Bad', views: 6543 }
-          ]
+        // Fetch real data from the API
+        const res = await axios.get('/api/admin/stats', {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
         });
-      } catch (err) {
-        setError('Failed to load dashboard data');
-        console.error(err);
+        
+        setStats(res.data);
+        console.log('Dashboard stats loaded:', res.data);
+      } catch (err: any) {
+        console.error('Error fetching dashboard stats:', err.response?.data || err.message);
+        setError('Failed to load dashboard data. ' + (err.response?.data?.error || err.message));
+        
+        // Use fallback data if API call fails
+        setStats({
+          userCount: 0,
+          movieCount: 0,
+          listCount: 0,
+          totalViews: 0,
+          newUsers: 0,
+          newUsersChange: 0,
+          popularMovies: [],
+          recentUsers: []
+        });
       } finally {
         setLoading(false);
       }
@@ -74,155 +85,447 @@ const Dashboard = () => {
     fetchStats();
   }, [user]);
 
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    } else {
+      return num.toString();
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-red-600"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong className="font-bold">Error!</strong>
-        <span className="block sm:inline"> {error}</span>
+      <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded" role="alert">
+        <div className="flex items-center">
+          <div className="py-1">
+            <FaExclamationTriangle className="h-6 w-6 text-red-500 mr-4" />
+          </div>
+          <div>
+            <p className="font-bold">Error</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+    <div>
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <p className="text-gray-600 mt-1">Welcome back to your admin dashboard</p>
+      </div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        {/* Users Card */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Total Users</p>
-              <h2 className="text-3xl font-bold">{stats.userCount.toLocaleString()}</h2>
+              <p className="text-gray-500 text-sm font-medium">Total Users</p>
+              <h2 className="text-3xl font-bold text-gray-800 mt-1">{stats.userCount.toLocaleString()}</h2>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <FaUsers className="text-blue-600 text-xl" />
             </div>
           </div>
           <div className="mt-4 flex items-center">
-            <span className={`text-sm ${stats.newUsersChange >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center`}>
+            <span className={`text-sm ${stats.newUsersChange >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center font-medium`}>
               {stats.newUsersChange >= 0 ? <FaArrowUp className="mr-1" /> : <FaArrowDown className="mr-1" />}
-              {Math.abs(stats.newUsersChange)}%
+              {Math.abs(stats.newUsersChange).toFixed(1)}%
             </span>
             <span className="text-gray-500 text-sm ml-2">from last month</span>
           </div>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <Link href="/users" className="text-blue-600 text-sm hover:underline flex items-center">
+              <FaUserPlus className="mr-1" /> Add new user
+            </Link>
+          </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Movies Card */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Total Movies</p>
-              <h2 className="text-3xl font-bold">{stats.movieCount.toLocaleString()}</h2>
+              <p className="text-gray-500 text-sm font-medium">Total Movies</p>
+              <h2 className="text-3xl font-bold text-gray-800 mt-1">{stats.movieCount.toLocaleString()}</h2>
             </div>
             <div className="bg-red-100 p-3 rounded-full">
               <FaFilm className="text-red-600 text-xl" />
             </div>
           </div>
-          <div className="mt-4">
-            <Link href="/movies/new" className="text-red-600 text-sm hover:underline">
-              Add new movie
+          <div className="mt-4 flex items-center">
+            <span className="text-sm text-gray-500">
+              <FaCalendarAlt className="inline mr-1" /> Last updated today
+            </span>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <Link href="/movies/new" className="text-red-600 text-sm hover:underline flex items-center">
+              <FaPlus className="mr-1" /> Add new movie
             </Link>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Lists Card */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Total Lists</p>
-              <h2 className="text-3xl font-bold">{stats.listCount.toLocaleString()}</h2>
+              <p className="text-gray-500 text-sm font-medium">Total Lists</p>
+              <h2 className="text-3xl font-bold text-gray-800 mt-1">{stats.listCount.toLocaleString()}</h2>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
               <FaListUl className="text-green-600 text-xl" />
             </div>
           </div>
-          <div className="mt-4">
-            <Link href="/lists/new" className="text-green-600 text-sm hover:underline">
-              Create new list
+          <div className="mt-4 flex items-center">
+            <span className="text-sm text-gray-500">
+              <FaChartBar className="inline mr-1" /> Curated collections
+            </span>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <Link href="/lists/new" className="text-green-600 text-sm hover:underline flex items-center">
+              <FaPlus className="mr-1" /> Create new list
             </Link>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Views Card */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Total Views</p>
-              <h2 className="text-3xl font-bold">{stats.totalViews.toLocaleString()}</h2>
+              <p className="text-gray-500 text-sm font-medium">Total Views</p>
+              <h2 className="text-3xl font-bold text-gray-800 mt-1">{formatNumber(stats.totalViews)}</h2>
             </div>
             <div className="bg-purple-100 p-3 rounded-full">
               <FaEye className="text-purple-600 text-xl" />
             </div>
           </div>
-          <div className="mt-4">
-            <Link href="/analytics" className="text-purple-600 text-sm hover:underline">
-              View analytics
+          <div className="mt-4 flex items-center">
+            <span className="text-sm text-gray-500">
+              Across all content
+            </span>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <Link href="/analytics" className="text-purple-600 text-sm hover:underline flex items-center">
+              <FaChartBar className="mr-1" /> View analytics
             </Link>
           </div>
         </div>
       </div>
       
-      {/* Popular Content */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Popular Content</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Title
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Views
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {stats.popularMovies.map((movie) => (
-                <tr key={movie._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{movie.title}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{movie.views.toLocaleString()}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Link href={`/movies/${movie._id}`} className="text-indigo-600 hover:text-indigo-900 mr-4">
-                      View
-                    </Link>
-                    <Link href={`/movies/edit/${movie._id}`} className="text-indigo-600 hover:text-indigo-900">
-                      Edit
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Tabs */}
+      <div className="mb-6 border-b border-gray-200">
+        <ul className="flex flex-wrap -mb-px text-sm font-medium text-center">
+          <li className="mr-2">
+            <button
+              className={`inline-block p-4 rounded-t-lg border-b-2 ${
+                activeTab === 'overview'
+                  ? 'text-red-600 border-red-600'
+                  : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+              }`}
+              onClick={() => setActiveTab('overview')}
+            >
+              Overview
+            </button>
+          </li>
+          <li className="mr-2">
+            <button
+              className={`inline-block p-4 rounded-t-lg border-b-2 ${
+                activeTab === 'popular'
+                  ? 'text-red-600 border-red-600'
+                  : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+              }`}
+              onClick={() => setActiveTab('popular')}
+            >
+              Popular Content
+            </button>
+          </li>
+          <li className="mr-2">
+            <button
+              className={`inline-block p-4 rounded-t-lg border-b-2 ${
+                activeTab === 'recent'
+                  ? 'text-red-600 border-red-600'
+                  : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+              }`}
+              onClick={() => setActiveTab('recent')}
+            >
+              Recent Users
+            </button>
+          </li>
+        </ul>
       </div>
       
-      {/* Firebase Integration */}
-      <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-        <h2 className="text-xl font-semibold mb-4">Firebase Integration</h2>
-        <p className="text-gray-600 mb-4">
-          This admin panel is integrated with Firebase Storage for uploading and storing media files.
-          You can test the Firebase integration by uploading files on the Test Upload page.
-        </p>
-        <Link
-          href="/test-upload"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <FaPlus className="mr-2" /> Test Firebase Upload
-        </Link>
+      {/* Tab Content */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Platform Overview</h2>
+            <p className="text-gray-600 mb-6">
+              Your streaming platform is performing well. Here's a summary of your key metrics.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Popular Movies Preview */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-800 mb-3">Popular Movies</h3>
+                {stats.popularMovies.length === 0 ? (
+                  <div className="p-4 bg-gray-50 rounded-lg text-center">
+                    <p className="text-gray-500">No movie data available</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {stats.popularMovies.slice(0, 3).map((movie) => (
+                      <div key={movie._id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded overflow-hidden">
+                          {movie.img ? (
+                            <Image 
+                              src={movie.img} 
+                              alt={movie.title} 
+                              width={40} 
+                              height={40} 
+                              className="object-cover h-full w-full"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 flex items-center justify-center bg-gray-300">
+                              <FaFilm className="text-gray-500" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-3 flex-1">
+                          <p className="text-sm font-medium text-gray-800">{movie.title}</p>
+                          <p className="text-xs text-gray-500">{movie.views.toLocaleString()} views</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {stats.popularMovies.length > 0 && (
+                  <div className="mt-4">
+                    <button 
+                      onClick={() => setActiveTab('popular')}
+                      className="text-red-600 text-sm hover:underline"
+                    >
+                      View all popular content
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Recent Users Preview */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-800 mb-3">Recent Users</h3>
+                {stats.recentUsers.length === 0 ? (
+                  <div className="p-4 bg-gray-50 rounded-lg text-center">
+                    <p className="text-gray-500">No user data available</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {stats.recentUsers.slice(0, 3).map((user) => (
+                      <div key={user._id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
+                          {user.profilePic ? (
+                            <Image 
+                              src={user.profilePic} 
+                              alt={user.username} 
+                              width={40} 
+                              height={40} 
+                              className="object-cover h-full w-full"
+                            />
+                          ) : (
+                            <FaUsers className="text-gray-400" />
+                          )}
+                        </div>
+                        <div className="ml-3 flex-1">
+                          <p className="text-sm font-medium text-gray-800">{user.username}</p>
+                          <p className="text-xs text-gray-500">Joined {new Date(user.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {stats.recentUsers.length > 0 && (
+                  <div className="mt-4">
+                    <button 
+                      onClick={() => setActiveTab('recent')}
+                      className="text-red-600 text-sm hover:underline"
+                    >
+                      View all recent users
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Popular Content Tab */}
+        {activeTab === 'popular' && (
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Popular Content</h2>
+            {stats.popularMovies.length === 0 ? (
+              <div className="p-8 text-center">
+                <FaFilm className="mx-auto text-gray-300 text-5xl mb-4" />
+                <h3 className="text-lg font-medium text-gray-800 mb-2">No movie data available</h3>
+                <p className="text-gray-500 mb-4">Try adding some movies to see them here</p>
+                <Link href="/movies/new" className="text-red-600 hover:text-red-800 font-medium">
+                  Add a movie
+                </Link>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Movie
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Views
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stats.popularMovies.map((movie) => (
+                      <tr key={movie._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded overflow-hidden">
+                              {movie.img ? (
+                                <Image 
+                                  src={movie.img} 
+                                  alt={movie.title} 
+                                  width={40} 
+                                  height={40} 
+                                  className="object-cover h-full w-full"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 flex items-center justify-center bg-gray-300">
+                                  <FaFilm className="text-gray-500" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{movie.title}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">{movie.views.toLocaleString()}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Link href={`/movies/${movie._id}`} className="text-indigo-600 hover:text-indigo-900 mr-4">
+                            View
+                          </Link>
+                          <Link href={`/movies/edit/${movie._id}`} className="text-indigo-600 hover:text-indigo-900">
+                            Edit
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Recent Users Tab */}
+        {activeTab === 'recent' && (
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Users</h2>
+            {stats.recentUsers.length === 0 ? (
+              <div className="p-8 text-center">
+                <FaUsers className="mx-auto text-gray-300 text-5xl mb-4" />
+                <h3 className="text-lg font-medium text-gray-800 mb-2">No user data available</h3>
+                <p className="text-gray-500 mb-4">Users will appear here once they register</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stats.recentUsers.map((user) => (
+                      <tr key={user._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
+                              {user.profilePic ? (
+                                <Image 
+                                  src={user.profilePic} 
+                                  alt={user.username} 
+                                  width={40} 
+                                  height={40} 
+                                  className="object-cover h-full w-full"
+                                />
+                              ) : (
+                                <FaUsers className="text-gray-400" />
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isAdmin ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                            {user.isAdmin ? 'Admin' : 'User'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Link href={`/users/${user._id}`} className="text-indigo-600 hover:text-indigo-900 mr-4">
+                            View
+                          </Link>
+                          <Link href={`/users/edit/${user._id}`} className="text-indigo-600 hover:text-indigo-900">
+                            Edit
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

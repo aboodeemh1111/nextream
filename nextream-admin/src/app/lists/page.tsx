@@ -26,7 +26,6 @@ interface List {
 }
 
 export default function ListsPage() {
-  const { user } = useAuth();
   const [lists, setLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,21 +33,62 @@ export default function ListsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'movie' | 'series'>('all');
   const [genreFilter, setGenreFilter] = useState<string>('');
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchLists();
+    if (user) {
+      fetchLists();
+    }
   }, [user]);
 
   const fetchLists = async () => {
+    if (!user) {
+      setError('Authentication required. Please log in.');
+      setLoading(false);
+      return;
+    }
+
     try {
+      setLoading(true);
+      console.log('Fetching lists with token:', user.accessToken.substring(0, 15) + '...');
+      
       const res = await axios.get('/api/lists/all', {
         headers: {
-          token: `Bearer ${user?.accessToken}`,
+          token: `Bearer ${user.accessToken}`,
         },
       });
+      
+      console.log('Lists API response status:', res.status);
       setLists(res.data);
+      setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load lists');
+      console.error('Error fetching lists:', err.response?.data || err.message);
+      
+      if (err.response?.status === 403) {
+        setError('Access denied. You do not have permission to view lists. Please ensure you are logged in with an admin account.');
+      } else if (err.response?.status === 401) {
+        setError('Authentication failed. Please log in again.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to load lists. Please try again later.');
+      }
+      
+      // Use mock data for development if API call fails
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Using mock data for development');
+        setLists([
+          {
+            _id: '1',
+            title: 'Popular Movies',
+            type: 'movie',
+            genre: 'all',
+            content: [
+              { _id: '101', title: 'Sample Movie 1', img: 'https://via.placeholder.com/150x225', genre: 'Action', isSeries: false },
+              { _id: '102', title: 'Sample Movie 2', img: 'https://via.placeholder.com/150x225', genre: 'Drama', isSeries: false }
+            ],
+            createdAt: new Date().toISOString()
+          }
+        ]);
+      }
     } finally {
       setLoading(false);
     }

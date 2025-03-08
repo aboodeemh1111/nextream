@@ -61,15 +61,27 @@ router.get("/find/:id", verify, async (req, res) => {
 
 // GET ALL LISTS (FOR ADMIN)
 router.get("/all", verify, async (req, res) => {
-  if (!req.user.isAdmin) {
-    return res.status(403).json("You are not allowed!");
-  }
-
   try {
+    // Log the request for debugging
+    console.log(`GET /lists/all request from user ID: ${req.user.id}, isAdmin: ${req.user.isAdmin}`);
+    
+    if (!req.user.isAdmin) {
+      console.log(`Access denied for user ${req.user.id} - not an admin`);
+      return res.status(403).json({
+        message: "You are not allowed to access this resource. Admin privileges required.",
+        error: "Forbidden"
+      });
+    }
+
     const lists = await List.find().populate('content').sort({ createdAt: -1 });
+    console.log(`Successfully retrieved ${lists.length} lists for admin user ${req.user.id}`);
     res.status(200).json(lists);
   } catch (err) {
-    res.status(500).json(err);
+    console.error(`Error in GET /lists/all:`, err);
+    res.status(500).json({
+      message: "Failed to retrieve lists",
+      error: err.message
+    });
   }
 });
 
