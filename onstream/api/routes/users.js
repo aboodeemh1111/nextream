@@ -369,4 +369,247 @@ router.get("/watchlist", verify, async (req, res) => {
   }
 });
 
+// UPDATE CURRENTLY WATCHING
+router.put("/currently-watching/update/:id", verify, async (req, res) => {
+  try {
+    const movie = await Movie.findById(req.params.id);
+    if (!movie) {
+      return res.status(404).json("Movie not found");
+    }
+
+    const user = await User.findById(req.user.id);
+    
+    // Find the movie in currently watching
+    const movieIndex = user.currentlyWatching.findIndex(
+      item => item.movie.toString() === req.params.id
+    );
+    
+    if (movieIndex === -1) {
+      // Movie not in currently watching, add it
+      user.currentlyWatching.push({
+        movie: req.params.id,
+        lastWatchedAt: new Date(),
+        progress: req.body.progress || 0,
+        watchTime: req.body.watchTime || 0,
+        pausePoints: req.body.pausePoints || []
+      });
+    } else {
+      // Update existing entry
+      user.currentlyWatching[movieIndex].lastWatchedAt = new Date();
+      user.currentlyWatching[movieIndex].progress = req.body.progress || user.currentlyWatching[movieIndex].progress;
+      user.currentlyWatching[movieIndex].watchTime = req.body.watchTime || user.currentlyWatching[movieIndex].watchTime;
+      
+      // Update pause points if provided
+      if (req.body.pausePoints) {
+        user.currentlyWatching[movieIndex].pausePoints = req.body.pausePoints;
+      }
+    }
+    
+    // Update genre preferences
+    if (movie.genre) {
+      if (!user.genrePreferences) {
+        user.genrePreferences = new Map();
+      }
+      
+      const currentCount = user.genrePreferences.get(movie.genre) || 0;
+      user.genrePreferences.set(movie.genre, currentCount + 1);
+    }
+    
+    await user.save();
+    res.status(200).json("Watch progress updated");
+  } catch (err) {
+    console.error("Error updating currently watching:", err);
+    res.status(500).json(err);
+  }
+});
+
+// ADD TO CURRENTLY WATCHING
+router.put("/currently-watching/add/:id", verify, async (req, res) => {
+  try {
+    const movie = await Movie.findById(req.params.id);
+    if (!movie) {
+      return res.status(404).json("Movie not found");
+    }
+
+    const user = await User.findById(req.user.id);
+    
+    // Check if movie is already in currently watching
+    const movieIndex = user.currentlyWatching.findIndex(
+      item => item.movie.toString() === req.params.id
+    );
+    
+    if (movieIndex === -1) {
+      // Add to currently watching
+      user.currentlyWatching.push({
+        movie: req.params.id,
+        lastWatchedAt: new Date(),
+        progress: req.body.progress || 0,
+        watchTime: req.body.watchTime || 0
+      });
+      
+      // Update last login date for analytics
+      user.lastLoginDate = new Date();
+      
+      // Update total watch time
+      if (req.body.watchTime) {
+        user.totalWatchTime = (user.totalWatchTime || 0) + req.body.watchTime;
+      }
+      
+      // Update genre preferences
+      if (movie.genre) {
+        if (!user.genrePreferences) {
+          user.genrePreferences = new Map();
+        }
+        
+        const currentCount = user.genrePreferences.get(movie.genre) || 0;
+        user.genrePreferences.set(movie.genre, currentCount + 1);
+      }
+      
+      await user.save();
+      res.status(200).json("Added to currently watching");
+    } else {
+      // Update existing entry
+      user.currentlyWatching[movieIndex].lastWatchedAt = new Date();
+      user.currentlyWatching[movieIndex].progress = req.body.progress || user.currentlyWatching[movieIndex].progress;
+      user.currentlyWatching[movieIndex].watchTime = req.body.watchTime || user.currentlyWatching[movieIndex].watchTime;
+      
+      await user.save();
+      res.status(200).json("Updated currently watching");
+    }
+  } catch (err) {
+    console.error("Error adding to currently watching:", err);
+    res.status(500).json(err);
+  }
+});
+
+// ADD TO WATCH HISTORY
+router.put("/watch-history/add/:id", verify, async (req, res) => {
+  try {
+    const movie = await Movie.findById(req.params.id);
+    if (!movie) {
+      return res.status(404).json("Movie not found");
+    }
+
+    const user = await User.findById(req.user.id);
+    
+    // Check if movie is already in watch history
+    const existingEntry = user.watchHistory.find(
+      item => item.movie.toString() === req.params.id
+    );
+    
+    if (existingEntry) {
+      // Increment rewatch count
+      existingEntry.rewatchCount = (existingEntry.rewatchCount || 0) + 1;
+      existingEntry.watchedAt = new Date();
+      existingEntry.progress = req.body.progress || 100;
+      existingEntry.completed = req.body.completed || true;
+      existingEntry.watchTime = req.body.watchTime || existingEntry.watchTime;
+      
+      if (req.body.dropOffPoint) {
+        existingEntry.dropOffPoint = req.body.dropOffPoint;
+      }
+    } else {
+      // Add to watch history
+      user.watchHistory.push({
+        movie: req.params.id,
+        watchedAt: new Date(),
+        progress: req.body.progress || 100,
+        completed: req.body.completed || true,
+        watchTime: req.body.watchTime || 0,
+        dropOffPoint: req.body.dropOffPoint,
+        rewatchCount: 0
+      });
+    }
+    
+    // Update total watch time
+    if (req.body.watchTime) {
+      user.totalWatchTime = (user.totalWatchTime || 0) + req.body.watchTime;
+    }
+    
+    // Update genre preferences
+    if (movie.genre) {
+      if (!user.genrePreferences) {
+        user.genrePreferences = new Map();
+      }
+      
+      const currentCount = user.genrePreferences.get(movie.genre) || 0;
+      user.genrePreferences.set(movie.genre, currentCount + 1);
+    }
+    
+    await user.save();
+    res.status(200).json("Added to watch history");
+  } catch (err) {
+    console.error("Error adding to watch history:", err);
+    res.status(500).json(err);
+  }
+});
+
+// GET WATCH HISTORY
+router.get("/watch-history", verify, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate("watchHistory.movie");
+    
+    // Format the response
+    const watchHistory = user.watchHistory.map(item => {
+      const movie = item.movie;
+      return {
+        _id: movie._id,
+        title: movie.title,
+        desc: movie.desc,
+        img: movie.img,
+        imgTitle: movie.imgTitle,
+        imgSm: movie.imgSm,
+        trailer: movie.trailer,
+        year: movie.year,
+        limit: movie.limit,
+        genre: movie.genre,
+        duration: movie.duration,
+        watchedAt: item.watchedAt,
+        progress: item.progress,
+        completed: item.completed,
+        watchTime: item.watchTime,
+        rewatchCount: item.rewatchCount
+      };
+    });
+    
+    res.status(200).json(watchHistory);
+  } catch (err) {
+    console.error("Error getting watch history:", err);
+    res.status(500).json(err);
+  }
+});
+
+// GET CURRENTLY WATCHING
+router.get("/currently-watching", verify, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate("currentlyWatching.movie");
+    
+    // Format the response
+    const currentlyWatching = user.currentlyWatching.map(item => {
+      const movie = item.movie;
+      return {
+        _id: movie._id,
+        title: movie.title,
+        desc: movie.desc,
+        img: movie.img,
+        imgTitle: movie.imgTitle,
+        imgSm: movie.imgSm,
+        trailer: movie.trailer,
+        year: movie.year,
+        limit: movie.limit,
+        genre: movie.genre,
+        duration: movie.duration,
+        progress: item.progress,
+        lastWatchedAt: item.lastWatchedAt,
+        watchTime: item.watchTime
+      };
+    });
+    
+    res.status(200).json(currentlyWatching);
+  } catch (err) {
+    console.error("Error getting currently watching:", err);
+    res.status(500).json(err);
+  }
+});
+
 module.exports = router;

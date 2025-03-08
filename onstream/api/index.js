@@ -7,6 +7,7 @@ const userRoute = require("./routes/users");
 const movieRoute = require("./routes/movies");
 const listRoute = require("./routes/lists");
 const adminRoute = require("./routes/admin");
+const analyticsRoute = require("./routes/analytics");
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ app.use("/api/users", userRoute);
 app.use("/api/movies", movieRoute);
 app.use("/api/lists", listRoute);
 app.use("/api/admin", adminRoute);
+app.use("/api/analytics", analyticsRoute);
 
 app.listen(8800, () => {
   console.log("Backend server is running!");

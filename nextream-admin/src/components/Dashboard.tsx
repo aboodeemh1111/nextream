@@ -14,7 +14,8 @@ import {
   FaChartBar,
   FaCalendarAlt,
   FaUserPlus,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaChartLine
 } from 'react-icons/fa';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -526,6 +527,21 @@ const Dashboard = () => {
             )}
           </div>
         )}
+      </div>
+
+      {/* Analytics Integration */}
+      <div className="bg-white rounded-lg shadow-sm p-6 mt-8">
+        <h2 className="text-xl font-semibold mb-4">Analytics Dashboard</h2>
+        <p className="text-gray-600 mb-4">
+          Get detailed insights into user engagement and content performance with our comprehensive analytics dashboard.
+          Track metrics like user activity, watch time, completion rates, and more.
+        </p>
+        <Link
+          href="/analytics"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        >
+          <FaChartLine className="mr-2" /> View Analytics Dashboard
+        </Link>
       </div>
     </div>
   );

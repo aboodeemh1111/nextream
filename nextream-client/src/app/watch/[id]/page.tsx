@@ -34,6 +34,10 @@ export default function Watch() {
   const [inFavorites, setInFavorites] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [watchTime, setWatchTime] = useState(0);
+  const [watchStartTime, setWatchStartTime] = useState<number | null>(null);
+  const [pausePoints, setPausePoints] = useState<number[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -120,8 +124,14 @@ export default function Watch() {
   const handlePlay = () => {
     // Record that user started watching this movie
     if (!isPlaying) {
+      // Set watch start time
+      setWatchStartTime(Date.now());
+      
       // Add to currently watching list
-      axios.put(`/api/users/currently-watching/add/${id}`, {}, {
+      axios.put(`/api/users/currently-watching/add/${id}`, {
+        progress: progress,
+        watchTime: watchTime
+      }, {
         headers: {
           token: `Bearer ${user?.accessToken}`,
         },
@@ -135,9 +145,74 @@ export default function Watch() {
       }).then(res => {
         console.log('Movie view recorded:', res.data);
       }).catch(err => console.error('Error recording movie view:', err));
+    } else {
+      // Calculate watch time when pausing
+      if (watchStartTime) {
+        const newWatchTime = watchTime + (Date.now() - watchStartTime) / 1000;
+        setWatchTime(newWatchTime);
+        setWatchStartTime(null);
+        
+        // Record pause point
+        setPausePoints([...pausePoints, progress]);
+        
+        // Update currently watching with progress
+        axios.put(`/api/users/currently-watching/update/${id}`, {
+          progress: progress,
+          watchTime: newWatchTime,
+          pausePoints: [...pausePoints, progress]
+        }, {
+          headers: {
+            token: `Bearer ${user?.accessToken}`,
+          },
+        }).catch(err => console.error('Error updating watch progress:', err));
+      }
     }
     
     setIsPlaying(!isPlaying);
+  };
+
+  // Track video progress
+  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    // This is a simplified example - in a real implementation, you would need to
+    // communicate with the iframe to get the current time and duration
+    // For demonstration purposes, we'll simulate progress
+    
+    // Simulate progress increasing over time when playing
+    if (isPlaying && progress < 100) {
+      const newProgress = Math.min(progress + 0.5, 100);
+      setProgress(newProgress);
+      
+      // If completed, record in watch history
+      if (newProgress >= 100) {
+        handleCompletion();
+      }
+    }
+  };
+  
+  // Handle video completion
+  const handleCompletion = () => {
+    // Calculate final watch time
+    const finalWatchTime = watchStartTime 
+      ? watchTime + (Date.now() - watchStartTime) / 1000
+      : watchTime;
+    
+    // Add to watch history
+    axios.put(`/api/users/watch-history/add/${id}`, {
+      progress: 100,
+      watchTime: finalWatchTime,
+      completed: true
+    }, {
+      headers: {
+        token: `Bearer ${user?.accessToken}`,
+      },
+    }).then(() => {
+      // Remove from currently watching
+      return axios.put(`/api/users/currently-watching/remove/${id}`, {}, {
+        headers: {
+          token: `Bearer ${user?.accessToken}`,
+        },
+      });
+    }).catch(err => console.error('Error recording watch history:', err));
   };
 
   const handleBack = () => {
@@ -243,7 +318,19 @@ export default function Watch() {
                 title={`${movie.title} trailer`}
                 className="w-full h-full"
                 allowFullScreen
+                onTimeUpdate={handleTimeUpdate}
               ></iframe>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="mt-4 bg-gray-700 rounded-full h-2.5 w-full">
+              <div 
+                className="bg-red-600 h-2.5 rounded-full" 
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <div className="mt-2 text-gray-400 text-sm">
+              {progress < 100 ? `${progress.toFixed(0)}% complete` : 'Completed'}
             </div>
           </div>
         )}
