@@ -3,6 +3,8 @@ const app = express();
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 const authRoute = require("./routes/auth");
 const userRoute = require("./routes/users");
 const movieRoute = require("./routes/movies");
@@ -62,6 +64,23 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// Create a public directory for static files if it doesn't exist
+const publicDir = path.join(__dirname, 'public');
+const imagesDir = path.join(publicDir, 'images');
+
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir);
+  console.log('Created public directory');
+}
+
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir);
+  console.log('Created images directory');
+}
+
+// Serve static files from the public directory
+app.use(express.static(publicDir));
+
 // API routes
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
@@ -86,6 +105,25 @@ app.get('/', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Route to check if images are available
+app.get('/images-info', (req, res) => {
+  try {
+    const images = fs.readdirSync(imagesDir);
+    res.json({
+      status: 'ok',
+      imagesDirectory: imagesDir,
+      imagesCount: images.length,
+      images: images
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error reading images directory',
+      error: err.message
+    });
+  }
 });
 
 // Error handling middleware
@@ -115,4 +153,5 @@ app.listen(PORT, () => {
   console.log(`Backend server is running on port ${PORT}!`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
+  console.log(`Static files directory: ${publicDir}`);
 });

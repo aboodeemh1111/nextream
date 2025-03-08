@@ -14,11 +14,24 @@ export default function Register() {
   const [passwordError, setPasswordError] = useState('');
   const { register, user, loading, error } = useAuth();
   const router = useRouter();
+  const [bgImageUrl, setBgImageUrl] = useState('/images/register-bg.jpg'); // Default fallback
 
   useEffect(() => {
     if (user) {
       router.push('/');
     }
+    
+    // Set the background image URL from the backend
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nextstream.onrender.com';
+    setBgImageUrl(`${backendUrl}/images/register-bg.jpg`);
+    
+    // You can also add a fallback in case the image doesn't load
+    const img = new Image();
+    img.src = `${backendUrl}/images/register-bg.jpg`;
+    img.onerror = () => {
+      console.log('Error loading image from backend, using fallback');
+      setBgImageUrl('/images/login-bg.jpg'); // Fallback to local image
+    };
   }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,11 +52,12 @@ export default function Register() {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/register-bg.jpg"
+          src={bgImageUrl}
           alt="Background"
           fill
           className="object-cover opacity-40"
           priority
+          unoptimized={bgImageUrl.startsWith('http')} // Disable optimization for external URLs
         />
       </div>
 
