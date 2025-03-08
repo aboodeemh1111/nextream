@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const Movie = require("../models/Movie");
+const User = require("../models/User");
 const verify = require("../verifyToken");
 
 // CREATE MOVIE
@@ -95,6 +96,124 @@ router.get("/random", verify, async (req, res) => {
     }
     res.status(200).json(movie[0]);
   } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+// GET PERSONALIZED FEATURED CONTENT
+router.get("/featured", verify, async (req, res) => {
+  const userId = req.user.id;
+  const type = req.query.type;
+  
+  try {
+    // Get user data for personalization
+    const user = await User.findById(userId)
+      .populate("watchHistory.movie")
+      .populate("currentlyWatching.movie")
+      .populate("favorites")
+      .populate("myList");
+    
+    // New user with no history - return trending content
+    if (!user.watchHistory.length && !user.currentlyWatching.length && !user.favorites.length) {
+      // For new users, get trending content (most recently added with good rating)
+      const trendingContent = await Movie.aggregate([
+        { $match: type ? { isSeries: type === "series" } : {} },
+        { $sort: { createdAt: -1 } },
+        { $limit: 10 }
+      ]);
+      
+      // Randomly select one from trending
+      const randomIndex = Math.floor(Math.random() * trendingContent.length);
+      return res.status(200).json([trendingContent[randomIndex]]);
+    }
+    
+    // Extract user preferences
+    const genrePreferences = {};
+    const watchedMovieIds = new Set();
+    
+    // Process watch history
+    user.watchHistory.forEach(item => {
+      if (item.movie && item.movie.genre) {
+        genrePreferences[item.movie.genre] = (genrePreferences[item.movie.genre] || 0) + 2;
+        watchedMovieIds.add(item.movie._id.toString());
+      }
+    });
+    
+    // Process currently watching
+    user.currentlyWatching.forEach(item => {
+      if (item.movie && item.movie.genre) {
+        genrePreferences[item.movie.genre] = (genrePreferences[item.movie.genre] || 0) + 3;
+        watchedMovieIds.add(item.movie._id.toString());
+      }
+    });
+    
+    // Process favorites
+    user.favorites.forEach(movie => {
+      if (movie && movie.genre) {
+        genrePreferences[movie.genre] = (genrePreferences[movie.genre] || 0) + 4;
+        watchedMovieIds.add(movie._id.toString());
+      }
+    });
+    
+    // Process my list
+    user.myList.forEach(movie => {
+      if (movie && movie.genre) {
+        genrePreferences[movie.genre] = (genrePreferences[movie.genre] || 0) + 1;
+      }
+    });
+    
+    // Find top genres
+    const sortedGenres = Object.entries(genrePreferences)
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
+    
+    // If we have genre preferences
+    if (sortedGenres.length > 0) {
+      // Get content from preferred genres that user hasn't watched yet
+      const topGenres = sortedGenres.slice(0, 3); // Top 3 genres
+      
+      const recommendedContent = await Movie.find({
+        genre: { $in: topGenres },
+        _id: { $nin: Array.from(watchedMovieIds) },
+        ...(type ? { isSeries: type === "series" } : {})
+      }).limit(20);
+      
+      if (recommendedContent.length > 0) {
+        // Randomly select one from recommendations
+        const randomIndex = Math.floor(Math.random() * recommendedContent.length);
+        return res.status(200).json([recommendedContent[randomIndex]]);
+      }
+    }
+    
+    // Fallback: Get content similar to what user has watched but not the same
+    const fallbackQuery = {
+      _id: { $nin: Array.from(watchedMovieIds) },
+      ...(type ? { isSeries: type === "series" } : {})
+    };
+    
+    // Add genre preference if available
+    if (sortedGenres.length > 0) {
+      fallbackQuery.genre = sortedGenres[0];
+    }
+    
+    const fallbackContent = await Movie.find(fallbackQuery).limit(10);
+    
+    if (fallbackContent.length > 0) {
+      // Randomly select one from fallback
+      const randomIndex = Math.floor(Math.random() * fallbackContent.length);
+      return res.status(200).json([fallbackContent[randomIndex]]);
+    }
+    
+    // Final fallback: Just get random content
+    const randomContent = await Movie.aggregate([
+      { $match: type ? { isSeries: type === "series" } : {} },
+      { $sample: { size: 1 } }
+    ]);
+    
+    res.status(200).json(randomContent);
+    
+  } catch (err) {
+    console.error("Featured content error:", err);
     res.status(500).json(err);
   }
 });

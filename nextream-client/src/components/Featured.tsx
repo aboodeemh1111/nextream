@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { FaPlay, FaInfoCircle, FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
+import { FaPlay, FaInfoCircle, FaVolumeMute, FaVolumeUp, FaRobot, FaFire, FaStar } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 
 interface Movie {
@@ -28,20 +28,45 @@ const Featured = ({ type }: { type?: string }) => {
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [recommendationType, setRecommendationType] = useState<'personalized' | 'trending' | 'random'>('personalized');
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
   const { user } = useAuth();
 
   useEffect(() => {
-    const getRandomContent = async () => {
+    const getPersonalizedContent = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`/api/movies/random${type ? `?type=${type}` : ''}`, {
-          headers: {
-            token: `Bearer ${user?.accessToken}`
-          }
-        });
-        setContent(res.data[0]);
+        
+        // Try to get personalized content first
+        try {
+          const res = await axios.get(`/api/movies/featured${type ? `?type=${type}` : ''}`, {
+            headers: {
+              token: `Bearer ${user?.accessToken}`
+            }
+          });
+          setContent(res.data[0]);
+          setRecommendationType('personalized');
+          setLoading(false);
+          return;
+        } catch (personalizedErr) {
+          console.error("Personalized content error:", personalizedErr);
+          // Fall back to trending/random if personalized fails
+        }
+        
+        // Try to get trending content as fallback
+        try {
+          const trendingRes = await axios.get(`/api/movies/random${type ? `?type=${type}` : ''}`, {
+            headers: {
+              token: `Bearer ${user?.accessToken}`
+            }
+          });
+          setContent(trendingRes.data[0]);
+          setRecommendationType('trending');
+        } catch (trendingErr) {
+          console.error("Trending content error:", trendingErr);
+          setError('Failed to load featured content');
+        }
       } catch (err) {
         setError('Failed to load featured content');
         console.error(err);
@@ -51,7 +76,7 @@ const Featured = ({ type }: { type?: string }) => {
     };
 
     if (user) {
-      getRandomContent();
+      getPersonalizedContent();
     }
   }, [type, user]);
 
@@ -95,6 +120,32 @@ const Featured = ({ type }: { type?: string }) => {
 
   const handleVideoLoad = () => {
     setIsVideoLoaded(true);
+  };
+
+  const getRecommendationLabel = () => {
+    switch (recommendationType) {
+      case 'personalized':
+        return (
+          <div className="flex items-center text-sm bg-black/40 px-3 py-1 rounded-full">
+            <FaRobot className="text-blue-400 mr-2" />
+            <span>Recommended for you</span>
+          </div>
+        );
+      case 'trending':
+        return (
+          <div className="flex items-center text-sm bg-black/40 px-3 py-1 rounded-full">
+            <FaFire className="text-orange-500 mr-2" />
+            <span>Trending now</span>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center text-sm bg-black/40 px-3 py-1 rounded-full">
+            <FaStar className="text-yellow-500 mr-2" />
+            <span>Featured title</span>
+          </div>
+        );
+    }
   };
 
   if (loading) {
@@ -148,6 +199,11 @@ const Featured = ({ type }: { type?: string }) => {
       
       <div className="absolute bottom-0 left-0 w-full p-8 md:p-16 z-10">
         <div className="max-w-2xl">
+          {/* Recommendation Label */}
+          <div className="mb-4">
+            {getRecommendationLabel()}
+          </div>
+          
           {content.imgTitle ? (
             <Image
               src={content.imgTitle}
