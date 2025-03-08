@@ -99,6 +99,29 @@ router.get("/random", verify, async (req, res) => {
   }
 });
 
+// SEARCH SUGGESTIONS (FOR AUTOCOMPLETE)
+router.get("/suggestions", verify, async (req, res) => {
+  const query = req.query.q;
+  
+  if (!query || query.length < 2) {
+    return res.status(200).json([]);
+  }
+  
+  try {
+    // Search in title with priority, limit to 8 results for quick suggestions
+    const movies = await Movie.find({
+      title: { $regex: query, $options: 'i' }
+    })
+    .select('_id title img imgSm genre year isSeries') // Only select fields we need
+    .limit(8)
+    .sort({ year: -1 }); // Sort by newest first
+    
+    res.status(200).json(movies);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
 // SEARCH MOVIES (FOR CLIENT)
 router.get("/search", verify, async (req, res) => {
   const query = req.query.q;
@@ -108,14 +131,38 @@ router.get("/search", verify, async (req, res) => {
   }
   
   try {
-    // Search in title, description, and genre
-    const movies = await Movie.find({
+    // Build search criteria
+    const searchCriteria = {
       $or: [
         { title: { $regex: query, $options: 'i' } },
         { desc: { $regex: query, $options: 'i' } },
         { genre: { $regex: query, $options: 'i' } }
       ]
-    }).limit(50); // Limit results to 50 for performance
+    };
+    
+    // Add type filter if specified
+    if (req.query.isSeries !== undefined) {
+      searchCriteria.isSeries = req.query.isSeries === 'true';
+    }
+    
+    // Add genre filter if specified
+    if (req.query.genre) {
+      // Override the OR condition for genre with exact match
+      searchCriteria.$and = [
+        { $or: [
+            { title: { $regex: query, $options: 'i' } },
+            { desc: { $regex: query, $options: 'i' } }
+          ]
+        },
+        { genre: { $regex: `^${req.query.genre}$`, $options: 'i' } }
+      ];
+      // Remove the original $or that included genre
+      delete searchCriteria.$or;
+    }
+    
+    const movies = await Movie.find(searchCriteria)
+      .limit(50) // Limit results to 50 for performance
+      .sort({ year: -1, title: 1 }); // Sort by newest first, then alphabetically
     
     res.status(200).json(movies);
   } catch (err) {

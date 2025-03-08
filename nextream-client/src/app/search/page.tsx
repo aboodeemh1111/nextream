@@ -6,7 +6,7 @@ import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import MovieCard from '@/components/MovieCard';
 import { useAuth } from '@/context/AuthContext';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaFilter } from 'react-icons/fa';
 
 interface Movie {
   _id: string;
@@ -26,9 +26,13 @@ interface Movie {
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
+  const type = searchParams.get('type') || 'all';
+  const genre = searchParams.get('genre') || '';
+  
   const [results, setResults] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -39,13 +43,33 @@ export default function SearchPage() {
         setLoading(true);
         setError(null);
         
-        const res = await axios.get(`/api/movies/search?q=${encodeURIComponent(query)}`, {
+        // Build query parameters
+        let apiUrl = `/api/movies/search?q=${encodeURIComponent(query)}`;
+        
+        if (type === 'movie') {
+          apiUrl += '&isSeries=false';
+        } else if (type === 'series') {
+          apiUrl += '&isSeries=true';
+        }
+        
+        if (genre) {
+          apiUrl += `&genre=${encodeURIComponent(genre)}`;
+        }
+        
+        const res = await axios.get(apiUrl, {
           headers: {
             token: `Bearer ${user.accessToken}`,
           },
         });
         
         setResults(res.data);
+        
+        // Set active filters for display
+        const filters = [];
+        if (type !== 'all') filters.push(type === 'movie' ? 'Movies' : 'Series');
+        if (genre) filters.push(genre.charAt(0).toUpperCase() + genre.slice(1));
+        setActiveFilters(filters);
+        
       } catch (err) {
         console.error('Search error:', err);
         setError('Failed to load search results');
@@ -55,7 +79,7 @@ export default function SearchPage() {
     };
 
     fetchSearchResults();
-  }, [query, user]);
+  }, [query, type, genre, user]);
 
   return (
     <main className="min-h-screen bg-gray-900">
@@ -66,9 +90,23 @@ export default function SearchPage() {
           <h1 className="text-white text-3xl font-bold mb-2">
             Search Results for "{query}"
           </h1>
-          <p className="text-gray-400">
-            {results.length} {results.length === 1 ? 'result' : 'results'} found
-          </p>
+          <div className="flex flex-wrap items-center">
+            <p className="text-gray-400 mr-4">
+              {results.length} {results.length === 1 ? 'result' : 'results'} found
+            </p>
+            
+            {activeFilters.length > 0 && (
+              <div className="flex flex-wrap items-center mt-2">
+                <FaFilter className="text-gray-400 mr-2" />
+                <span className="text-gray-400 mr-2">Filters:</span>
+                {activeFilters.map((filter, index) => (
+                  <span key={index} className="bg-gray-800 text-white text-xs px-2 py-1 rounded mr-2 mb-1">
+                    {filter}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -82,8 +120,13 @@ export default function SearchPage() {
             <FaSearch className="text-gray-500 text-5xl mx-auto mb-4" />
             <h2 className="text-white text-xl mb-2">No results found</h2>
             <p className="text-gray-400">
-              We couldn't find any titles matching "{query}". Please try another search.
+              We couldn't find any titles matching "{query}"{activeFilters.length > 0 ? ' with the selected filters' : ''}.
             </p>
+            {activeFilters.length > 0 && (
+              <p className="text-gray-400 mt-2">
+                Try broadening your search by removing some filters.
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
