@@ -99,6 +99,30 @@ router.get("/random", verify, async (req, res) => {
   }
 });
 
+// SEARCH MOVIES (FOR CLIENT)
+router.get("/search", verify, async (req, res) => {
+  const query = req.query.q;
+  
+  if (!query) {
+    return res.status(400).json("Search query is required");
+  }
+  
+  try {
+    // Search in title, description, and genre
+    const movies = await Movie.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { desc: { $regex: query, $options: 'i' } },
+        { genre: { $regex: query, $options: 'i' } }
+      ]
+    }).limit(50); // Limit results to 50 for performance
+    
+    res.status(200).json(movies);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
 // GET ALL MOVIES (WITH FILTERS)
 router.get("/", verify, async (req, res) => {
   if (!req.user.isAdmin) {

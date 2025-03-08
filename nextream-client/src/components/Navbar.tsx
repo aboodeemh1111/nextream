@@ -5,11 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { FaSearch, FaBell, FaUser, FaSignOutAlt } from 'react-icons/fa';
+import { FaSearch, FaBell, FaUser, FaSignOutAlt, FaTimes } from 'react-icons/fa';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -26,6 +28,26 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm('');
+      setShowSearch(false);
+    }
+  };
+
+  const toggleSearch = () => {
+    setShowSearch(!showSearch);
+    if (!showSearch) {
+      // Focus the input when search is shown
+      setTimeout(() => {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.focus();
+      }, 100);
+    }
   };
 
   return (
@@ -52,16 +74,32 @@ const Navbar = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          <div className="relative">
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              className="bg-black bg-opacity-50 text-white px-3 py-1 rounded-full border border-gray-600 focus:outline-none focus:border-gray-400 hidden md:block"
-            />
-            <FaSearch className="absolute right-3 top-2 text-gray-400 hidden md:block" />
+          {/* Desktop Search */}
+          <div className="relative hidden md:block">
+            <form onSubmit={handleSearch}>
+              <input 
+                type="text" 
+                id="search-input-desktop"
+                placeholder="Search titles, genres..." 
+                className="bg-black bg-opacity-50 text-white px-3 py-1 pl-10 rounded-full border border-gray-600 focus:outline-none focus:border-gray-400 w-48 transition-all duration-300 focus:w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button type="submit" className="absolute left-3 top-2 text-gray-400">
+                <FaSearch />
+              </button>
+            </form>
           </div>
           
-          <FaSearch className="text-white md:hidden" />
+          {/* Mobile Search Icon */}
+          <button 
+            onClick={toggleSearch} 
+            className="text-white md:hidden"
+            aria-label="Search"
+          >
+            {showSearch ? <FaTimes /> : <FaSearch />}
+          </button>
+          
           <FaBell className="text-white" />
           
           <div className="relative">
@@ -106,6 +144,25 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      
+      {/* Mobile Search Bar - Full Width */}
+      {showSearch && (
+        <div className="w-full bg-black bg-opacity-90 py-3 px-4 md:hidden">
+          <form onSubmit={handleSearch} className="relative">
+            <input 
+              type="text" 
+              id="search-input"
+              placeholder="Search titles, genres..." 
+              className="bg-black bg-opacity-50 text-white px-3 py-2 pl-10 rounded-full border border-gray-600 focus:outline-none focus:border-gray-400 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button type="submit" className="absolute left-3 top-2.5 text-gray-400">
+              <FaSearch />
+            </button>
+          </form>
+        </div>
+      )}
     </nav>
   );
 };

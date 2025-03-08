@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { FaPlay, FaInfoCircle } from 'react-icons/fa';
+import { FaPlay, FaInfoCircle, FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 
 interface Movie {
@@ -25,6 +25,10 @@ const Featured = ({ type }: { type?: string }) => {
   const [content, setContent] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
   const { user } = useAuth();
 
@@ -63,6 +67,36 @@ const Featured = ({ type }: { type?: string }) => {
     }
   };
 
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMuted(!isMuted);
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+    }
+  };
+
+  const playTrailer = () => {
+    if (content?.trailer) {
+      setIsPlayingTrailer(true);
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(err => console.error("Video play error:", err));
+      }
+    }
+  };
+
+  const stopTrailer = () => {
+    setIsPlayingTrailer(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      setIsVideoLoaded(false);
+    }
+  };
+
+  const handleVideoLoad = () => {
+    setIsVideoLoaded(true);
+  };
+
   if (loading) {
     return (
       <div className="w-full h-[90vh] bg-gray-900 flex items-center justify-center">
@@ -81,7 +115,8 @@ const Featured = ({ type }: { type?: string }) => {
 
   return (
     <div className="relative w-full h-[90vh]">
-      {content.img && (
+      {/* Background Image or Video */}
+      {!isPlayingTrailer && content.img && (
         <div className="absolute inset-0">
           <Image
             src={content.img}
@@ -92,6 +127,22 @@ const Featured = ({ type }: { type?: string }) => {
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+        </div>
+      )}
+
+      {/* Trailer Video */}
+      {isPlayingTrailer && content.trailer && (
+        <div className="absolute inset-0 bg-black">
+          <video
+            ref={videoRef}
+            src={content.trailer}
+            className={`w-full h-full object-cover ${isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}
+            autoPlay
+            muted={isMuted}
+            loop
+            onLoadedData={handleVideoLoad}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
         </div>
       )}
       
@@ -124,9 +175,11 @@ const Featured = ({ type }: { type?: string }) => {
           
           <p className="text-white text-lg mb-6 line-clamp-3">{content.desc}</p>
           
-          <div className="flex space-x-4">
+          <div className="flex space-x-4 items-center">
             <button
               onClick={handlePlay}
+              onMouseEnter={playTrailer}
+              onMouseLeave={stopTrailer}
               className="bg-white text-black px-6 py-2 rounded flex items-center hover:bg-opacity-80 transition"
             >
               <FaPlay className="mr-2" /> Play
@@ -137,6 +190,15 @@ const Featured = ({ type }: { type?: string }) => {
             >
               <FaInfoCircle className="mr-2" /> More Info
             </button>
+            
+            {isPlayingTrailer && content.trailer && (
+              <button 
+                onClick={toggleMute} 
+                className="bg-gray-800 bg-opacity-70 text-white p-2 rounded-full hover:bg-opacity-90 transition"
+              >
+                {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
+              </button>
+            )}
           </div>
         </div>
       </div>
