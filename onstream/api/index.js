@@ -20,6 +20,26 @@ mongoose
     console.error(err);
   });
 
+// Add CORS headers
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, token");
+  
+  // Log incoming requests for debugging
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  if (req.headers.token) {
+    console.log('Request with token:', req.headers.token.substring(0, 20) + '...');
+  }
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
 app.use(express.json());
 
 app.use("/api/auth", authRoute);
