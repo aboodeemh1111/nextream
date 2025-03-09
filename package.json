@@ -1,0 +1,24 @@
+{
+  "name": "nextream",
+  "version": "1.0.0",
+  "description": "A Netflix-like streaming platform with client and admin applications",
+  "scripts": {
+    "setup": "node -e \"const os = require('os'); const { execSync } = require('child_process'); const isWin = os.platform() === 'win32'; execSync(isWin ? 'setup-local-dev.bat' : './setup-local-dev.sh', {stdio: 'inherit'});\"",
+    "start": "node -e \"const os = require('os'); const { execSync } = require('child_process'); const isWin = os.platform() === 'win32'; execSync(isWin ? 'start-dev.bat' : './start-dev.sh', {stdio: 'inherit'});\"",
+    "backend": "cd onstream/api && npm run dev",
+    "client": "cd nextream-client && npm run dev",
+    "admin": "cd nextream-admin && npm run dev",
+    "seed": "cd onstream/api && npm run seed",
+    "seed-content": "cd onstream/api && npm run seed-content",
+    "setup-images": "cd onstream/api && npm run setup-images"
+  },
+  "keywords": [
+    "netflix",
+    "streaming",
+    "nextjs",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "MIT"
+} 

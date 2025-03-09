@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "seed": "node seed.js",
+    "seed-content": "node seedContent.js",
+    "setup-images": "node upload-images.js"
   },
   "keywords": [],
   "author": "",
