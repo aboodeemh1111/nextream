@@ -205,13 +205,16 @@ const Featured = ({ type }: { type?: string }) => {
           </div>
           
           {content.imgTitle ? (
-            <Image
-              src={content.imgTitle}
-              alt={content.title}
-              width={400}
-              height={150}
-              className="mb-6"
-            />
+            <div className="relative w-full max-w-[400px] h-auto mb-6">
+              <Image
+                src={content.imgTitle}
+                alt={content.title}
+                width={400}
+                height={150}
+                style={{ width: '100%', height: 'auto' }}
+                priority
+              />
+            </div>
           ) : (
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">{content.title}</h1>
           )}

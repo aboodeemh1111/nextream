@@ -11,6 +11,8 @@ const movieRoute = require("./routes/movies");
 const listRoute = require("./routes/lists");
 const adminRoute = require("./routes/admin");
 const analyticsRoute = require("./routes/analytics");
+const reviewRoute = require("./routes/reviews");
+const commentRoute = require("./routes/comments");
 
 dotenv.config();
 
@@ -88,6 +90,8 @@ app.use("/api/movies", movieRoute);
 app.use("/api/lists", listRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/analytics", analyticsRoute);
+app.use("/api/reviews", reviewRoute);
+app.use("/api/comments", commentRoute);
 
 // Also mount routes without /api prefix for direct access
 app.use("/auth", authRoute);
@@ -96,6 +100,8 @@ app.use("/movies", movieRoute);
 app.use("/lists", listRoute);
 app.use("/admin", adminRoute);
 app.use("/analytics", analyticsRoute);
+app.use("/reviews", reviewRoute);
+app.use("/comments", commentRoute);
 
 // Basic route for health check
 app.get('/', (req, res) => {

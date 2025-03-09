@@ -15,8 +15,10 @@ import {
   FaRegClock,
   FaInfoCircle, 
   FaVolumeMute, 
-  FaVolumeUp 
+  FaVolumeUp,
+  FaStar
 } from 'react-icons/fa';
+import Link from 'next/link';
 
 interface Movie {
   _id: string;
@@ -26,11 +28,14 @@ interface Movie {
   imgTitle?: string;
   imgSm?: string;
   trailer?: string;
+  video?: string;
   year?: string;
   limit?: number;
   genre?: string;
   duration?: string;
   progress?: number;
+  avgRating?: number;
+  numRatings?: number;
 }
 
 export interface MovieCardProps {
@@ -41,6 +46,7 @@ export interface MovieCardProps {
   inWatchlist?: boolean;
   showProgress?: boolean;
   onListChange?: (movieId: string, listType: string, action: 'add' | 'remove') => void;
+  className?: string;
 }
 
 const MovieCard = ({ 
@@ -50,7 +56,8 @@ const MovieCard = ({
   inFavorites, 
   inWatchlist,
   showProgress,
-  onListChange 
+  onListChange,
+  className = ''
 }: MovieCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -106,6 +113,50 @@ const MovieCard = ({
     setIsInWatchlist(inWatchlist);
   }, [inMyList, inFavorites, inWatchlist]);
 
+  useEffect(() => {
+    // Handle hover effects
+    if (isHovered && videoRef.current && movie.trailer) {
+      // Add a small delay before showing the video to prevent flickering on quick mouse movements
+      const timer = setTimeout(() => {
+        if (videoRef.current && movie.trailer) {
+          videoRef.current.currentTime = 0;
+          // Only try to play if the element is still in the document
+          if (document.body.contains(videoRef.current)) {
+            videoRef.current.play().catch(err => console.error("Video play error:", err));
+          }
+        }
+      }, 800);
+      
+      return () => {
+        clearTimeout(timer);
+        // Make sure to pause the video when unmounting or when hover state changes
+        if (videoRef.current) {
+          videoRef.current.pause();
+          setIsVideoLoaded(false);
+        }
+      };
+    }
+    
+    // Cleanup when not hovering
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        setIsVideoLoaded(false);
+      }
+    };
+  }, [isHovered, movie.trailer]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = '';
+        videoRef.current.load();
+      }
+    };
+  }, []);
+
   const handleMouseEnter = () => {
     if (isMobile) return;
     
@@ -155,6 +206,10 @@ const MovieCard = ({
 
   const handleVideoLoad = () => {
     setIsVideoLoaded(true);
+    // Only try to play if the element is still in the document and we're hovering
+    if (videoRef.current && isHovered && document.body.contains(videoRef.current)) {
+      videoRef.current.play().catch(err => console.error("Video load play error:", err));
+    }
   };
 
   const toggleMyList = async (e: React.MouseEvent) => {
@@ -272,147 +327,157 @@ const MovieCard = ({
   };
 
   return (
-    <div 
-      ref={cardRef}
-      className={`relative ${getCardHeight()} rounded-md overflow-hidden transition-transform duration-300 ease-in-out`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={isMobile ? handleTouchStart : undefined}
-      style={{ 
-        transform: isHovered ? 'scale(1.1)' : 'scale(1)', 
-        zIndex: isHovered ? 10 : 0,
-        transition: 'all 0.3s ease-in-out'
-      }}
-    >
-      {/* Static Image */}
-      {(!isHovered || !movie.trailer || !isVideoLoaded) && (
-        <Image
-          src={movie.imgSm || movie.img}
-          alt={movie.title}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-          className="object-cover"
-          loading="lazy"
-        />
-      )}
-      
-      {/* Video Trailer */}
-      {isHovered && movie.trailer && !isMobile && (
-        <div className="absolute inset-0 bg-black">
-          <video
-            ref={videoRef}
-            src={movie.trailer}
-            className={`w-full h-full object-cover ${isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}
-            autoPlay
-            muted={isMuted}
-            loop
-            onLoadedData={handleVideoLoad}
-            playsInline
+    <Link href={`/details/${movie._id}`}>
+      <div 
+        ref={cardRef}
+        className={`relative ${getCardHeight()} rounded-md overflow-hidden transition-transform duration-300 ease-in-out ${className}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={isMobile ? handleTouchStart : undefined}
+        style={{ 
+          transform: isHovered ? 'scale(1.1)' : 'scale(1)', 
+          zIndex: isHovered ? 10 : 0,
+          transition: 'all 0.3s ease-in-out'
+        }}
+      >
+        {/* Static Image */}
+        {(!isHovered || !movie.trailer || !isVideoLoaded) && (
+          <Image
+            src={movie.imgSm || movie.img}
+            alt={movie.title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+            className="object-cover"
+            loading="lazy"
           />
-        </div>
-      )}
-      
-      {/* Progress bar for currently watching */}
-      {showProgress && movie.progress !== undefined && (
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800">
-          <div 
-            className="h-full bg-red-600" 
-            style={{ width: `${movie.progress}%` }}
-          />
-        </div>
-      )}
-      
-      {/* Hover Overlay */}
-      {isHovered && (
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/60 to-black flex flex-col p-2 sm:p-3">
-          <div className="flex-1 flex flex-col">
-            <h3 className="text-white font-semibold text-xs sm:text-sm md:text-base mb-0.5 sm:mb-1 line-clamp-1">{movie.title}</h3>
-            
-            <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
-              <span className="text-green-500 text-xs sm:text-sm">{movie.year}</span>
-              {movie.limit && (
-                <span className="border border-gray-400 text-white px-0.5 text-xs">
-                  {movie.limit}+
-                </span>
-              )}
-              <span className="text-white text-xs sm:text-sm">{movie.duration}</span>
-            </div>
-            
-            <p className="text-gray-300 text-xs line-clamp-2 mb-1 sm:mb-2 hidden sm:block">{movie.desc}</p>
-            
-            <div className="flex space-x-1 sm:space-x-2 mb-1 sm:mb-2">
-              <button
-                onClick={handlePlay}
-                className="bg-white text-black p-1 rounded-full hover:bg-opacity-80 text-xs sm:text-sm"
-                title="Play"
-              >
-                <FaPlay />
-              </button>
-              
-              <button 
-                onClick={toggleMyList}
-                disabled={isLoading}
-                className={`${isInMyList ? 'bg-red-600 text-white' : 'border border-gray-400 text-white'} p-1 rounded-full hover:bg-gray-700 text-xs sm:text-sm`}
-                title={isInMyList ? "Remove from My List" : "Add to My List"}
-              >
-                {isInMyList ? <FaCheck /> : <FaPlus />}
-              </button>
-              
-              <button 
-                onClick={toggleFavorites}
-                disabled={isLoading}
-                className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700 text-xs sm:text-sm"
-                title={isInFavorites ? "Remove from Favorites" : "Add to Favorites"}
-              >
-                {isInFavorites ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
-              </button>
-              
-              <button 
-                onClick={toggleWatchlist}
-                disabled={isLoading}
-                className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700 text-xs sm:text-sm"
-                title={isInWatchlist ? "Remove from Want to Watch" : "Add to Want to Watch"}
-              >
-                {isInWatchlist ? <FaClock className="text-blue-400" /> : <FaRegClock />}
-              </button>
-              
-              {movie.trailer && !isMobile && (
-                <button 
-                  onClick={toggleMute} 
-                  className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700 text-xs sm:text-sm hidden sm:block"
-                  title={isMuted ? "Unmute" : "Mute"}
-                >
-                  {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
-                </button>
-              )}
-            </div>
+        )}
+        
+        {/* Video Trailer */}
+        {isHovered && movie.trailer && !isMobile && (
+          <div className="absolute inset-0 bg-black">
+            <video
+              ref={videoRef}
+              src={movie.trailer}
+              className={`w-full h-full object-cover ${isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}
+              autoPlay
+              muted={isMuted}
+              loop
+              onLoadedData={handleVideoLoad}
+              playsInline
+            />
           </div>
-          
-          <button
-            onClick={handleMoreInfo}
-            className="w-full bg-gray-600 text-white py-1 rounded flex items-center justify-center hover:bg-gray-700 text-xs sm:text-sm"
-          >
-            <FaInfoCircle className="mr-1" /> More Info
-          </button>
-        </div>
-      )}
-      
-      {/* Non-hover indicators for list membership */}
-      {!isHovered && (
-        <div className="absolute top-1 right-1 flex space-x-1">
-          {isInMyList && (
-            <div className="bg-red-600 text-white p-1 rounded-full text-xs">
-              <FaCheck />
+        )}
+        
+        {/* Progress bar for currently watching */}
+        {showProgress && movie.progress !== undefined && (
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800">
+            <div 
+              className="h-full bg-red-600" 
+              style={{ width: `${movie.progress}%` }}
+            />
+          </div>
+        )}
+        
+        {/* Movie Rating Badge */}
+        {movie.avgRating && movie.avgRating > 0 && (
+          <div className="absolute top-2 right-2 bg-black/70 text-yellow-500 px-2 py-1 rounded-md text-xs flex items-center z-10">
+            <FaStar className="mr-1" />
+            {movie.avgRating.toFixed(1)}
+          </div>
+        )}
+        
+        {/* Hover Overlay */}
+        {isHovered && (
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/60 to-black flex flex-col p-2 sm:p-3">
+            <div className="flex-1 flex flex-col">
+              <h3 className="text-white font-semibold text-xs sm:text-sm md:text-base mb-0.5 sm:mb-1 line-clamp-1">{movie.title}</h3>
+              
+              <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
+                <span className="text-green-500 text-xs sm:text-sm">{movie.year}</span>
+                {movie.limit && (
+                  <span className="border border-gray-400 text-white px-0.5 text-xs">
+                    {movie.limit}+
+                  </span>
+                )}
+                <span className="text-white text-xs sm:text-sm">{movie.duration}</span>
+              </div>
+              
+              <p className="text-gray-300 text-xs line-clamp-2 mb-1 sm:mb-2 hidden sm:block">{movie.desc}</p>
+              
+              <div className="flex space-x-1 sm:space-x-2 mb-1 sm:mb-2">
+                <button
+                  onClick={handlePlay}
+                  className="bg-white text-black p-1 rounded-full hover:bg-opacity-80 text-xs sm:text-sm"
+                  title="Play"
+                >
+                  <FaPlay />
+                </button>
+                
+                <button 
+                  onClick={toggleMyList}
+                  disabled={isLoading}
+                  className={`${isInMyList ? 'bg-red-600 text-white' : 'border border-gray-400 text-white'} p-1 rounded-full hover:bg-gray-700 text-xs sm:text-sm`}
+                  title={isInMyList ? "Remove from My List" : "Add to My List"}
+                >
+                  {isInMyList ? <FaCheck /> : <FaPlus />}
+                </button>
+                
+                <button 
+                  onClick={toggleFavorites}
+                  disabled={isLoading}
+                  className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700 text-xs sm:text-sm"
+                  title={isInFavorites ? "Remove from Favorites" : "Add to Favorites"}
+                >
+                  {isInFavorites ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
+                </button>
+                
+                <button 
+                  onClick={toggleWatchlist}
+                  disabled={isLoading}
+                  className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700 text-xs sm:text-sm"
+                  title={isInWatchlist ? "Remove from Want to Watch" : "Add to Want to Watch"}
+                >
+                  {isInWatchlist ? <FaClock className="text-blue-400" /> : <FaRegClock />}
+                </button>
+                
+                {movie.trailer && !isMobile && (
+                  <button 
+                    onClick={toggleMute} 
+                    className="border border-gray-400 text-white p-1 rounded-full hover:bg-gray-700 text-xs sm:text-sm hidden sm:block"
+                    title={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
+                  </button>
+                )}
+              </div>
             </div>
-          )}
-          {isInFavorites && (
-            <div className="bg-black/60 p-1 rounded-full text-xs">
-              <FaHeart className="text-red-500" />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+            
+            <button
+              onClick={handleMoreInfo}
+              className="w-full bg-gray-600 text-white py-1 rounded flex items-center justify-center hover:bg-gray-700 text-xs sm:text-sm"
+            >
+              <FaInfoCircle className="mr-1" /> More Info
+            </button>
+          </div>
+        )}
+        
+        {/* Non-hover indicators for list membership */}
+        {!isHovered && (
+          <div className="absolute top-1 right-1 flex space-x-1">
+            {isInMyList && (
+              <div className="bg-red-600 text-white p-1 rounded-full text-xs">
+                <FaCheck />
+              </div>
+            )}
+            {isInFavorites && (
+              <div className="bg-black/60 p-1 rounded-full text-xs">
+                <FaHeart className="text-red-500" />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Link>
   );
 };
 

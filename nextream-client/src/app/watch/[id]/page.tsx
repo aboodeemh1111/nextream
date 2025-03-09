@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { FaPlay, FaPlus, FaMinus, FaHeart, FaRegHeart, FaClock, FaRegClock, FaArrowLeft } from 'react-icons/fa';
+import { FaPlay, FaPlus, FaMinus, FaHeart, FaRegHeart, FaClock, FaRegClock, FaArrowLeft, FaStar, FaCheck } from 'react-icons/fa';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
+import RatingStars from '@/components/RatingStars';
 
 interface Movie {
   _id: string;
@@ -21,6 +23,15 @@ interface Movie {
   genre?: string;
   duration?: string;
   isSeries?: boolean;
+  avgRating?: number;
+  numRatings?: number;
+}
+
+interface UserReview {
+  _id: string;
+  rating: number;
+  review: string;
+  createdAt: string;
 }
 
 export default function Watch() {
@@ -38,6 +49,10 @@ export default function Watch() {
   const [watchTime, setWatchTime] = useState(0);
   const [watchStartTime, setWatchStartTime] = useState<number | null>(null);
   const [pausePoints, setPausePoints] = useState<number[]>([]);
+  const [userRating, setUserRating] = useState<number>(0);
+  const [userReview, setUserReview] = useState<UserReview | null>(null);
+  const [isRating, setIsRating] = useState(false);
+  const [ratingSuccess, setRatingSuccess] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -76,7 +91,33 @@ export default function Watch() {
       }
     };
 
+    const fetchUserReview = async () => {
+      if (!user) return;
+      
+      try {
+        const res = await axios.get(
+          `/api/reviews/user/${user.id}/movie/${id}`,
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+        
+        if (res.data) {
+          setUserReview(res.data);
+          setUserRating(res.data.rating);
+        }
+      } catch (err: any) {
+        // 404 means the user hasn't reviewed this movie yet, which is fine
+        if (err.response?.status !== 404) {
+          console.error('Error fetching user review:', err);
+        }
+      }
+    };
+
     getMovie();
+    fetchUserReview();
   }, [id, user, router]);
 
   const handleMyList = async () => {
@@ -219,6 +260,80 @@ export default function Watch() {
     router.back();
   };
 
+  const handleRatingChange = async (rating: number) => {
+    if (!user || !movie) return;
+    
+    try {
+      setIsRating(true);
+      setUserRating(rating);
+      
+      if (userReview) {
+        // Update existing review
+        await axios.put(
+          `/api/reviews/${userReview._id}`,
+          {
+            rating,
+            review: userReview.review,
+          },
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+      } else {
+        // Create new review
+        const res = await axios.post(
+          '/api/reviews',
+          {
+            movieId: id,
+            rating,
+            review: '',
+          },
+          {
+            headers: {
+              token: `Bearer ${user.accessToken}`,
+            },
+          }
+        );
+        setUserReview(res.data.review);
+      }
+      
+      // Update the movie's rating in the UI
+      if (movie.avgRating && movie.numRatings) {
+        // If the movie already had ratings, update the average
+        const newNumRatings = userReview ? movie.numRatings : movie.numRatings + 1;
+        const newTotalRating = userReview 
+          ? (movie.avgRating * movie.numRatings) - userReview.rating + rating
+          : (movie.avgRating * movie.numRatings) + rating;
+        const newAvgRating = newTotalRating / newNumRatings;
+        
+        setMovie({
+          ...movie,
+          avgRating: newAvgRating,
+          numRatings: newNumRatings,
+        });
+      } else {
+        // If this is the first rating
+        setMovie({
+          ...movie,
+          avgRating: rating,
+          numRatings: 1,
+        });
+      }
+      
+      // Show success message
+      setRatingSuccess(true);
+      setTimeout(() => {
+        setRatingSuccess(false);
+      }, 3000);
+    } catch (err) {
+      console.error('Error submitting rating:', err);
+    } finally {
+      setIsRating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-main min-h-screen flex items-center justify-center">
@@ -349,6 +464,45 @@ export default function Watch() {
             </div>
           </div>
         )}
+      </div>
+      
+      {/* Rating Component */}
+      <div className="p-4 z-10 bg-gradient-to-b from-black/80 to-transparent">
+        <div className="flex justify-between items-center">
+          <Link href={`/details/${id}`} className="text-white flex items-center hover:text-gray-300">
+            <FaArrowLeft className="mr-2" /> Back to Details
+          </Link>
+          
+          <div className="flex items-center bg-black/50 p-2 rounded-lg">
+            <div className="flex flex-col items-center mr-4">
+              <div className="text-white text-sm mb-1">Your Rating</div>
+              <RatingStars
+                rating={userRating}
+                size={24}
+                interactive={!isRating}
+                onChange={handleRatingChange}
+              />
+            </div>
+            
+            {movie.avgRating && (
+              <div className="flex flex-col items-center">
+                <div className="text-white text-sm mb-1">Average Rating</div>
+                <div className="flex items-center">
+                  <FaStar className="text-yellow-500 mr-1" />
+                  <span className="text-white">
+                    {movie.avgRating.toFixed(1)} ({movie.numRatings})
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {ratingSuccess && (
+              <div className="ml-4 bg-green-600/70 text-white px-3 py-1 rounded-full flex items-center">
+                <FaCheck className="mr-1" /> Rated
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

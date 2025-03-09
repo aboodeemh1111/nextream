@@ -14,7 +14,8 @@ import {
   FaPlus,
   FaBars,
   FaTimes,
-  FaChevronRight
+  FaChevronRight,
+  FaComment
 } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 
@@ -48,6 +49,7 @@ const Sidebar = () => {
     { name: 'Users', icon: <FaUsers className="text-lg" />, path: '/users' },
     { name: 'Movies', icon: <FaFilm className="text-lg" />, path: '/movies' },
     { name: 'Lists', icon: <FaListUl className="text-lg" />, path: '/lists' },
+    { name: 'Reviews', icon: <FaComment className="text-lg" />, path: '/reviews' },
     { name: 'Analytics', icon: <FaChartLine className="text-lg" />, path: '/analytics' },
     { name: 'Test Upload', icon: <FaPlus className="text-lg" />, path: '/test-upload' },
     { name: 'Settings', icon: <FaCog className="text-lg" />, path: '/settings' },

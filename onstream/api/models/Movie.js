@@ -13,13 +13,14 @@ const MovieSchema = new mongoose.Schema(
     limit: { type: Number },
     genre: { type: String },
     isSeries: { type: Boolean, default: false },
-    views: { type: Number, default: 0 },
     duration: { type: String },
+    views: { type: Number, default: 0 },
+    // Rating information
+    avgRating: { type: Number, default: 0 },
+    numRatings: { type: Number, default: 0 },
+    totalRating: { type: Number, default: 0 },
   },
-  { 
-    timestamps: true,
-    collection: 'movies'
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Movie", MovieSchema);

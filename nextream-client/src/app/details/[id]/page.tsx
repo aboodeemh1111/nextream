@@ -16,6 +16,9 @@ import {
   FaRegClock, 
   FaStar 
 } from 'react-icons/fa';
+import Link from 'next/link';
+import RatingStars from '@/components/RatingStars';
+import ReviewList from '@/components/ReviewList';
 
 interface Movie {
   _id: string;
@@ -31,33 +34,28 @@ interface Movie {
   genre?: string;
   duration?: string;
   isSeries?: boolean;
-  rating?: number;
-  cast?: string[];
-  director?: string;
+  avgRating?: number;
+  numRatings?: number;
 }
 
 interface UserLists {
-  myList: string[];
-  favorites: string[];
-  watchlist: string[];
+  myList: boolean;
+  favorites: boolean;
+  watchlist: boolean;
 }
 
 export default function MovieDetails() {
+  const { id } = useParams();
+  const movieId = Array.isArray(id) ? id[0] : id || '';
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLists, setUserLists] = useState<UserLists>({
-    myList: [],
-    favorites: [],
-    watchlist: []
+    myList: false,
+    favorites: false,
+    watchlist: false,
   });
-  const [isInMyList, setIsInMyList] = useState(false);
-  const [isInFavorites, setIsInFavorites] = useState(false);
-  const [isInWatchlist, setIsInWatchlist] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  
-  const params = useParams();
-  const movieId = params.id as string;
+  const [updatingList, setUpdatingList] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
 
@@ -67,7 +65,7 @@ export default function MovieDetails() {
       return;
     }
 
-    const getMovie = async () => {
+    const fetchMovie = async () => {
       try {
         setLoading(true);
         const res = await axios.get(`/api/movies/find/${movieId}`, {
@@ -76,15 +74,15 @@ export default function MovieDetails() {
           },
         });
         setMovie(res.data);
-      } catch (err) {
-        setError('Failed to load movie details');
+      } catch (err: any) {
         console.error(err);
+        setError(err.response?.data?.message || 'Failed to load movie details');
       } finally {
         setLoading(false);
       }
     };
 
-    const getUserLists = async () => {
+    const fetchUserLists = async () => {
       try {
         const res = await axios.get('/api/users/profile', {
           headers: {
@@ -92,300 +90,209 @@ export default function MovieDetails() {
           },
         });
         
-        const lists = {
-          myList: res.data.myList.map((item: any) => item._id || item),
-          favorites: res.data.favorites.map((item: any) => item._id || item),
-          watchlist: res.data.watchlist.map((item: any) => item._id || item)
-        };
-        
-        setUserLists(lists);
-        setIsInMyList(lists.myList.includes(movieId));
-        setIsInFavorites(lists.favorites.includes(movieId));
-        setIsInWatchlist(lists.watchlist.includes(movieId));
+        const userData = res.data;
+        setUserLists({
+          myList: userData.myList?.some((item: any) => item.movieId === movieId) || false,
+          favorites: userData.favorites?.some((item: any) => item.movieId === movieId) || false,
+          watchlist: userData.watchlist?.some((item: any) => item.movieId === movieId) || false,
+        });
       } catch (err) {
-        console.error('Failed to load user lists:', err);
+        console.error('Error fetching user lists:', err);
       }
     };
 
-    getMovie();
-    getUserLists();
+    fetchMovie();
+    fetchUserLists();
   }, [movieId, user, router]);
 
-  const handlePlay = () => {
-    router.push(`/watch?videoId=${movieId}`);
-  };
+  const handleListUpdate = async (listType: 'myList' | 'favorites' | 'watchlist') => {
+    if (!user || !movie) return;
 
-  const toggleMyList = async () => {
-    if (!user || isUpdating) return;
-    
     try {
-      setIsUpdating(true);
+      setUpdatingList(listType);
+      const isAdding = !userLists[listType];
       
-      if (isInMyList) {
-        // Remove from My List
-        await axios.delete(`/api/users/mylist/${movieId}`, {
+      await axios.put(
+        `/api/users/${isAdding ? 'add' : 'remove'}/${listType}`,
+        { movieId },
+        {
           headers: {
             token: `Bearer ${user.accessToken}`,
           },
-        });
-        setIsInMyList(false);
-      } else {
-        // Add to My List
-        await axios.post('/api/users/mylist', 
-          { movieId },
-          {
-            headers: {
-              token: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
-        setIsInMyList(true);
-      }
-    } catch (err) {
-      console.error('Error updating My List:', err);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const toggleFavorites = async () => {
-    if (!user || isUpdating) return;
-    
-    try {
-      setIsUpdating(true);
+        }
+      );
       
-      if (isInFavorites) {
-        // Remove from Favorites
-        await axios.delete(`/api/users/favorites/${movieId}`, {
-          headers: {
-            token: `Bearer ${user.accessToken}`,
-          },
-        });
-        setIsInFavorites(false);
-      } else {
-        // Add to Favorites
-        await axios.post('/api/users/favorites', 
-          { movieId },
-          {
-            headers: {
-              token: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
-        setIsInFavorites(true);
-      }
+      setUserLists((prev) => ({
+        ...prev,
+        [listType]: isAdding,
+      }));
     } catch (err) {
-      console.error('Error updating Favorites:', err);
+      console.error(`Error updating ${listType}:`, err);
     } finally {
-      setIsUpdating(false);
+      setUpdatingList(null);
     }
   };
-
-  const toggleWatchlist = async () => {
-    if (!user || isUpdating) return;
-    
-    try {
-      setIsUpdating(true);
-      
-      if (isInWatchlist) {
-        // Remove from Watchlist
-        await axios.delete(`/api/users/watchlist/${movieId}`, {
-          headers: {
-            token: `Bearer ${user.accessToken}`,
-          },
-        });
-        setIsInWatchlist(false);
-      } else {
-        // Add to Watchlist
-        await axios.post('/api/users/watchlist', 
-          { movieId },
-          {
-            headers: {
-              token: `Bearer ${user.accessToken}`,
-            },
-          }
-        );
-        setIsInWatchlist(true);
-      }
-    } catch (err) {
-      console.error('Error updating Watchlist:', err);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  if (!user) {
-    return null;
-  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900">
-        <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
-        </div>
+      <div className="flex items-center justify-center h-screen bg-black">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
       </div>
     );
   }
 
   if (error || !movie) {
     return (
-      <div className="min-h-screen bg-gray-900">
-        <Navbar />
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)]">
-          <div className="text-white text-xl mb-4">{error || 'Movie not found'}</div>
-        </div>
+      <div className="flex flex-col items-center justify-center h-screen bg-black">
+        <div className="text-white text-xl mb-4">{error || 'Movie not found'}</div>
+        <Link href="/" className="text-red-600 hover:underline">
+          Go back to home
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-black">
       <Navbar />
       
-      <div className="relative">
-        {/* Hero Banner */}
-        <div className="relative h-[70vh] w-full">
+      {/* Hero Section */}
+      <div className="relative w-full h-[70vh]">
+        {/* Background Image */}
+        <div className="absolute inset-0">
           <Image
             src={movie.img}
             alt={movie.title}
             fill
-            sizes="100vw"
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/70 to-transparent"></div>
-          
-          <div className="absolute bottom-0 left-0 w-full p-8 md:p-16">
-            <div className="max-w-4xl">
-              {movie.imgTitle ? (
-                <Image
-                  src={movie.imgTitle}
-                  alt={movie.title}
-                  width={400}
-                  height={150}
-                  className="mb-6"
-                />
-              ) : (
-                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">{movie.title}</h1>
-              )}
-              
-              <div className="flex items-center space-x-4 mb-4">
-                <span className="text-green-500 font-semibold">{movie.year}</span>
-                {movie.limit && (
-                  <span className="border border-gray-400 text-white px-2 py-0.5 text-sm">
-                    {movie.limit}+
-                  </span>
-                )}
-                <span className="text-white">{movie.duration}</span>
-                {movie.genre && (
-                  <span className="text-white">{movie.genre}</span>
-                )}
-                {movie.rating && (
-                  <div className="flex items-center text-yellow-500">
-                    <FaStar className="mr-1" />
-                    <span>{movie.rating.toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex space-x-4 mb-6">
-                <button
-                  onClick={handlePlay}
-                  className="bg-white text-black px-6 py-2 rounded flex items-center hover:bg-opacity-80 transition"
-                >
-                  <FaPlay className="mr-2" /> Play
-                </button>
-                
-                <button 
-                  onClick={toggleMyList}
-                  disabled={isUpdating}
-                  className={`${isInMyList ? 'bg-red-600' : 'bg-gray-600 bg-opacity-70'} text-white px-6 py-2 rounded flex items-center hover:bg-opacity-90 transition`}
-                >
-                  {isInMyList ? <FaCheck className="mr-2" /> : <FaPlus className="mr-2" />}
-                  {isInMyList ? 'Added to List' : 'My List'}
-                </button>
-                
-                <button 
-                  onClick={toggleFavorites}
-                  disabled={isUpdating}
-                  className="bg-gray-600 bg-opacity-70 text-white p-2 rounded-full flex items-center hover:bg-opacity-90 transition"
-                  title={isInFavorites ? "Remove from Favorites" : "Add to Favorites"}
-                >
-                  {isInFavorites ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
-                </button>
-                
-                <button 
-                  onClick={toggleWatchlist}
-                  disabled={isUpdating}
-                  className="bg-gray-600 bg-opacity-70 text-white p-2 rounded-full flex items-center hover:bg-opacity-90 transition"
-                  title={isInWatchlist ? "Remove from Want to Watch" : "Add to Want to Watch"}
-                >
-                  {isInWatchlist ? <FaClock className="text-blue-400" /> : <FaRegClock />}
-                </button>
-              </div>
-            </div>
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
         </div>
         
-        {/* Details Section */}
-        <div className="container mx-auto px-4 md:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2">
-              <h2 className="text-white text-2xl font-semibold mb-4">Overview</h2>
-              <p className="text-gray-300 mb-6">{movie.desc}</p>
-              
-              {movie.director && (
-                <div className="mb-4">
-                  <span className="text-gray-400">Director: </span>
-                  <span className="text-white">{movie.director}</span>
-                </div>
-              )}
-              
-              {movie.cast && movie.cast.length > 0 && (
-                <div>
-                  <span className="text-gray-400">Cast: </span>
-                  <span className="text-white">{movie.cast.join(', ')}</span>
-                </div>
-              )}
-            </div>
+        {/* Content */}
+        <div className="absolute bottom-0 left-0 w-full p-8 md:p-16">
+          <h1 className="text-white text-3xl md:text-5xl font-bold mb-4">
+            {movie.title}
+          </h1>
+          
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            {movie.year && (
+              <span className="text-gray-300 text-sm">{movie.year}</span>
+            )}
+            {movie.limit && (
+              <span className="border border-gray-300 text-gray-300 text-xs px-2 py-1 rounded">
+                {movie.limit}+
+              </span>
+            )}
+            {movie.duration && (
+              <span className="text-gray-300 text-sm">{movie.duration}</span>
+            )}
+            {movie.genre && (
+              <span className="text-gray-300 text-sm">{movie.genre}</span>
+            )}
+            {movie.isSeries !== undefined && (
+              <span className="text-gray-300 text-sm">
+                {movie.isSeries ? 'Series' : 'Movie'}
+              </span>
+            )}
+          </div>
+          
+          {/* Rating */}
+          <div className="flex items-center mb-6">
+            {movie.avgRating ? (
+              <>
+                <RatingStars rating={movie.avgRating} size={20} />
+                <span className="text-white ml-2">
+                  {movie.avgRating.toFixed(1)}
+                </span>
+                <span className="text-gray-400 text-sm ml-2">
+                  ({movie.numRatings} {movie.numRatings === 1 ? 'review' : 'reviews'})
+                </span>
+              </>
+            ) : (
+              <span className="text-gray-400 text-sm">No ratings yet</span>
+            )}
+          </div>
+          
+          <p className="text-gray-300 text-sm md:text-base mb-6 max-w-3xl">
+            {movie.desc}
+          </p>
+          
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/watch?videoId=${movie._id}`}
+              className="bg-red-600 text-white px-6 py-2 rounded flex items-center hover:bg-red-700 transition"
+            >
+              <FaPlay className="mr-2" /> Play
+            </Link>
             
-            <div>
-              <h2 className="text-white text-2xl font-semibold mb-4">Details</h2>
-              <div className="space-y-2">
-                <div className="flex">
-                  <span className="text-gray-400 w-24">Type:</span>
-                  <span className="text-white">{movie.isSeries ? 'Series' : 'Movie'}</span>
-                </div>
-                {movie.genre && (
-                  <div className="flex">
-                    <span className="text-gray-400 w-24">Genre:</span>
-                    <span className="text-white">{movie.genre}</span>
-                  </div>
-                )}
-                {movie.year && (
-                  <div className="flex">
-                    <span className="text-gray-400 w-24">Released:</span>
-                    <span className="text-white">{movie.year}</span>
-                  </div>
-                )}
-                {movie.duration && (
-                  <div className="flex">
-                    <span className="text-gray-400 w-24">Duration:</span>
-                    <span className="text-white">{movie.duration}</span>
-                  </div>
-                )}
-                {movie.limit && (
-                  <div className="flex">
-                    <span className="text-gray-400 w-24">Age Rating:</span>
-                    <span className="text-white">{movie.limit}+</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            <Link
+              href={`/watch/${movie._id}`}
+              className="bg-gray-700 text-white px-6 py-2 rounded flex items-center hover:bg-gray-600 transition"
+            >
+              <FaPlay className="mr-2" /> Watch Trailer
+            </Link>
+            
+            <button
+              onClick={() => handleListUpdate('myList')}
+              disabled={updatingList === 'myList'}
+              className={`px-4 py-2 rounded flex items-center transition ${
+                userLists.myList
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+            >
+              {updatingList === 'myList' ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              ) : userLists.myList ? (
+                <FaCheck className="mr-2" />
+              ) : (
+                <FaPlus className="mr-2" />
+              )}
+              {userLists.myList ? 'Added to My List' : 'Add to My List'}
+            </button>
+            
+            <button
+              onClick={() => handleListUpdate('favorites')}
+              disabled={updatingList === 'favorites'}
+              className={`px-4 py-2 rounded flex items-center transition ${
+                userLists.favorites
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+            >
+              {updatingList === 'favorites' ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              ) : (
+                <FaHeart className="mr-2" />
+              )}
+              {userLists.favorites ? 'In Favorites' : 'Add to Favorites'}
+            </button>
+            
+            <button
+              onClick={() => handleListUpdate('watchlist')}
+              disabled={updatingList === 'watchlist'}
+              className={`px-4 py-2 rounded flex items-center transition ${
+                userLists.watchlist
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+            >
+              {updatingList === 'watchlist' ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              ) : (
+                <FaClock className="mr-2" />
+              )}
+              {userLists.watchlist ? 'In Watchlist' : 'Add to Watchlist'}
+            </button>
           </div>
         </div>
+      </div>
+      
+      {/* Reviews Section */}
+      <div className="container mx-auto px-4 py-12">
+        <ReviewList movieId={movieId} />
       </div>
     </div>
   );

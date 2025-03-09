@@ -82,29 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log('Registering user with:', { username, email });
       
-      // Try different API endpoints to handle potential path issues
-      try {
-        // First try with the direct API URL
-        await api.post('/auth/register', { username, email, password });
-        console.log('Registration successful with /auth/register');
-      } catch (err: any) {
-        console.error('First registration attempt failed:', err.response?.data || err.message);
-        
-        // If that fails, try with the /api prefix
-        try {
-          await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, { 
-            username, 
-            email, 
-            password 
-          });
-          console.log('Registration successful with /api/auth/register');
-        } catch (err2: any) {
-          console.error('Second registration attempt failed:', err2.response?.data || err2.message);
-          
-          // If both fail, throw the original error
-          throw err;
-        }
-      }
+      // Use the local API endpoint which will be proxied through Next.js rewrites
+      await api.post('/auth/register', { username, email, password });
+      console.log('Registration successful');
       
       router.push('/login');
     } catch (err: any) {
