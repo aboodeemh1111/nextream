@@ -22,6 +22,14 @@ interface Review {
   likedBy: string[];
 }
 
+// Define the User type to match what's returned from useAuth
+interface User {
+  id: string;
+  accessToken: string;
+  isAdmin?: boolean;
+  [key: string]: any; // Allow for other properties
+}
+
 interface ReviewListProps {
   movieId: string;
   className?: string;
@@ -34,7 +42,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ movieId, className = '' }) => {
   const [error, setError] = useState<string | null>(null);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [likingReview, setLikingReview] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
 
   // Get all reviews for the movie
   const fetchReviews = async () => {

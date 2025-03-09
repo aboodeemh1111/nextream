@@ -19,6 +19,13 @@ interface Comment {
   likedBy: string[];
 }
 
+// Define the User type to match what's returned from useAuth
+interface User {
+  id: string;
+  accessToken: string;
+  [key: string]: any; // Allow for other properties
+}
+
 interface CommentListProps {
   movieId: string;
   className?: string;
@@ -29,7 +36,7 @@ const CommentList: React.FC<CommentListProps> = ({ movieId, className = '' }) =>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
 
   const fetchComments = async () => {
     try {
