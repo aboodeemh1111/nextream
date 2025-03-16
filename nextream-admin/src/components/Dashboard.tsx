@@ -1,24 +1,25 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useAuth } from '@/context/AuthContext';
-import { 
-  FaUsers, 
-  FaFilm, 
-  FaListUl, 
-  FaEye, 
-  FaArrowUp, 
-  FaArrowDown, 
+import React from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/SimpleAuthContext";
+import api from "@/services/api";
+import {
+  FaUsers,
+  FaFilm,
+  FaListUl,
+  FaEye,
+  FaArrowUp,
+  FaArrowDown,
   FaPlus,
   FaChartBar,
   FaCalendarAlt,
   FaUserPlus,
   FaExclamationTriangle,
-  FaChartLine
-} from 'react-icons/fa';
-import Link from 'next/link';
-import Image from 'next/image';
+  FaChartLine,
+} from "react-icons/fa";
+import Link from "next/link";
+import Image from "next/image";
 
 interface Stats {
   userCount: number;
@@ -28,56 +29,115 @@ interface Stats {
   newUsers: number;
   newUsersChange: number;
   popularMovies: { _id: string; title: string; views: number; img?: string }[];
-  recentUsers: { _id: string; username: string; email: string; profilePic?: string; createdAt: string; isAdmin: boolean }[];
+  recentUsers: {
+    _id: string;
+    username: string;
+    email: string;
+    profilePic?: string;
+    createdAt: string;
+    isAdmin: boolean;
+  }[];
 }
 
+// Mock data for the dashboard
+const MOCK_STATS: Stats = {
+  userCount: 1250,
+  movieCount: 250,
+  listCount: 45,
+  totalViews: 25000,
+  newUsers: 120,
+  newUsersChange: 12.5,
+  popularMovies: [
+    {
+      _id: "1",
+      title: "Inception",
+      views: 5200,
+      img: "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=100&auto=format&fit=crop",
+    },
+    {
+      _id: "2",
+      title: "The Shawshank Redemption",
+      views: 4800,
+      img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=100&auto=format&fit=crop",
+    },
+    {
+      _id: "3",
+      title: "The Dark Knight",
+      views: 4500,
+      img: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=100&auto=format&fit=crop",
+    },
+  ],
+  recentUsers: [
+    {
+      _id: "1",
+      username: "johndoe",
+      email: "john@example.com",
+      profilePic:
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop",
+      createdAt: new Date().toISOString(),
+      isAdmin: false,
+    },
+    {
+      _id: "2",
+      username: "janedoe",
+      email: "jane@example.com",
+      profilePic:
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop",
+      createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      isAdmin: false,
+    },
+    {
+      _id: "3",
+      username: "admin",
+      email: "admin@example.com",
+      profilePic:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop",
+      createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+      isAdmin: true,
+    },
+  ],
+};
+
 const Dashboard = () => {
-  const [stats, setStats] = useState<Stats>({
-    userCount: 0,
-    movieCount: 0,
-    listCount: 0,
-    totalViews: 0,
-    newUsers: 0,
-    newUsersChange: 0,
-    popularMovies: [],
-    recentUsers: []
-  });
+  const [stats, setStats] = useState<Stats>(MOCK_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
-        
+
         // Fetch real data from the API
-        const res = await axios.get('/api/admin/stats', {
-          headers: {
-            token: `Bearer ${user.accessToken}`,
-          },
-        });
-        
-        setStats(res.data);
-        console.log('Dashboard stats loaded:', res.data);
+        const response = await api.get("/admin/stats");
+
+        if (response.data) {
+          setStats(response.data);
+          console.log("Dashboard stats loaded:", response.data);
+        } else {
+          // Fallback to mock data if response is empty
+          console.log("Using mock data as fallback");
+          setStats(MOCK_STATS);
+        }
       } catch (err: any) {
-        console.error('Error fetching dashboard stats:', err.response?.data || err.message);
-        setError('Failed to load dashboard data. ' + (err.response?.data?.error || err.message));
-        
-        // Use fallback data if API call fails
-        setStats({
-          userCount: 0,
-          movieCount: 0,
-          listCount: 0,
-          totalViews: 0,
-          newUsers: 0,
-          newUsersChange: 0,
-          popularMovies: [],
-          recentUsers: []
-        });
+        console.error(
+          "Error fetching dashboard stats:",
+          err.response?.data || err.message
+        );
+        setError(
+          "Failed to load dashboard data. " +
+            (err.response?.data?.message || err.message)
+        );
+
+        // Use mock data if API call fails
+        setStats(MOCK_STATS);
       } finally {
         setLoading(false);
       }
@@ -88,9 +148,9 @@ const Dashboard = () => {
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
+      return (num / 1000000).toFixed(1) + "M";
     } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
+      return (num / 1000).toFixed(1) + "K";
     } else {
       return num.toString();
     }
@@ -106,7 +166,10 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded" role="alert">
+      <div
+        className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded"
+        role="alert"
+      >
         <div className="flex items-center">
           <div className="py-1">
             <FaExclamationTriangle className="h-6 w-6 text-red-500 mr-4" />
@@ -125,9 +188,11 @@ const Dashboard = () => {
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Welcome back to your admin dashboard</p>
+        <p className="text-gray-600 mt-1">
+          Welcome back to your admin dashboard
+        </p>
       </div>
-      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         {/* Users Card */}
@@ -135,32 +200,47 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Users</p>
-              <h2 className="text-3xl font-bold text-gray-800 mt-1">{stats.userCount.toLocaleString()}</h2>
+              <h2 className="text-3xl font-bold text-gray-800 mt-1">
+                {stats.userCount.toLocaleString()}
+              </h2>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <FaUsers className="text-blue-600 text-xl" />
             </div>
           </div>
           <div className="mt-4 flex items-center">
-            <span className={`text-sm ${stats.newUsersChange >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center font-medium`}>
-              {stats.newUsersChange >= 0 ? <FaArrowUp className="mr-1" /> : <FaArrowDown className="mr-1" />}
+            <span
+              className={`text-sm ${
+                stats.newUsersChange >= 0 ? "text-green-500" : "text-red-500"
+              } flex items-center font-medium`}
+            >
+              {stats.newUsersChange >= 0 ? (
+                <FaArrowUp className="mr-1" />
+              ) : (
+                <FaArrowDown className="mr-1" />
+              )}
               {Math.abs(stats.newUsersChange).toFixed(1)}%
             </span>
             <span className="text-gray-500 text-sm ml-2">from last month</span>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <Link href="/users" className="text-blue-600 text-sm hover:underline flex items-center">
+            <Link
+              href="/users"
+              className="text-blue-600 text-sm hover:underline flex items-center"
+            >
               <FaUserPlus className="mr-1" /> Add new user
             </Link>
           </div>
         </div>
-        
+
         {/* Movies Card */}
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Movies</p>
-              <h2 className="text-3xl font-bold text-gray-800 mt-1">{stats.movieCount.toLocaleString()}</h2>
+              <h2 className="text-3xl font-bold text-gray-800 mt-1">
+                {stats.movieCount.toLocaleString()}
+              </h2>
             </div>
             <div className="bg-red-100 p-3 rounded-full">
               <FaFilm className="text-red-600 text-xl" />
@@ -172,18 +252,23 @@ const Dashboard = () => {
             </span>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <Link href="/movies/new" className="text-red-600 text-sm hover:underline flex items-center">
+            <Link
+              href="/movies/new"
+              className="text-red-600 text-sm hover:underline flex items-center"
+            >
               <FaPlus className="mr-1" /> Add new movie
             </Link>
           </div>
         </div>
-        
+
         {/* Lists Card */}
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Lists</p>
-              <h2 className="text-3xl font-bold text-gray-800 mt-1">{stats.listCount.toLocaleString()}</h2>
+              <h2 className="text-3xl font-bold text-gray-800 mt-1">
+                {stats.listCount.toLocaleString()}
+              </h2>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
               <FaListUl className="text-green-600 text-xl" />
@@ -195,47 +280,53 @@ const Dashboard = () => {
             </span>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <Link href="/lists/new" className="text-green-600 text-sm hover:underline flex items-center">
+            <Link
+              href="/lists/new"
+              className="text-green-600 text-sm hover:underline flex items-center"
+            >
               <FaPlus className="mr-1" /> Create new list
             </Link>
           </div>
         </div>
-        
+
         {/* Views Card */}
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Views</p>
-              <h2 className="text-3xl font-bold text-gray-800 mt-1">{formatNumber(stats.totalViews)}</h2>
+              <h2 className="text-3xl font-bold text-gray-800 mt-1">
+                {formatNumber(stats.totalViews)}
+              </h2>
             </div>
             <div className="bg-purple-100 p-3 rounded-full">
               <FaEye className="text-purple-600 text-xl" />
             </div>
           </div>
           <div className="mt-4 flex items-center">
-            <span className="text-sm text-gray-500">
-              Across all content
-            </span>
+            <span className="text-sm text-gray-500">Across all content</span>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <Link href="/analytics" className="text-purple-600 text-sm hover:underline flex items-center">
+            <Link
+              href="/analytics"
+              className="text-purple-600 text-sm hover:underline flex items-center"
+            >
               <FaChartBar className="mr-1" /> View analytics
             </Link>
           </div>
         </div>
       </div>
-      
+
       {/* Tabs */}
       <div className="mb-6 border-b border-gray-200">
         <ul className="flex flex-wrap -mb-px text-sm font-medium text-center">
           <li className="mr-2">
             <button
               className={`inline-block p-4 rounded-t-lg border-b-2 ${
-                activeTab === 'overview'
-                  ? 'text-red-600 border-red-600'
-                  : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+                activeTab === "overview"
+                  ? "text-red-600 border-red-600"
+                  : "border-transparent hover:text-gray-600 hover:border-gray-300"
               }`}
-              onClick={() => setActiveTab('overview')}
+              onClick={() => setActiveTab("overview")}
             >
               Overview
             </button>
@@ -243,11 +334,11 @@ const Dashboard = () => {
           <li className="mr-2">
             <button
               className={`inline-block p-4 rounded-t-lg border-b-2 ${
-                activeTab === 'popular'
-                  ? 'text-red-600 border-red-600'
-                  : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+                activeTab === "popular"
+                  ? "text-red-600 border-red-600"
+                  : "border-transparent hover:text-gray-600 hover:border-gray-300"
               }`}
-              onClick={() => setActiveTab('popular')}
+              onClick={() => setActiveTab("popular")}
             >
               Popular Content
             </button>
@@ -255,32 +346,37 @@ const Dashboard = () => {
           <li className="mr-2">
             <button
               className={`inline-block p-4 rounded-t-lg border-b-2 ${
-                activeTab === 'recent'
-                  ? 'text-red-600 border-red-600'
-                  : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+                activeTab === "recent"
+                  ? "text-red-600 border-red-600"
+                  : "border-transparent hover:text-gray-600 hover:border-gray-300"
               }`}
-              onClick={() => setActiveTab('recent')}
+              onClick={() => setActiveTab("recent")}
             >
               Recent Users
             </button>
           </li>
         </ul>
       </div>
-      
+
       {/* Tab Content */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100">
         {/* Overview Tab */}
-        {activeTab === 'overview' && (
+        {activeTab === "overview" && (
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Platform Overview</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Platform Overview
+            </h2>
             <p className="text-gray-600 mb-6">
-              Your streaming platform is performing well. Here's a summary of your key metrics.
+              Your streaming platform is performing well. Here's a summary of
+              your key metrics.
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Popular Movies Preview */}
               <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-3">Popular Movies</h3>
+                <h3 className="text-lg font-medium text-gray-800 mb-3">
+                  Popular Movies
+                </h3>
                 {stats.popularMovies.length === 0 ? (
                   <div className="p-4 bg-gray-50 rounded-lg text-center">
                     <p className="text-gray-500">No movie data available</p>
@@ -288,14 +384,17 @@ const Dashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {stats.popularMovies.slice(0, 3).map((movie) => (
-                      <div key={movie._id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <div
+                        key={movie._id}
+                        className="flex items-center p-3 bg-gray-50 rounded-lg"
+                      >
                         <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded overflow-hidden">
                           {movie.img ? (
-                            <Image 
-                              src={movie.img} 
-                              alt={movie.title} 
-                              width={40} 
-                              height={40} 
+                            <Image
+                              src={movie.img}
+                              alt={movie.title}
+                              width={40}
+                              height={40}
                               className="object-cover h-full w-full"
                             />
                           ) : (
@@ -305,8 +404,12 @@ const Dashboard = () => {
                           )}
                         </div>
                         <div className="ml-3 flex-1">
-                          <p className="text-sm font-medium text-gray-800">{movie.title}</p>
-                          <p className="text-xs text-gray-500">{movie.views.toLocaleString()} views</p>
+                          <p className="text-sm font-medium text-gray-800">
+                            {movie.title}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {movie.views.toLocaleString()} views
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -314,8 +417,8 @@ const Dashboard = () => {
                 )}
                 {stats.popularMovies.length > 0 && (
                   <div className="mt-4">
-                    <button 
-                      onClick={() => setActiveTab('popular')}
+                    <button
+                      onClick={() => setActiveTab("popular")}
                       className="text-red-600 text-sm hover:underline"
                     >
                       View all popular content
@@ -323,10 +426,12 @@ const Dashboard = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Recent Users Preview */}
               <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-3">Recent Users</h3>
+                <h3 className="text-lg font-medium text-gray-800 mb-3">
+                  Recent Users
+                </h3>
                 {stats.recentUsers.length === 0 ? (
                   <div className="p-4 bg-gray-50 rounded-lg text-center">
                     <p className="text-gray-500">No user data available</p>
@@ -334,14 +439,17 @@ const Dashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {stats.recentUsers.slice(0, 3).map((user) => (
-                      <div key={user._id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <div
+                        key={user._id}
+                        className="flex items-center p-3 bg-gray-50 rounded-lg"
+                      >
                         <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
                           {user.profilePic ? (
-                            <Image 
-                              src={user.profilePic} 
-                              alt={user.username} 
-                              width={40} 
-                              height={40} 
+                            <Image
+                              src={user.profilePic}
+                              alt={user.username}
+                              width={40}
+                              height={40}
                               className="object-cover h-full w-full"
                             />
                           ) : (
@@ -349,8 +457,13 @@ const Dashboard = () => {
                           )}
                         </div>
                         <div className="ml-3 flex-1">
-                          <p className="text-sm font-medium text-gray-800">{user.username}</p>
-                          <p className="text-xs text-gray-500">Joined {new Date(user.createdAt).toLocaleDateString()}</p>
+                          <p className="text-sm font-medium text-gray-800">
+                            {user.username}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Joined{" "}
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -358,8 +471,8 @@ const Dashboard = () => {
                 )}
                 {stats.recentUsers.length > 0 && (
                   <div className="mt-4">
-                    <button 
-                      onClick={() => setActiveTab('recent')}
+                    <button
+                      onClick={() => setActiveTab("recent")}
                       className="text-red-600 text-sm hover:underline"
                     >
                       View all recent users
@@ -370,17 +483,26 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-        
+
         {/* Popular Content Tab */}
-        {activeTab === 'popular' && (
+        {activeTab === "popular" && (
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Popular Content</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Popular Content
+            </h2>
             {stats.popularMovies.length === 0 ? (
               <div className="p-8 text-center">
                 <FaFilm className="mx-auto text-gray-300 text-5xl mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No movie data available</h3>
-                <p className="text-gray-500 mb-4">Try adding some movies to see them here</p>
-                <Link href="/movies/new" className="text-red-600 hover:text-red-800 font-medium">
+                <h3 className="text-lg font-medium text-gray-800 mb-2">
+                  No movie data available
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Try adding some movies to see them here
+                </p>
+                <Link
+                  href="/movies/new"
+                  className="text-red-600 hover:text-red-800 font-medium"
+                >
                   Add a movie
                 </Link>
               </div>
@@ -389,13 +511,22 @@ const Dashboard = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Movie
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Views
                       </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Actions
                       </th>
                     </tr>
@@ -407,11 +538,11 @@ const Dashboard = () => {
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded overflow-hidden">
                               {movie.img ? (
-                                <Image 
-                                  src={movie.img} 
-                                  alt={movie.title} 
-                                  width={40} 
-                                  height={40} 
+                                <Image
+                                  src={movie.img}
+                                  alt={movie.title}
+                                  width={40}
+                                  height={40}
                                   className="object-cover h-full w-full"
                                 />
                               ) : (
@@ -421,18 +552,28 @@ const Dashboard = () => {
                               )}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{movie.title}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {movie.title}
+                              </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">{movie.views.toLocaleString()}</div>
+                          <div className="text-sm text-gray-500">
+                            {movie.views.toLocaleString()}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link href={`/movies/${movie._id}`} className="text-indigo-600 hover:text-indigo-900 mr-4">
+                          <Link
+                            href={`/movies/${movie._id}`}
+                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                          >
                             View
                           </Link>
-                          <Link href={`/movies/edit/${movie._id}`} className="text-indigo-600 hover:text-indigo-900">
+                          <Link
+                            href={`/movies/edit/${movie._id}`}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
                             Edit
                           </Link>
                         </td>
@@ -444,35 +585,56 @@ const Dashboard = () => {
             )}
           </div>
         )}
-        
+
         {/* Recent Users Tab */}
-        {activeTab === 'recent' && (
+        {activeTab === "recent" && (
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Users</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Recent Users
+            </h2>
             {stats.recentUsers.length === 0 ? (
               <div className="p-8 text-center">
                 <FaUsers className="mx-auto text-gray-300 text-5xl mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No user data available</h3>
-                <p className="text-gray-500 mb-4">Users will appear here once they register</p>
+                <h3 className="text-lg font-medium text-gray-800 mb-2">
+                  No user data available
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Users will appear here once they register
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         User
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Email
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Role
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Joined
                       </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Actions
                       </th>
                     </tr>
@@ -484,11 +646,11 @@ const Dashboard = () => {
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
                               {user.profilePic ? (
-                                <Image 
-                                  src={user.profilePic} 
-                                  alt={user.username} 
-                                  width={40} 
-                                  height={40} 
+                                <Image
+                                  src={user.profilePic}
+                                  alt={user.username}
+                                  width={40}
+                                  height={40}
                                   className="object-cover h-full w-full"
                                 />
                               ) : (
@@ -496,26 +658,44 @@ const Dashboard = () => {
                               )}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {user.username}
+                              </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">{user.email}</div>
+                          <div className="text-sm text-gray-500">
+                            {user.email}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isAdmin ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                            {user.isAdmin ? 'Admin' : 'User'}
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              user.isAdmin
+                                ? "bg-red-100 text-red-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
+                            {user.isAdmin ? "Admin" : "User"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link href={`/users/${user._id}`} className="text-indigo-600 hover:text-indigo-900 mr-4">
+                          <Link
+                            href={`/users/${user._id}`}
+                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                          >
                             View
                           </Link>
-                          <Link href={`/users/edit/${user._id}`} className="text-indigo-600 hover:text-indigo-900">
+                          <Link
+                            href={`/users/edit/${user._id}`}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
                             Edit
                           </Link>
                         </td>
@@ -533,8 +713,9 @@ const Dashboard = () => {
       <div className="bg-white rounded-lg shadow-sm p-6 mt-8">
         <h2 className="text-xl font-semibold mb-4">Analytics Dashboard</h2>
         <p className="text-gray-600 mb-4">
-          Get detailed insights into user engagement and content performance with our comprehensive analytics dashboard.
-          Track metrics like user activity, watch time, completion rates, and more.
+          Get detailed insights into user engagement and content performance
+          with our comprehensive analytics dashboard. Track metrics like user
+          activity, watch time, completion rates, and more.
         </p>
         <Link
           href="/analytics"
@@ -547,4 +728,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;
