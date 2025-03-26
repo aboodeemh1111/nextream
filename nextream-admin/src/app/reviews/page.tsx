@@ -1,135 +1,210 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { FaComment, FaCheck, FaTimes, FaChartBar } from 'react-icons/fa';
-import ReviewsTable from '@/components/reviews/ReviewsTable';
-import ReviewStats from '@/components/reviews/ReviewStats';
-import { useAuth } from '@/context/AuthContext';
+import { useState } from "react";
+import {
+  FaComment,
+  FaCheck,
+  FaTimes,
+  FaChartBar,
+  FaExclamationTriangle,
+  FaFilter,
+  FaChartLine,
+} from "react-icons/fa";
+import ReviewsTable from "@/components/reviews/ReviewsTable";
+import ReviewStats from "@/components/reviews/ReviewStats";
+import { useAuth } from "@/context/AuthContext";
+import FuturisticAdminCard from "@/components/FuturisticAdminCard";
+import FuturisticAdminButton from "@/components/FuturisticAdminButton";
 
 export default function ReviewsPage() {
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'stats'>('all');
+  const [activeTab, setActiveTab] = useState<
+    "all" | "pending" | "approved" | "stats"
+  >("all");
   const { user } = useAuth();
 
   if (!user || !user.isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-700">
-            You do not have permission to access this page.
+      <div className="min-h-screen flex items-center justify-center">
+        <FuturisticAdminCard
+          className="max-w-md w-full"
+          title="Access Denied"
+          icon={<FaExclamationTriangle />}
+          glowColor="purple"
+        >
+          <p className="text-slate-300 mt-2">
+            You do not have permission to access this page. Please log in with
+            an admin account.
           </p>
-        </div>
+        </FuturisticAdminCard>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">
-            User Reviews Management
-          </h1>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`${
-                  activeTab === 'all'
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+    <div>
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">
+              Review Management
+            </h1>
+            <p className="text-slate-400 mt-1">
+              Monitor and manage user reviews for your streaming content
+            </p>
+          </div>
+          <div className="mt-4 md:mt-0">
+            <div className="flex space-x-2">
+              <FuturisticAdminButton
+                size="sm"
+                variant="secondary"
+                icon={<FaChartLine />}
               >
-                <FaComment className="mr-2" />
-                All Reviews
-              </button>
-              <button
-                onClick={() => setActiveTab('pending')}
-                className={`${
-                  activeTab === 'pending'
-                    ? 'border-yellow-500 text-yellow-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-              >
-                <FaTimes className="mr-2" />
-                Pending Approval
-              </button>
-              <button
-                onClick={() => setActiveTab('approved')}
-                className={`${
-                  activeTab === 'approved'
-                    ? 'border-green-500 text-green-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-              >
-                <FaCheck className="mr-2" />
-                Approved
-              </button>
-              <button
-                onClick={() => setActiveTab('stats')}
-                className={`${
-                  activeTab === 'stats'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-              >
-                <FaChartBar className="mr-2" />
-                Statistics
-              </button>
-            </nav>
+                Generate Report
+              </FuturisticAdminButton>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Content based on active tab */}
-        <div className="bg-white shadow rounded-lg">
-          {activeTab === 'all' && (
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">All Reviews</h2>
-              <ReviewsTable 
-                filter="all" 
-                onReviewUpdated={() => {
-                  // Force refresh if needed
-                }}
-              />
-            </div>
-          )}
-
-          {activeTab === 'pending' && (
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Pending Reviews</h2>
-              <ReviewsTable 
-                filter="pending" 
-                onReviewUpdated={() => {
-                  // Force refresh if needed
-                }}
-              />
-            </div>
-          )}
-
-          {activeTab === 'approved' && (
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Approved Reviews</h2>
-              <ReviewsTable 
-                filter="approved" 
-                onReviewUpdated={() => {
-                  // Force refresh if needed
-                }}
-              />
-            </div>
-          )}
-
-          {activeTab === 'stats' && (
-            <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Review Statistics</h2>
-              <ReviewStats />
-            </div>
-          )}
+      {/* Tabs */}
+      <div className="mb-8">
+        <div className="border-b border-slate-700/50 flex overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`${
+              activeTab === "all"
+                ? "border-indigo-500 text-indigo-400"
+                : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600"
+            } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+          >
+            <FaComment className="mr-2" />
+            All Reviews
+          </button>
+          <button
+            onClick={() => setActiveTab("pending")}
+            className={`${
+              activeTab === "pending"
+                ? "border-amber-500 text-amber-400"
+                : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600"
+            } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+          >
+            <FaTimes className="mr-2" />
+            Pending Approval
+          </button>
+          <button
+            onClick={() => setActiveTab("approved")}
+            className={`${
+              activeTab === "approved"
+                ? "border-emerald-500 text-emerald-400"
+                : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600"
+            } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+          >
+            <FaCheck className="mr-2" />
+            Approved
+          </button>
+          <button
+            onClick={() => setActiveTab("stats")}
+            className={`${
+              activeTab === "stats"
+                ? "border-blue-500 text-blue-400"
+                : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-600"
+            } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+          >
+            <FaChartBar className="mr-2" />
+            Statistics
+          </button>
         </div>
+      </div>
+
+      {/* Content based on active tab */}
+      <div>
+        {activeTab === "all" && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium text-slate-200">
+                All Reviews
+              </h2>
+              <FuturisticAdminButton
+                size="sm"
+                variant="secondary"
+                icon={<FaFilter />}
+              >
+                Filter
+              </FuturisticAdminButton>
+            </div>
+            <ReviewsTable
+              filter="all"
+              onReviewUpdated={() => {
+                // Force refresh if needed
+              }}
+            />
+          </div>
+        )}
+
+        {activeTab === "pending" && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium text-slate-200">
+                Pending Reviews
+              </h2>
+              <div className="flex space-x-2">
+                <FuturisticAdminButton
+                  size="sm"
+                  variant="success"
+                  icon={<FaCheck />}
+                >
+                  Approve All
+                </FuturisticAdminButton>
+                <FuturisticAdminButton
+                  size="sm"
+                  variant="secondary"
+                  icon={<FaFilter />}
+                >
+                  Filter
+                </FuturisticAdminButton>
+              </div>
+            </div>
+            <ReviewsTable
+              filter="pending"
+              onReviewUpdated={() => {
+                // Force refresh if needed
+              }}
+            />
+          </div>
+        )}
+
+        {activeTab === "approved" && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium text-slate-200">
+                Approved Reviews
+              </h2>
+              <FuturisticAdminButton
+                size="sm"
+                variant="secondary"
+                icon={<FaFilter />}
+              >
+                Filter
+              </FuturisticAdminButton>
+            </div>
+            <ReviewsTable
+              filter="approved"
+              onReviewUpdated={() => {
+                // Force refresh if needed
+              }}
+            />
+          </div>
+        )}
+
+        {activeTab === "stats" && (
+          <div>
+            <h2 className="text-lg font-medium text-slate-200 mb-4">
+              Review Statistics
+            </h2>
+            <ReviewStats />
+          </div>
+        )}
       </div>
     </div>
   );
-} 
+}
