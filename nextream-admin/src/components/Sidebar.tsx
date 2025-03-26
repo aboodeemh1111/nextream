@@ -16,6 +16,7 @@ import {
   FaTimes,
   FaChevronRight,
   FaComment,
+  FaTv,
 } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 
@@ -50,6 +51,7 @@ const Sidebar = () => {
     { name: "Dashboard", icon: <FaHome className="text-lg" />, path: "/" },
     { name: "Users", icon: <FaUsers className="text-lg" />, path: "/users" },
     { name: "Movies", icon: <FaFilm className="text-lg" />, path: "/movies" },
+    { name: "TV Series", icon: <FaTv className="text-lg" />, path: "/series" },
     { name: "Lists", icon: <FaListUl className="text-lg" />, path: "/lists" },
     {
       name: "Reviews",
