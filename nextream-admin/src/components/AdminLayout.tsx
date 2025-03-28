@@ -24,14 +24,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   if (loading) {
     return (
-      <div className="relative flex justify-center items-center h-screen bg-slate-900">
+      <div className="relative flex justify-center items-center h-screen bg-[var(--color-bg-primary)]">
         <FuturisticAdminBackground />
         <div className="relative z-10 flex flex-col items-center">
           <div className="w-16 h-16 relative">
-            <div className="absolute inset-0 rounded-full border-t-4 border-b-4 border-blue-500 animate-spin"></div>
-            <div className="absolute inset-2 rounded-full border-t-4 border-b-4 border-indigo-500 animate-spin animation-delay-500"></div>
+            <div className="absolute inset-0 rounded-full border-t-4 border-b-4 border-[var(--color-accent-primary)] animate-spin"></div>
+            <div className="absolute inset-2 rounded-full border-t-4 border-b-4 border-[var(--color-accent-secondary)] animate-spin animation-delay-500"></div>
           </div>
-          <p className="mt-4 text-slate-300">Loading admin panel...</p>
+          <p className="mt-4 text-[var(--color-text-secondary)]">
+            Loading admin panel...
+          </p>
         </div>
       </div>
     );
@@ -42,7 +44,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-slate-900 text-white relative overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] relative overflow-hidden">
       {/* Animated background (only visible on certain pages or conditions) */}
       {showBackground && (
         <div className="fixed inset-0 z-0 opacity-30">
@@ -51,7 +53,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       )}
 
       {/* Glass overlay for better readability */}
-      <div className="fixed inset-0 z-0 backdrop-blur-[1px] bg-slate-900/10 pointer-events-none"></div>
+      <div className="fixed inset-0 z-0 backdrop-blur-[1px] bg-[var(--color-bg-primary)]/10 pointer-events-none"></div>
 
       {/* Sidebar */}
       <Sidebar />
@@ -64,7 +66,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
 
-        <footer className="backdrop-blur-sm bg-slate-800/50 border-t border-slate-700/50 py-4 px-6 text-center text-slate-400 text-sm">
+        <footer className="bg-glass py-4 px-6 text-center text-[var(--color-text-muted)] text-sm">
           <p>
             © {new Date().getFullYear()} Nextream Admin. All rights reserved.
           </p>
