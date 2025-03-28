@@ -48,7 +48,7 @@ const nextConfig = {
       bodySizeLimit: "2mb",
     },
   },
-  // Moved out of experimental as per Next.js 15.2.1 requirements
+  // Next.js 15.2.1 requires this at the root level instead of in experimental
   serverExternalPackages: [],
 };
 

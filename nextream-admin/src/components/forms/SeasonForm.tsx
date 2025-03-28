@@ -100,8 +100,8 @@ const SeasonForm: React.FC<SeasonFormProps> = ({
       )}
 
       <form onSubmit={handleSubmit}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "24px" }}>
+          <div style={{ flex: "1 1 calc(50% - 12px)", minWidth: "250px" }}>
             <TextField
               required
               fullWidth
@@ -111,8 +111,8 @@ const SeasonForm: React.FC<SeasonFormProps> = ({
               onChange={handleChange}
               disabled={loading}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </div>
+          <div style={{ flex: "1 1 calc(50% - 12px)", minWidth: "250px" }}>
             <TextField
               required
               fullWidth
@@ -124,8 +124,8 @@ const SeasonForm: React.FC<SeasonFormProps> = ({
               disabled={loading}
               inputProps={{ min: 1 }}
             />
-          </Grid>
-          <Grid item xs={12}>
+          </div>
+          <div style={{ width: "100%" }}>
             <TextField
               fullWidth
               label="Description"
@@ -136,8 +136,8 @@ const SeasonForm: React.FC<SeasonFormProps> = ({
               multiline
               rows={4}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </div>
+          <div style={{ flex: "1 1 calc(50% - 12px)", minWidth: "250px" }}>
             <TextField
               fullWidth
               label="Year"
@@ -146,8 +146,8 @@ const SeasonForm: React.FC<SeasonFormProps> = ({
               onChange={handleChange}
               disabled={loading}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </div>
+          <div style={{ flex: "1 1 calc(50% - 12px)", minWidth: "250px" }}>
             <TextField
               fullWidth
               label="Poster URL"
@@ -157,10 +157,10 @@ const SeasonForm: React.FC<SeasonFormProps> = ({
               disabled={loading}
               placeholder="https://example.com/poster.jpg"
             />
-          </Grid>
+          </div>
 
           {season.poster && (
-            <Grid item xs={12}>
+            <div style={{ width: "100%" }}>
               <Box sx={{ textAlign: "center", mt: 2 }}>
                 <img
                   src={season.poster}
@@ -172,13 +172,17 @@ const SeasonForm: React.FC<SeasonFormProps> = ({
                   }}
                 />
               </Box>
-            </Grid>
+            </div>
           )}
 
-          <Grid
-            item
-            xs={12}
-            sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 2 }}
+          <div
+            style={{
+              width: "100%",
+              marginTop: "16px",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "16px",
+            }}
           >
             <Button variant="outlined" onClick={onClose} disabled={loading}>
               Cancel
@@ -191,8 +195,8 @@ const SeasonForm: React.FC<SeasonFormProps> = ({
             >
               {loading ? "Saving..." : isEdit ? "Update Season" : "Add Season"}
             </Button>
-          </Grid>
-        </Grid>
+          </div>
+        </div>
       </form>
     </Paper>
   );
