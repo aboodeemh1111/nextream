@@ -5,15 +5,11 @@ import SeriesForm from "@/components/SeriesForm";
 import AdminLayout from "@/components/AdminLayout";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
+import { useParams } from "next/navigation";
 
-interface EditSeriesProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function EditSeries({ params }: EditSeriesProps) {
-  const { id } = params;
+export default function EditSeries() {
+  const params = useParams();
+  const id = params.id as string;
 
   return (
     <AdminLayout>

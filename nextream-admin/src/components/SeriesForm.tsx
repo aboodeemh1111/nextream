@@ -27,6 +27,13 @@ interface SeriesData {
   genre: string;
   status: "ongoing" | "completed" | "cancelled" | "coming soon";
   totalSeasons: number;
+  tags: string[];
+  maturityRating: string;
+  releaseDate: string;
+  language: string;
+  cast: string[];
+  director: string;
+  isOriginal: boolean;
 }
 
 const initialSeriesData: SeriesData = {
@@ -41,6 +48,13 @@ const initialSeriesData: SeriesData = {
   genre: "",
   status: "ongoing",
   totalSeasons: 1,
+  tags: [],
+  maturityRating: "TV-14",
+  releaseDate: "",
+  language: "English",
+  cast: [],
+  director: "",
+  isOriginal: false,
 };
 
 const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
@@ -57,12 +71,21 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
       const fetchSeries = async () => {
         try {
           setLoading(true);
-          const res = await axios.get(`/api/series/find/${seriesId}`, {
+          const res = await axios.get(`/api/movies/find/${seriesId}`, {
             headers: {
               token: `Bearer ${user?.accessToken}`,
             },
           });
-          setSeriesData(res.data);
+
+          const data = res.data || {};
+          setSeriesData({
+            ...initialSeriesData,
+            ...data,
+            tags: data.tags || [],
+            cast: data.cast || [],
+            totalSeasons: data.totalSeasons || 0,
+            limit: data.limit || 0,
+          });
         } catch (err) {
           setError("Failed to load series data");
           console.error(err);
@@ -99,14 +122,14 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) {
-      setError("You must be logged in to perform this action");
+    // Form validation
+    if (!seriesData.title) {
+      setError("Series title is required");
       return;
     }
 
-    // Validate required fields
-    if (!seriesData.title || !seriesData.desc || !seriesData.img) {
-      setError("Please fill in all required fields");
+    if (!seriesData.img) {
+      setError("Main poster image is required");
       return;
     }
 
@@ -116,36 +139,56 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
       setSuccess(null);
 
       const headers = {
-        token: `Bearer ${user.accessToken}`,
+        token: `Bearer ${user?.accessToken}`,
+      };
+
+      // Add isSeries flag to ensure it's treated as a series
+      const seriesPayload = {
+        ...seriesData,
+        isSeries: true,
       };
 
       if (isEdit && seriesId) {
-        // Update existing series
-        const res = await axios.put(`/api/series/${seriesId}`, seriesData, {
-          headers,
-        });
+        await axios.put(`/api/movies/${seriesId}`, seriesPayload, { headers });
         setSuccess("Series updated successfully");
-
-        // Navigate to series management page after edit
-        setTimeout(() => {
-          router.push(`/series/${seriesId}`);
-        }, 1500);
       } else {
-        // Create new series
-        const res = await axios.post("/api/series", seriesData, { headers });
+        await axios.post("/api/movies", seriesPayload, { headers });
         setSuccess("Series created successfully");
 
-        // Navigate to series management page after creation
+        // Optional: Reset form after successful creation
         setTimeout(() => {
-          router.push(`/series/${res.data._id}`);
-        }, 1500);
+          setSeriesData(initialSeriesData);
+        }, 2000);
       }
+
+      // Navigate to series list after a delay
+      setTimeout(() => {
+        router.push("/series");
+      }, 2000);
     } catch (err: any) {
       console.error("Error saving series:", err.response?.data || err.message);
       setError(err.response?.data?.message || "Failed to save series");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const tagsInput = e.target.value;
+    const tagsArray = tagsInput
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag);
+    setSeriesData({ ...seriesData, tags: tagsArray });
+  };
+
+  const handleCastChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const castInput = e.target.value;
+    const castArray = castInput
+      .split(",")
+      .map((actor) => actor.trim())
+      .filter((actor) => actor);
+    setSeriesData({ ...seriesData, cast: castArray });
   };
 
   if (loading) {
@@ -182,8 +225,9 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
         </FuturisticAdminCard>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Information */}
+        <div className="lg:col-span-2">
           <FuturisticAdminCard
             title="Series Information"
             icon={<FaFilm />}
@@ -221,7 +265,7 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-200 mb-2">
                     Year
@@ -239,16 +283,15 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-200 mb-2">
-                    Age Limit
+                    Release Date
                   </label>
                   <input
-                    type="number"
-                    placeholder="Age restriction"
-                    value={seriesData.limit.toString()}
+                    type="date"
+                    value={seriesData.releaseDate}
                     onChange={(e) =>
                       setSeriesData({
                         ...seriesData,
-                        limit: parseInt(e.target.value) || 0,
+                        releaseDate: e.target.value,
                       })
                     }
                     className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 placeholder:text-slate-400"
@@ -256,7 +299,7 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-200 mb-2">
                     Genre
@@ -303,19 +346,157 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
+                    Total Seasons
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Number of seasons"
+                    value={(seriesData.totalSeasons ?? 0).toString()}
+                    onChange={(e) =>
+                      setSeriesData({
+                        ...seriesData,
+                        totalSeasons: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
+                    Language
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Main language"
+                    value={seriesData.language}
+                    onChange={(e) =>
+                      setSeriesData({ ...seriesData, language: e.target.value })
+                    }
+                    className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
+                    Age Limit
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Age restriction"
+                    value={(seriesData.limit ?? 0).toString()}
+                    onChange={(e) =>
+                      setSeriesData({
+                        ...seriesData,
+                        limit: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
+                    Maturity Rating
+                  </label>
+                  <select
+                    value={seriesData.maturityRating}
+                    onChange={(e) =>
+                      setSeriesData({
+                        ...seriesData,
+                        maturityRating: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300"
+                  >
+                    <option value="TV-Y">TV-Y (All Children)</option>
+                    <option value="TV-Y7">TV-Y7 (7+ Years)</option>
+                    <option value="TV-G">TV-G (General Audience)</option>
+                    <option value="TV-PG">TV-PG (Parental Guidance)</option>
+                    <option value="TV-14">TV-14 (14+ Years)</option>
+                    <option value="TV-MA">TV-MA (Mature Audience)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
+                    Tags (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="action, adventure, mystery"
+                    value={seriesData.tags.join(", ")}
+                    onChange={handleTagsChange}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 placeholder:text-slate-400"
+                  />
+                  {seriesData.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {seriesData.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-blue-600/30 text-blue-300 text-xs rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
+                    Original Series
+                  </label>
+                  <div className="mt-2 flex items-center">
+                    <input
+                      type="checkbox"
+                      id="isOriginal"
+                      checked={seriesData.isOriginal}
+                      onChange={(e) =>
+                        setSeriesData({
+                          ...seriesData,
+                          isOriginal: e.target.checked,
+                        })
+                      }
+                      className="w-5 h-5 rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-500"
+                    />
+                    <label htmlFor="isOriginal" className="ml-2 text-slate-300">
+                      Mark as platform original series
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-200 mb-2">
-                  Total Seasons
+                  Cast (comma-separated)
                 </label>
                 <input
-                  type="number"
-                  placeholder="Number of seasons"
-                  value={seriesData.totalSeasons.toString()}
+                  type="text"
+                  placeholder="John Doe, Jane Smith"
+                  value={seriesData.cast.join(", ")}
+                  onChange={handleCastChange}
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 placeholder:text-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-200 mb-2">
+                  Director
+                </label>
+                <input
+                  type="text"
+                  placeholder="Director name"
+                  value={seriesData.director}
                   onChange={(e) =>
-                    setSeriesData({
-                      ...seriesData,
-                      totalSeasons: parseInt(e.target.value) || 1,
-                    })
+                    setSeriesData({ ...seriesData, director: e.target.value })
                   }
                   className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 placeholder:text-slate-400"
                 />
@@ -324,6 +505,7 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
           </FuturisticAdminCard>
         </div>
 
+        {/* Media Assets */}
         <div>
           <FuturisticAdminCard
             title="Media Assets"
@@ -339,6 +521,10 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
                   folder="series/posters"
                   accept="image/*"
                 />
+                <p className="text-xs text-slate-400 mt-1">
+                  This is the primary poster shown in browse views (Recommended:
+                  500x750px)
+                </p>
               </div>
 
               <div>
@@ -349,6 +535,9 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
                   folder="series/title-images"
                   accept="image/*"
                 />
+                <p className="text-xs text-slate-400 mt-1">
+                  Image with the series title/logo (Recommended: 500x200px)
+                </p>
               </div>
 
               <div>
@@ -359,6 +548,10 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
                   folder="series/thumbnails"
                   accept="image/*"
                 />
+                <p className="text-xs text-slate-400 mt-1">
+                  Smaller thumbnail for lists and recommendations (Recommended:
+                  300x200px)
+                </p>
               </div>
 
               <div>
@@ -367,31 +560,45 @@ const SeriesForm = ({ seriesId, isEdit = false }: SeriesFormProps) => {
                 </label>
                 <input
                   type="text"
-                  placeholder="Enter trailer URL"
+                  placeholder="YouTube or other video URL"
                   value={seriesData.trailer}
                   onChange={(e) =>
                     setSeriesData({ ...seriesData, trailer: e.target.value })
                   }
                   className="w-full px-4 py-3 rounded-lg bg-slate-800/80 backdrop-blur-md text-white border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300 placeholder:text-slate-400"
                 />
+                {seriesData.trailer && (
+                  <div className="mt-3 bg-slate-900 p-2 rounded">
+                    <p className="text-xs text-slate-400 mb-2">
+                      Trailer Preview:
+                    </p>
+                    <div className="relative aspect-video w-full overflow-hidden rounded">
+                      <iframe
+                        src={seriesData.trailer.replace("watch?v=", "embed/")}
+                        className="absolute inset-0 w-full h-full"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </FuturisticAdminCard>
 
-          <div className="mt-6 flex justify-end space-x-4">
+          <div className="mt-6 flex justify-end space-x-3">
             <FuturisticAdminButton
               type="button"
               variant="secondary"
-              onClick={() => router.back()}
+              onClick={() => router.push("/series")}
             >
               Cancel
             </FuturisticAdminButton>
-
             <FuturisticAdminButton
               type="submit"
               variant="primary"
               loading={submitting}
-              disabled={submitting}
             >
               {isEdit ? "Update Series" : "Create Series"}
             </FuturisticAdminButton>

@@ -60,7 +60,7 @@ export default function SeriesList() {
 
       try {
         setLoading(true);
-        const res = await axios.get("/api/series", {
+        const res = await axios.get("/api/movies?type=series", {
           headers: {
             token: `Bearer ${user.accessToken}`,
           },
@@ -192,7 +192,7 @@ export default function SeriesList() {
     if (!confirm("Are you sure you want to delete this series?")) return;
 
     try {
-      await axios.delete(`/api/series/${id}`, {
+      await axios.delete(`/api/movies/${id}`, {
         headers: { token: `Bearer ${user?.accessToken}` },
       });
 
@@ -303,7 +303,9 @@ export default function SeriesList() {
               <option value="">All Statuses</option>
               {statuses.map((status) => (
                 <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {status
+                    ? status.charAt(0).toUpperCase() + status.slice(1)
+                    : "Unknown"}
                 </option>
               ))}
             </select>
@@ -473,8 +475,10 @@ export default function SeriesList() {
                       : "bg-amber-900/50 text-amber-300"
                   }`}
                 >
-                  {series.status.charAt(0).toUpperCase() +
-                    series.status.slice(1)}
+                  {series.status
+                    ? series.status.charAt(0).toUpperCase() +
+                      series.status.slice(1)
+                    : "Unknown"}
                 </span>
               </div>
 
