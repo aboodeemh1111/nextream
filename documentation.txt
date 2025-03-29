@@ -1,0 +1,448 @@
+# NEXTREAM PROJECT DOCUMENTATION
+
+## PROJECT OVERVIEW
+
+Nextream is a full-featured video streaming platform that provides services similar to popular streaming platforms like Netflix. The project consists of three main components:
+
+1. **Client Application**: A Next.js-based frontend for end users to browse, search, and stream content
+2. **Admin Panel**: A Next.js admin dashboard for content management, user administration, and analytics
+3. **Backend API**: A Node.js/Express backend that serves both the client and admin applications
+
+The platform offers features including user authentication, content browsing, video playback, series management with seasons and episodes, user reviews, personalized recommendations, and comprehensive admin tools.
+
+## TECHNICAL ARCHITECTURE
+
+### Current Architecture
+
+```
+┌─────────────┐    ┌─────────────┐
+│             │    │             │
+│  Client App │    │  Admin Panel│
+│  (Next.js)  │    │  (Next.js)  │
+│             │    │             │
+└──────┬──────┘    └──────┬──────┘
+       │                  │
+       │                  │
+       │    ┌─────────────┴─────────┐
+       │    │                       │
+       └────►   Backend API         │
+            │   (Node.js/Express)   │
+            │                       │
+            └───────────┬───────────┘
+                        │
+                        │
+            ┌───────────┴───────────┐
+            │                       │
+            │     MongoDB Database  │
+            │                       │
+            └───────────┬───────────┘
+                        │
+            ┌───────────┴───────────┐
+            │                       │
+            │  File Storage System  │
+            │                       │
+            └───────────────────────┘
+```
+
+### Technology Stack
+
+1. **Frontend (Client & Admin)**
+   - Next.js 15.2.1 (React 19.0.0)
+   - TypeScript
+   - MUI (Material-UI) v7 for Admin UI
+   - Tailwind CSS for Client UI
+   - React Context API for state management
+   - Axios for API requests
+
+2. **Backend**
+   - Node.js
+   - Express.js
+   - MongoDB (with Mongoose ODM)
+   - JSON Web Tokens (JWT) for authentication
+   - Various middleware for security and performance
+
+3. **Infrastructure**
+   - Currently deployed as monolithic application
+   - Static file hosting for media content
+   - No dedicated caching solution in place
+
+## CODEBASE STRUCTURE AND EXPLANATION
+
+### Client Application (`nextream-client/`)
+
+The client-side application is built with Next.js and organized as follows:
+
+1. **`src/app/`**: Contains the application routes using Next.js App Router
+   - `page.tsx`: Home page component displaying featured content and recommendations
+   - `login/page.tsx`: User login page
+   - `register/page.tsx`: User registration page
+   - `series/[id]/page.tsx`: Series detail page with seasons and episodes
+   - Other content browsing and user profile pages
+
+2. **`src/components/`**: Reusable UI components
+   - `FuturisticBackground.tsx`: Animated background for the application
+   - `FuturisticButton.tsx`: Styled button component
+   - `FuturisticInput.tsx`: Styled input component
+   - `Navbar.tsx`: Site navigation component
+   - `Featured.tsx`: Featured content carousel
+   - `MovieList.tsx`: Grid display of movies
+   - `SeriesList.tsx`: Grid display of series
+   - Various playback and content display components
+
+3. **`src/context/`**: Context providers for state management
+   - `AuthContext.tsx`: Manages user authentication state
+
+### Admin Panel (`nextream-admin/`)
+
+The admin panel is also built with Next.js but with a focus on content management:
+
+1. **`src/app/`**: Contains admin application routes
+   - `page.tsx`: Dashboard home page
+   - `movies/page.tsx`: Movie management page
+   - `series/page.tsx`: Series management page
+   - `series/[id]/page.tsx`: Series detail management with seasons/episodes
+   - `users/page.tsx`: User management page
+   - `reviews/page.tsx`: Review management page
+
+2. **`src/components/`**: Admin UI components
+   - `AdminLayout.tsx`: Main layout wrapper for admin pages
+   - `Dashboard.tsx`: Analytics dashboard component
+   - `Sidebar.tsx`: Admin navigation sidebar
+   - `Header.tsx`: Admin header with user controls
+   - `MovieForm.tsx`: Form for creating/editing movies
+   - `SeriesForm.tsx`: Form for creating/editing series
+   - `forms/SeasonForm.tsx`: Form for season management
+   - `forms/EpisodeForm.tsx`: Form for episode management
+   - Various tables and data display components
+
+3. **`src/context/`**: Admin context providers
+   - `AuthContext.tsx`: Manages admin authentication state
+
+### Backend API (`onstream/api/`)
+
+The backend is a Node.js/Express application structured as follows:
+
+1. **`index.js`**: Main entry point and Express configuration
+
+2. **`routes/`**: API route handlers
+   - `auth.js`: Authentication routes (login, register)
+   - `users.js`: User management routes
+   - `movies.js`: Movie and general content routes
+   - `lists.js`: Content list management routes
+   - `seasons.js`: TV show season management routes
+   - `episodes.js`: Episode management routes
+   - `reviews.js`: User review management routes
+
+3. **`models/`**: Mongoose data models
+   - `User.js`: User account model
+   - `Movie.js`: Content model (covers both movies and series)
+   - `List.js`: Content list model
+   - `Season.js`: TV show season model
+   - `Episode.js`: Episode model
+   - `Review.js`: User review model
+
+4. **`verifyToken.js`**: Authentication middleware
+
+## CURRENT ISSUES AND PERFORMANCE BOTTLENECKS
+
+The application is currently experiencing significant performance issues, particularly when the admin panel and client application are accessed simultaneously. Key issues include:
+
+1. **Shared Backend Resources**
+   - The single backend serves both admin and client requests, leading to resource contention
+   - Admin operations, often being resource-intensive, can slow down client requests
+
+2. **Inefficient Database Access**
+   - No database indexing strategy for common query patterns
+   - Fetching full documents when only partial data is needed
+   - No pagination for large result sets
+
+3. **Lack of Caching**
+   - Every request hits the database, even for rarely-changing data
+   - No caching headers for static assets or API responses
+   - Repeated computation of derived data
+
+4. **Authentication Overhead**
+   - Token verification on every request adds latency
+   - No token caching or efficient validation
+
+5. **Monolithic Architecture Limitations**
+   - Scaling requires duplicating the entire application
+   - Cannot scale admin and client services independently
+   - Single point of failure
+
+6. **Unoptimized Frontend**
+   - Large bundle sizes
+   - Inefficient rendering patterns
+   - No code splitting or lazy loading
+
+## PLANNED IMPROVEMENTS
+
+Based on the optimization plan, the following improvements will be implemented:
+
+### Phase 1: Immediate Performance Relief
+
+1. **Database Optimization**
+   - Add indexes to the following collections:
+     * `movies` collection: `{ isSeries: 1, genre: 1 }`, `{ year: 1 }`, `{ title: 1 }`
+     * `users` collection: `{ email: 1 }`, `{ username: 1 }`
+     * `episodes` collection: `{ seasonId: 1, episodeNumber: 1 }`
+     * `seasons` collection: `{ seriesId: 1, seasonNumber: 1 }`
+   - Implement database connection pooling:
+     * Configure Mongoose with `poolSize` option
+     * Set appropriate `connectTimeoutMS` and `socketTimeoutMS`
+   - Optimize queries:
+     * Add `.lean()` to read operations
+     * Use `.select()` to project only needed fields
+     * Implement `.limit()` and `.skip()` for pagination
+
+2. **Caching Implementation**
+   - Set up Redis for server-side caching:
+     * Cache homepage content for 5-15 minutes
+     * Cache movie/series metadata for 1-2 hours
+     * Cache user profiles for 30 minutes
+   - Add proper cache headers:
+     * `Cache-Control: public, max-age=3600` for static assets
+     * `Cache-Control: private, max-age=300` for personalized responses
+     * `ETag` support for all API responses
+   - Implement client-side caching in Next.js:
+     * Utilize SWR or React Query with appropriate staleTime
+
+3. **Code-Level Optimizations**
+   - Refactor API endpoints to support pagination:
+     * Add `limit` and `page` parameters to all list endpoints
+     * Return metadata about total items and page count
+   - Optimize authentication middleware:
+     * Cache decoded tokens
+     * Implement more efficient token validation
+   - Implement compression middleware:
+     * Use `compression` Express middleware
+     * Configure proper thresholds and compression levels
+
+### Phase 2: Architectural Changes
+
+1. **Service Separation**
+   - Split backend into separate services:
+     * `nextream-api-client`: Client-facing API endpoints
+     * `nextream-api-admin`: Admin-only endpoints
+     * `nextream-auth`: Authentication service
+     * `nextream-media`: Media processing service
+   - Implement inter-service communication:
+     * Use HTTP for synchronous requests
+     * Use message queues for asynchronous operations
+
+2. **API Gateway Implementation**
+   - Set up API Gateway using Express Gateway or similar:
+     * Configure routing rules based on request path
+     * Implement rate limiting (100 req/min for client, 300 req/min for admin)
+     * Add request logging and monitoring
+     * Implement circuit breaker patterns for resilience
+
+3. **Database Scaling**
+   - Configure MongoDB replica set:
+     * Primary node for writes
+     * Secondary nodes for reads
+     * Configure read preference based on operation type
+   - Implement data partitioning strategy:
+     * Partition by content type (movies vs series)
+     * Consider time-based partitioning for logs and analytics
+
+### Phase 3: Infrastructure Improvements
+
+1. **Containerization and Orchestration**
+   - Create Docker images for each service
+   - Implement Kubernetes deployment:
+     * Configure resource limits and requests
+     * Set up autoscaling based on CPU/memory metrics
+     * Implement health checks and readiness probes
+
+2. **Load Balancing and CDN Integration**
+   - Set up load balancing for API services
+   - Configure CDN for static assets:
+     * Media thumbnails
+     * Images and posters
+     * CSS/JS assets
+
+3. **Background Processing**
+   - Implement job queue with Bull.js:
+     * Move report generation to background jobs
+     * Handle content processing asynchronously
+     * Schedule periodic cleanup and maintenance tasks
+
+### Phase 4: Monitoring and Continuous Improvement
+
+1. **Monitoring Infrastructure**
+   - Set up Prometheus and Grafana:
+     * Track API response times
+     * Monitor database performance
+     * Collect error rates and system metrics
+   - Implement custom logging:
+     * Structured logging with Winston
+     * Centralized log collection
+
+2. **Performance Testing and Tuning**
+   - Develop load testing scenarios:
+     * Simulate peak user traffic
+     * Test admin operations during high client load
+     * Measure system resilience under failure conditions
+
+## CODE IMPLEMENTATION DETAILS
+
+### Database Indexing Example:
+
+Current model definition in `Season.js`:
+```javascript
+const SeasonSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    description: { type: String },
+    seasonNumber: { type: Number, required: true },
+    year: { type: String },
+    poster: { type: String },
+    episodes: { type: Number, default: 0 },
+    seriesId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Movie",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+```
+
+Optimized model with indexes:
+```javascript
+const SeasonSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    description: { type: String },
+    seasonNumber: { type: Number, required: true },
+    year: { type: String },
+    poster: { type: String },
+    episodes: { type: Number, default: 0 },
+    seriesId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Movie",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+// Add indexes for common queries
+SeasonSchema.index({ seriesId: 1, seasonNumber: 1 }, { unique: true });
+SeasonSchema.index({ title: 1 });
+```
+
+### Redis Caching Implementation Example:
+
+```javascript
+const redis = require('redis');
+const { promisify } = require('util');
+
+const client = redis.createClient({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: process.env.REDIS_PORT || 6379
+});
+
+const getAsync = promisify(client.get).bind(client);
+const setAsync = promisify(client.set).bind(client);
+const expireAsync = promisify(client.expire).bind(client);
+
+// Cache middleware
+const cacheMiddleware = (ttl = 3600) => async (req, res, next) => {
+  if (req.method !== 'GET') return next();
+  
+  const cacheKey = `api:${req.originalUrl}`;
+  
+  try {
+    const cachedData = await getAsync(cacheKey);
+    if (cachedData) {
+      return res.json(JSON.parse(cachedData));
+    }
+    
+    // Store original res.json
+    const originalJson = res.json;
+    
+    // Override res.json method to cache response
+    res.json = function(data) {
+      setAsync(cacheKey, JSON.stringify(data));
+      expireAsync(cacheKey, ttl);
+      return originalJson.call(this, data);
+    };
+    
+    next();
+  } catch (err) {
+    console.error('Cache error:', err);
+    next();
+  }
+};
+
+// Usage in routes
+router.get('/series/:seriesId', cacheMiddleware(1800), async (req, res) => {
+  // Route handler logic
+});
+```
+
+### API Gateway Configuration Example:
+
+```javascript
+// api-gateway.js
+const express = require('express');
+const httpProxy = require('http-proxy');
+const rateLimit = require('express-rate-limit');
+
+const app = express();
+const proxy = httpProxy.createProxyServer();
+
+// Rate limiting middleware
+const clientLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 300, // 300 requests per minute
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+// Proxy middleware
+const proxyMiddleware = (target) => (req, res) => {
+  proxy.web(req, res, { target }, (err) => {
+    console.error('Proxy error:', err);
+    res.status(500).json({ error: 'Proxy error' });
+  });
+};
+
+// Auth verification middleware
+const authMiddleware = (req, res, next) => {
+  // Token verification logic
+  next();
+};
+
+// Routes
+app.use('/api/auth', proxyMiddleware('http://auth-service:3000'));
+
+// Client routes
+app.use('/api/movies', clientLimiter, proxyMiddleware('http://client-api:3000'));
+app.use('/api/series', clientLimiter, proxyMiddleware('http://client-api:3000'));
+
+// Admin routes
+app.use('/api/admin', authMiddleware, adminLimiter, proxyMiddleware('http://admin-api:3000'));
+
+// Media service routes
+app.use('/api/media', proxyMiddleware('http://media-service:3000'));
+
+app.listen(8000, () => {
+  console.log('API Gateway running on port 8000');
+});
+```
+
+## CONCLUSION
+
+The Nextream platform has a solid foundation but requires significant architectural and performance optimizations to support a large user base. By implementing the outlined improvements in stages, we can gradually transform the application from a monolithic architecture to a scalable, resilient microservices-based platform.
+
+The most immediate gains will come from database optimizations and caching implementation, while the long-term scalability will be achieved through service separation and infrastructure improvements. Throughout this process, monitoring will be crucial to identify bottlenecks and validate the effectiveness of each optimization.
+
+Upon completion of all phases, the Nextream platform will be able to handle thousands of concurrent users while providing a responsive experience for both regular users and admin operators.
