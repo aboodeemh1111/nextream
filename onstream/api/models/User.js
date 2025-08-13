@@ -50,6 +50,20 @@ const UserSchema = new mongoose.Schema(
       startDate: { type: Date },
       endDate: { type: Date },
       isActive: { type: Boolean, default: true }
+    },
+    // User preferences for UI/Playback/Accessibility
+    preferences: {
+      autoplayPreviews: { type: Boolean, default: true },
+      reduceMotion: { type: Boolean, default: false },
+      theme: { type: String, default: "system" }, // system | dark | light
+      textSize: { type: String, default: "md" }, // sm | md | lg
+      captionsStyle: {
+        background: { type: String, default: "transparent" },
+        color: { type: String, default: "#FFFFFF" },
+        fontSize: { type: String, default: "medium" }
+      },
+      maturityRating: { type: String, default: "PG-13" },
+      language: { type: String, default: "en" }
     }
   },
   { timestamps: true }

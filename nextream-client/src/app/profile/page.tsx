@@ -45,11 +45,23 @@ interface UserProfile {
   watchHistory: WatchHistoryItem[];
   currentlyWatching: CurrentlyWatchingItem[];
   watchlist: Movie[];
+  preferences?: any;
+}
+
+interface ProfileSummary {
+  username: string;
+  profilePic?: string;
+  subscriptionStatus?: { plan?: string; isActive?: boolean };
+  preferences?: any;
+  metrics: { totalWatchTime: number; totalTitlesWatched: number; inProgress: number; favoritesCount: number; myListCount: number };
+  topGenres: { genre: string; count: number }[];
+  recentLogins: { date?: string; device?: string; location?: string }[];
 }
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [summary, setSummary] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, logout } = useAuth();
@@ -70,6 +82,11 @@ export default function Profile() {
           },
         });
         setProfile(res.data);
+        // Fetch summary
+        const sum = await axios.get('/api/users/profile/summary', {
+          headers: { token: `Bearer ${user.accessToken}` }
+        });
+        setSummary(sum.data);
       } catch (err) {
         console.error('Error fetching profile:', err);
         setError('Failed to load profile');
@@ -153,7 +170,12 @@ export default function Profile() {
           
           <div className="text-center md:text-left">
             <h1 className="text-white text-3xl font-bold mb-2">{profile.username}</h1>
-            <p className="text-gray-400 mb-4">{profile.email}</p>
+            <p className="text-gray-400 mb-2">{profile.email}</p>
+            {summary?.subscriptionStatus?.plan && (
+              <p className="text-xs inline-block px-2 py-1 rounded bg-red-600/20 text-red-400 mb-4">
+                Plan: {summary.subscriptionStatus.plan} {summary.subscriptionStatus?.isActive ? '(Active)' : '(Inactive)'}
+              </p>
+            )}
             
             <button 
               className="bg-gray-700 text-white px-4 py-2 rounded flex items-center mx-auto md:mx-0 hover:bg-gray-600"
@@ -163,6 +185,54 @@ export default function Profile() {
             </button>
           </div>
         </div>
+
+        {/* Quick Stats + Top Genres */}
+        {summary && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-400 text-sm">Total watch time</p>
+              <p className="text-white text-2xl font-semibold">{Math.round(summary.metrics.totalWatchTime / 60)} min</p>
+            </div>
+            <div className="bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-400 text-sm">Titles watched</p>
+              <p className="text-white text-2xl font-semibold">{summary.metrics.totalTitlesWatched}</p>
+            </div>
+            <div className="bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-400 text-sm">In progress</p>
+              <p className="text-white text-2xl font-semibold">{summary.metrics.inProgress}</p>
+            </div>
+            <div className="bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-400 text-sm">Favorites</p>
+              <p className="text-white text-2xl font-semibold">{summary.metrics.favoritesCount}</p>
+            </div>
+            <div className="md:col-span-2 bg-gray-800 rounded-lg p-4">
+              <p className="text-white text-lg font-semibold mb-2">Top genres</p>
+              <div className="flex flex-wrap gap-2">
+                {summary.topGenres.length === 0 ? (
+                  <span className="text-gray-400 text-sm">No data yet</span>
+                ) : summary.topGenres.map((g) => (
+                  <span key={g.genre} className="px-2 py-1 rounded bg-white/10 text-white text-sm">
+                    {g.genre} <span className="text-gray-400">×{g.count}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="md:col-span-2 bg-gray-800 rounded-lg p-4">
+              <p className="text-white text-lg font-semibold mb-2">Recent logins</p>
+              {summary.recentLogins.length === 0 ? (
+                <p className="text-gray-400 text-sm">No recent login data</p>
+              ) : (
+                <ul className="text-gray-300 text-sm space-y-1">
+                  {summary.recentLogins.map((l, idx) => (
+                    <li key={idx}>
+                      {formatDate(l.date || new Date().toISOString())} • {l.device || 'device'} • {l.location || 'unknown'}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
         
         {/* Navigation Tabs */}
         <div className="flex flex-wrap border-b border-gray-700 mb-6">

@@ -201,14 +201,15 @@ const Featured = ({ type }: { type?: string }) => {
             {getRecommendationLabel()}
           </div>
           
-          {content.imgTitle ? (
+            {content.imgTitle ? (
             <div className="relative w-full max-w-[400px] h-auto mb-6">
               <Image
                 src={content.imgTitle}
                 alt={content.title}
                 width={400}
                 height={150}
-                style={{ width: '100%', height: 'auto' }}
+                sizes="(max-width: 420px) 90vw, 400px"
+                style={{ width: 'auto', height: 'auto', maxWidth: '100%' }}
                 priority
               />
             </div>

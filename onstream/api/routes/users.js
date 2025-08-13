@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Movie = require("../models/Movie");
 const CryptoJS = require("crypto-js");
 const verify = require("../verifyToken");
+const mongoose = require("mongoose");
 //UPDATE
 
 router.put("/:id", verify, async (req, res) => {
@@ -93,7 +94,7 @@ router.get("/stats", async (req, res) => {
         },
       },
     ]);
-    res.status(200).json(data)
+    res.status(200).json(data);
   } catch (err) {
     res.status(500).json(err);
   }
@@ -102,23 +103,125 @@ router.get("/stats", async (req, res) => {
 // GET USER PROFILE
 router.get("/profile", verify, async (req, res) => {
   try {
+    // If DB not connected, return a minimal stub to avoid 500s in dev
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(200).json({
+        _id: req.user.id,
+        username: "Guest",
+        email: "",
+        profilePic: "",
+        myList: [],
+        favorites: [],
+        watchHistory: [],
+        currentlyWatching: [],
+        watchlist: [],
+        preferences: {},
+      });
+    }
+
     const user = await User.findById(req.user.id)
       .select("-password")
       .populate("myList", "title img imgSm year")
       .populate("favorites", "title img imgSm year")
       .populate({
         path: "watchHistory.movie",
-        select: "title img imgSm year"
+        select: "title img imgSm year",
       })
       .populate({
         path: "currentlyWatching.movie",
-        select: "title img imgSm year"
+        select: "title img imgSm year",
       })
       .populate("watchlist", "title img imgSm year");
-    
+
     res.status(200).json(user);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json({ error: "PROFILE_ERROR", message: err.message });
+  }
+});
+
+// GET USER PROFILE SUMMARY (stats/top genres/devices)
+router.get("/profile/summary", verify, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .select(
+        "username email profilePic totalWatchTime loginHistory genrePreferences subscriptionStatus preferences watchHistory currentlyWatching favorites myList"
+      )
+      .lean();
+
+    if (!user) return res.status(404).json({ error: "USER_NOT_FOUND" });
+
+    // Compute top genres
+    const preferencesMap = user.genrePreferences || new Map();
+    const entries = Array.from(
+      preferencesMap instanceof Map
+        ? preferencesMap.entries()
+        : Object.entries(preferencesMap)
+    );
+    const topGenres = entries
+      .sort((a, b) => Number(b[1]) - Number(a[1]))
+      .slice(0, 5)
+      .map(([genre, count]) => ({ genre, count }));
+
+    const totalTitlesWatched = user.watchHistory?.length || 0;
+    const inProgress = user.currentlyWatching?.length || 0;
+    const favoritesCount = user.favorites?.length || 0;
+    const myListCount = user.myList?.length || 0;
+
+    const lastLogins = (user.loginHistory || []).slice(-5).reverse();
+
+    const summary = {
+      username: user.username,
+      profilePic: user.profilePic,
+      subscriptionStatus: user.subscriptionStatus,
+      preferences: user.preferences || {},
+      metrics: {
+        totalWatchTime: user.totalWatchTime || 0,
+        totalTitlesWatched,
+        inProgress,
+        favoritesCount,
+        myListCount,
+      },
+      topGenres,
+      recentLogins: lastLogins,
+    };
+
+    res.status(200).json(summary);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "PROFILE_SUMMARY_ERROR", message: err.message });
+  }
+});
+
+// UPDATE USER PREFERENCES
+router.post("/preferences", verify, async (req, res) => {
+  try {
+    const allowed = [
+      "autoplayPreviews",
+      "reduceMotion",
+      "theme",
+      "textSize",
+      "captionsStyle",
+      "maturityRating",
+      "language",
+    ];
+    const update = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        update[`preferences.${key}`] = req.body[key];
+      }
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: update },
+      { new: true, select: "preferences" }
+    );
+    res.status(200).json(updated.preferences);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "PREFERENCES_UPDATE_ERROR", message: err.message });
   }
 });
 
@@ -139,7 +242,7 @@ router.post("/mylist", verify, async (req, res) => {
     }
 
     await User.findByIdAndUpdate(req.user.id, {
-      $push: { myList: movieId }
+      $push: { myList: movieId },
     });
 
     res.status(200).json("Movie added to My List");
@@ -152,7 +255,7 @@ router.post("/mylist", verify, async (req, res) => {
 router.delete("/mylist/:movieId", verify, async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.user.id, {
-      $pull: { myList: req.params.movieId }
+      $pull: { myList: req.params.movieId },
     });
 
     res.status(200).json("Movie removed from My List");
@@ -188,7 +291,7 @@ router.post("/favorites", verify, async (req, res) => {
     }
 
     await User.findByIdAndUpdate(req.user.id, {
-      $push: { favorites: movieId }
+      $push: { favorites: movieId },
     });
 
     res.status(200).json("Movie added to Favorites");
@@ -201,7 +304,7 @@ router.post("/favorites", verify, async (req, res) => {
 router.delete("/favorites/:movieId", verify, async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.user.id, {
-      $pull: { favorites: req.params.movieId }
+      $pull: { favorites: req.params.movieId },
     });
 
     res.status(200).json("Movie removed from Favorites");
@@ -225,17 +328,18 @@ router.post("/watching", verify, async (req, res) => {
   try {
     const { movieId, progress } = req.body;
     if (!movieId) return res.status(400).json("Movie ID is required");
-    if (progress === undefined) return res.status(400).json("Progress is required");
+    if (progress === undefined)
+      return res.status(400).json("Progress is required");
 
     // Check if movie exists
     const movie = await Movie.findById(movieId);
     if (!movie) return res.status(404).json("Movie not found");
 
     const user = await User.findById(req.user.id);
-    
+
     // Check if movie is in currentlyWatching
     const watchingIndex = user.currentlyWatching.findIndex(
-      item => item.movie.toString() === movieId
+      (item) => item.movie.toString() === movieId
     );
 
     if (watchingIndex > -1) {
@@ -247,7 +351,7 @@ router.post("/watching", verify, async (req, res) => {
       user.currentlyWatching.push({
         movie: movieId,
         progress,
-        lastWatchedAt: new Date()
+        lastWatchedAt: new Date(),
       });
     }
 
@@ -255,7 +359,7 @@ router.post("/watching", verify, async (req, res) => {
     if (progress >= 95) {
       // Add to watch history if not already there
       const historyIndex = user.watchHistory.findIndex(
-        item => item.movie.toString() === movieId
+        (item) => item.movie.toString() === movieId
       );
 
       if (historyIndex === -1) {
@@ -263,14 +367,14 @@ router.post("/watching", verify, async (req, res) => {
           movie: movieId,
           watchedAt: new Date(),
           progress: 100,
-          completed: true
+          completed: true,
         });
       }
 
       // Remove from currently watching if progress is 100%
       if (progress === 100) {
         user.currentlyWatching = user.currentlyWatching.filter(
-          item => item.movie.toString() !== movieId
+          (item) => item.movie.toString() !== movieId
         );
       }
     }
@@ -287,14 +391,14 @@ router.get("/watching", verify, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate({
       path: "currentlyWatching.movie",
-      select: "title img imgSm year duration"
+      select: "title img imgSm year duration",
     });
-    
+
     // Sort by last watched (most recent first)
-    const sortedWatching = user.currentlyWatching.sort((a, b) => 
-      new Date(b.lastWatchedAt) - new Date(a.lastWatchedAt)
+    const sortedWatching = user.currentlyWatching.sort(
+      (a, b) => new Date(b.lastWatchedAt) - new Date(a.lastWatchedAt)
     );
-    
+
     res.status(200).json(sortedWatching);
   } catch (err) {
     res.status(500).json(err);
@@ -306,14 +410,14 @@ router.get("/history", verify, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate({
       path: "watchHistory.movie",
-      select: "title img imgSm year"
+      select: "title img imgSm year",
     });
-    
+
     // Sort by watched date (most recent first)
-    const sortedHistory = user.watchHistory.sort((a, b) => 
-      new Date(b.watchedAt) - new Date(a.watchedAt)
+    const sortedHistory = user.watchHistory.sort(
+      (a, b) => new Date(b.watchedAt) - new Date(a.watchedAt)
     );
-    
+
     res.status(200).json(sortedHistory);
   } catch (err) {
     res.status(500).json(err);
@@ -337,7 +441,7 @@ router.post("/watchlist", verify, async (req, res) => {
     }
 
     await User.findByIdAndUpdate(req.user.id, {
-      $push: { watchlist: movieId }
+      $push: { watchlist: movieId },
     });
 
     res.status(200).json("Movie added to Watchlist");
@@ -350,7 +454,7 @@ router.post("/watchlist", verify, async (req, res) => {
 router.delete("/watchlist/:movieId", verify, async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.user.id, {
-      $pull: { watchlist: req.params.movieId }
+      $pull: { watchlist: req.params.movieId },
     });
 
     res.status(200).json("Movie removed from Watchlist");
@@ -378,12 +482,12 @@ router.put("/currently-watching/update/:id", verify, async (req, res) => {
     }
 
     const user = await User.findById(req.user.id);
-    
+
     // Find the movie in currently watching
     const movieIndex = user.currentlyWatching.findIndex(
-      item => item.movie.toString() === req.params.id
+      (item) => item.movie.toString() === req.params.id
     );
-    
+
     if (movieIndex === -1) {
       // Movie not in currently watching, add it
       user.currentlyWatching.push({
@@ -391,30 +495,32 @@ router.put("/currently-watching/update/:id", verify, async (req, res) => {
         lastWatchedAt: new Date(),
         progress: req.body.progress || 0,
         watchTime: req.body.watchTime || 0,
-        pausePoints: req.body.pausePoints || []
+        pausePoints: req.body.pausePoints || [],
       });
     } else {
       // Update existing entry
       user.currentlyWatching[movieIndex].lastWatchedAt = new Date();
-      user.currentlyWatching[movieIndex].progress = req.body.progress || user.currentlyWatching[movieIndex].progress;
-      user.currentlyWatching[movieIndex].watchTime = req.body.watchTime || user.currentlyWatching[movieIndex].watchTime;
-      
+      user.currentlyWatching[movieIndex].progress =
+        req.body.progress || user.currentlyWatching[movieIndex].progress;
+      user.currentlyWatching[movieIndex].watchTime =
+        req.body.watchTime || user.currentlyWatching[movieIndex].watchTime;
+
       // Update pause points if provided
       if (req.body.pausePoints) {
         user.currentlyWatching[movieIndex].pausePoints = req.body.pausePoints;
       }
     }
-    
+
     // Update genre preferences
     if (movie.genre) {
       if (!user.genrePreferences) {
         user.genrePreferences = new Map();
       }
-      
+
       const currentCount = user.genrePreferences.get(movie.genre) || 0;
       user.genrePreferences.set(movie.genre, currentCount + 1);
     }
-    
+
     await user.save();
     res.status(200).json("Watch progress updated");
   } catch (err) {
@@ -432,47 +538,49 @@ router.put("/currently-watching/add/:id", verify, async (req, res) => {
     }
 
     const user = await User.findById(req.user.id);
-    
+
     // Check if movie is already in currently watching
     const movieIndex = user.currentlyWatching.findIndex(
-      item => item.movie.toString() === req.params.id
+      (item) => item.movie.toString() === req.params.id
     );
-    
+
     if (movieIndex === -1) {
       // Add to currently watching
       user.currentlyWatching.push({
         movie: req.params.id,
         lastWatchedAt: new Date(),
         progress: req.body.progress || 0,
-        watchTime: req.body.watchTime || 0
+        watchTime: req.body.watchTime || 0,
       });
-      
+
       // Update last login date for analytics
       user.lastLoginDate = new Date();
-      
+
       // Update total watch time
       if (req.body.watchTime) {
         user.totalWatchTime = (user.totalWatchTime || 0) + req.body.watchTime;
       }
-      
+
       // Update genre preferences
       if (movie.genre) {
         if (!user.genrePreferences) {
           user.genrePreferences = new Map();
         }
-        
+
         const currentCount = user.genrePreferences.get(movie.genre) || 0;
         user.genrePreferences.set(movie.genre, currentCount + 1);
       }
-      
+
       await user.save();
       res.status(200).json("Added to currently watching");
     } else {
       // Update existing entry
       user.currentlyWatching[movieIndex].lastWatchedAt = new Date();
-      user.currentlyWatching[movieIndex].progress = req.body.progress || user.currentlyWatching[movieIndex].progress;
-      user.currentlyWatching[movieIndex].watchTime = req.body.watchTime || user.currentlyWatching[movieIndex].watchTime;
-      
+      user.currentlyWatching[movieIndex].progress =
+        req.body.progress || user.currentlyWatching[movieIndex].progress;
+      user.currentlyWatching[movieIndex].watchTime =
+        req.body.watchTime || user.currentlyWatching[movieIndex].watchTime;
+
       await user.save();
       res.status(200).json("Updated currently watching");
     }
@@ -491,12 +599,12 @@ router.put("/watch-history/add/:id", verify, async (req, res) => {
     }
 
     const user = await User.findById(req.user.id);
-    
+
     // Check if movie is already in watch history
     const existingEntry = user.watchHistory.find(
-      item => item.movie.toString() === req.params.id
+      (item) => item.movie.toString() === req.params.id
     );
-    
+
     if (existingEntry) {
       // Increment rewatch count
       existingEntry.rewatchCount = (existingEntry.rewatchCount || 0) + 1;
@@ -504,7 +612,7 @@ router.put("/watch-history/add/:id", verify, async (req, res) => {
       existingEntry.progress = req.body.progress || 100;
       existingEntry.completed = req.body.completed || true;
       existingEntry.watchTime = req.body.watchTime || existingEntry.watchTime;
-      
+
       if (req.body.dropOffPoint) {
         existingEntry.dropOffPoint = req.body.dropOffPoint;
       }
@@ -517,25 +625,25 @@ router.put("/watch-history/add/:id", verify, async (req, res) => {
         completed: req.body.completed || true,
         watchTime: req.body.watchTime || 0,
         dropOffPoint: req.body.dropOffPoint,
-        rewatchCount: 0
+        rewatchCount: 0,
       });
     }
-    
+
     // Update total watch time
     if (req.body.watchTime) {
       user.totalWatchTime = (user.totalWatchTime || 0) + req.body.watchTime;
     }
-    
+
     // Update genre preferences
     if (movie.genre) {
       if (!user.genrePreferences) {
         user.genrePreferences = new Map();
       }
-      
+
       const currentCount = user.genrePreferences.get(movie.genre) || 0;
       user.genrePreferences.set(movie.genre, currentCount + 1);
     }
-    
+
     await user.save();
     res.status(200).json("Added to watch history");
   } catch (err) {
@@ -547,10 +655,12 @@ router.put("/watch-history/add/:id", verify, async (req, res) => {
 // GET WATCH HISTORY
 router.get("/watch-history", verify, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate("watchHistory.movie");
-    
+    const user = await User.findById(req.user.id).populate(
+      "watchHistory.movie"
+    );
+
     // Format the response
-    const watchHistory = user.watchHistory.map(item => {
+    const watchHistory = user.watchHistory.map((item) => {
       const movie = item.movie;
       return {
         _id: movie._id,
@@ -568,10 +678,10 @@ router.get("/watch-history", verify, async (req, res) => {
         progress: item.progress,
         completed: item.completed,
         watchTime: item.watchTime,
-        rewatchCount: item.rewatchCount
+        rewatchCount: item.rewatchCount,
       };
     });
-    
+
     res.status(200).json(watchHistory);
   } catch (err) {
     console.error("Error getting watch history:", err);
@@ -582,10 +692,12 @@ router.get("/watch-history", verify, async (req, res) => {
 // GET CURRENTLY WATCHING
 router.get("/currently-watching", verify, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate("currentlyWatching.movie");
-    
+    const user = await User.findById(req.user.id).populate(
+      "currentlyWatching.movie"
+    );
+
     // Format the response
-    const currentlyWatching = user.currentlyWatching.map(item => {
+    const currentlyWatching = user.currentlyWatching.map((item) => {
       const movie = item.movie;
       return {
         _id: movie._id,
@@ -601,10 +713,10 @@ router.get("/currently-watching", verify, async (req, res) => {
         duration: movie.duration,
         progress: item.progress,
         lastWatchedAt: item.lastWatchedAt,
-        watchTime: item.watchTime
+        watchTime: item.watchTime,
       };
     });
-    
+
     res.status(200).json(currentlyWatching);
   } catch (err) {
     console.error("Error getting currently watching:", err);
