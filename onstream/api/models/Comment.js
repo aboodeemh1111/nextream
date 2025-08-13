@@ -14,4 +14,8 @@ const CommentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Comment", CommentSchema); 
+// Performance indexes
+CommentSchema.index({ movieId: 1, createdAt: -1 });
+CommentSchema.index({ likes: -1 });
+
+module.exports = mongoose.model("Comment", CommentSchema);

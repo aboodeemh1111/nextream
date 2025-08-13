@@ -13,4 +13,8 @@ const ListSchema = new mongoose.Schema(
   }
 );
 
+// Performance indexes
+ListSchema.index({ type: 1, genre: 1 });
+ListSchema.index({ title: 1 });
+
 module.exports = mongoose.model("List", ListSchema);

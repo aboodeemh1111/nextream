@@ -1,5 +1,7 @@
 const express = require("express");
 const app = express();
+const compression = require("compression");
+const helmet = require("helmet");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
@@ -55,16 +57,25 @@ app.use(cors({
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'token']
 }));
 
-// Log incoming requests for debugging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - Origin: ${req.headers.origin || 'No origin'}`);
-  if (req.headers.token) {
-    console.log('Request with token:', req.headers.token.substring(0, 20) + '...');
-  }
-  next();
-});
+// Security headers and gzip compression
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+app.use(compression());
 
-app.use(express.json());
+// Trim noisy logs in production
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - Origin: ${req.headers.origin || 'No origin'}`);
+    if (req.headers.token) {
+      console.log('Request with token:', req.headers.token.substring(0, 20) + '...');
+    }
+    next();
+  });
+}
+
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Create a public directory for static files if it doesn't exist
 const publicDir = path.join(__dirname, 'public');

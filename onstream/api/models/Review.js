@@ -17,5 +17,7 @@ const ReviewSchema = new mongoose.Schema(
 
 // Compound index to ensure a user can only review a movie once
 ReviewSchema.index({ userId: 1, movieId: 1 }, { unique: true });
+ReviewSchema.index({ movieId: 1, createdAt: -1 });
+ReviewSchema.index({ likes: -1 });
 
 module.exports = mongoose.model("Review", ReviewSchema); 

@@ -38,17 +38,16 @@ const nextConfig = {
     unoptimized: process.env.NODE_ENV === 'development',
   },
   async rewrites() {
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/api/:path*',
+          destination: 'http://localhost:8800/api/:path*',
+        }
+      ];
+    }
+    // Production rewrites only in non-development
     return [
-      // In development, proxy to local API
-      ...(process.env.NODE_ENV === 'development' 
-        ? [
-            {
-              source: '/api/:path*',
-              destination: 'http://localhost:8800/api/:path*',
-            }
-          ] 
-        : []),
-      // Always include these rewrites for production to handle CORS
       {
         source: '/auth/:path*',
         destination: 'https://nextream-api.onrender.com/auth/:path*',

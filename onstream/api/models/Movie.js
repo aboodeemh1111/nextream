@@ -23,4 +23,11 @@ const MovieSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Performance indexes
+MovieSchema.index({ title: 1 });
+MovieSchema.index({ genre: 1 });
+MovieSchema.index({ isSeries: 1 });
+MovieSchema.index({ createdAt: -1 });
+MovieSchema.index({ year: -1 });
+
 module.exports = mongoose.model("Movie", MovieSchema);

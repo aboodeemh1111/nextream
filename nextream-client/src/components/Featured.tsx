@@ -41,9 +41,8 @@ const Featured = ({ type }: { type?: string }) => {
         // Try to get personalized content first
         try {
           const res = await axios.get(`/api/movies/featured${type ? `?type=${type}` : ''}`, {
-            headers: {
-              token: `Bearer ${user?.accessToken}`
-            }
+            // Send token only if we have one
+            headers: user?.accessToken ? { token: `Bearer ${user.accessToken}` } : undefined
           });
           setContent(res.data[0]);
           setRecommendationType('personalized');
@@ -75,10 +74,8 @@ const Featured = ({ type }: { type?: string }) => {
       }
     };
 
-    if (user) {
-      getPersonalizedContent();
-    }
-  }, [type, user]);
+    getPersonalizedContent();
+  }, [type, user?.accessToken]);
 
   const handlePlay = () => {
     if (content?.trailer) {

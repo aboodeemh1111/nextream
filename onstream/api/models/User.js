@@ -55,4 +55,10 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Performance indexes
+UserSchema.index({ email: 1 });
+UserSchema.index({ username: 1 });
+UserSchema.index({ 'watchHistory.movie': 1 });
+UserSchema.index({ 'currentlyWatching.movie': 1 });
+
 module.exports = mongoose.model("User", UserSchema);
