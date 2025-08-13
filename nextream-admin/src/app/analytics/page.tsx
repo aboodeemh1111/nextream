@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
+import api from '@/services/api';
 import { 
   FaUsers, 
   FaFilm, 
@@ -53,7 +54,7 @@ export default function AnalyticsPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/analytics/dashboard', {
+      const res = await api.get('/analytics/dashboard', {
         headers: {
           token: `Bearer ${user?.accessToken}`,
         },
@@ -71,7 +72,7 @@ export default function AnalyticsPage() {
   const fetchUserEngagementData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/analytics/user-engagement', {
+      const res = await api.get('/analytics/user-engagement', {
         headers: {
           token: `Bearer ${user?.accessToken}`,
         },
@@ -90,7 +91,7 @@ export default function AnalyticsPage() {
   const fetchContentPerformanceData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/analytics/content-performance', {
+      const res = await api.get('/analytics/content-performance', {
         headers: {
           token: `Bearer ${user?.accessToken}`,
         },

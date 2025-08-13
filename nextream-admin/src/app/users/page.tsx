@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
+import api from '@/services/api';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaUserPlus, FaEdit, FaTrash, FaSearch, FaUser, FaFilter, FaSort, FaEllipsisH } from 'react-icons/fa';
@@ -35,8 +36,8 @@ export default function UsersPage() {
       try {
         setLoading(true);
         
-        const res = await axios.get(
-          `/api/users`,
+        const res = await api.get(
+          `/users`,
           {
             headers: {
               token: `Bearer ${user.accessToken}`

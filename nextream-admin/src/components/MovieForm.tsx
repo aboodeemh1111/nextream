@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import axios from 'axios';
-import FileUpload from './FileUpload';
-import { FaSave, FaTimes, FaSpinner } from 'react-icons/fa';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import axios from "axios";
+import api from "@/services/api";
+import FileUpload from "./FileUpload";
+import { FaSave, FaTimes, FaSpinner } from "react-icons/fa";
 
 interface MovieFormProps {
   movieId?: string;
@@ -28,18 +29,18 @@ interface MovieData {
 }
 
 const initialMovieData: MovieData = {
-  title: '',
-  desc: '',
-  img: '',
-  imgTitle: '',
-  imgSm: '',
-  trailer: '',
-  video: '',
-  year: '',
+  title: "",
+  desc: "",
+  img: "",
+  imgTitle: "",
+  imgSm: "",
+  trailer: "",
+  video: "",
+  year: "",
   limit: 0,
-  genre: '',
+  genre: "",
   isSeries: false,
-  duration: '',
+  duration: "",
 };
 
 const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
@@ -56,14 +57,14 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
       const fetchMovie = async () => {
         try {
           setLoading(true);
-          const res = await axios.get(`/api/movies/find/${movieId}`, {
+          const res = await api.get(`/movies/find/${movieId}`, {
             headers: {
               token: `Bearer ${user?.accessToken}`,
             },
           });
           setMovieData(res.data);
         } catch (err) {
-          setError('Failed to load movie data');
+          setError("Failed to load movie data");
           console.error(err);
         } finally {
           setLoading(false);
@@ -74,13 +75,17 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
     }
   }, [isEdit, movieId, user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value, type } = e.target;
-    
-    if (type === 'checkbox') {
+
+    if (type === "checkbox") {
       const checkbox = e.target as HTMLInputElement;
       setMovieData({ ...movieData, [name]: checkbox.checked });
-    } else if (type === 'number') {
+    } else if (type === "number") {
       setMovieData({ ...movieData, [name]: parseInt(value) || 0 });
     } else {
       setMovieData({ ...movieData, [name]: value });
@@ -93,15 +98,15 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
-      setError('You must be logged in to perform this action');
+      setError("You must be logged in to perform this action");
       return;
     }
 
     // Validate required fields
     if (!movieData.title || !movieData.desc || !movieData.img) {
-      setError('Please fill in all required fields');
+      setError("Please fill in all required fields");
       return;
     }
 
@@ -110,42 +115,34 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
       setError(null);
       setSuccess(null);
 
-      console.log('Submitting movie data:', movieData);
-      
+      console.log("Submitting movie data:", movieData);
+
       // Log the headers being sent
       const headers = {
-        token: `Bearer ${user.accessToken}`
+        token: `Bearer ${user.accessToken}`,
       };
-      console.log('Request headers:', headers);
+      console.log("Request headers:", headers);
 
       if (isEdit && movieId) {
         // Update existing movie
-        const res = await axios.put(
-          `/api/movies/${movieId}`,
-          movieData,
-          {
-            headers
-          }
-        );
-        console.log('Update movie response:', res.data);
-        setSuccess('Movie updated successfully');
+        const res = await api.put(`/movies/${movieId}`, movieData, {
+          headers,
+        });
+        console.log("Update movie response:", res.data);
+        setSuccess("Movie updated successfully");
       } else {
         // Create new movie
-        const res = await axios.post(
-          '/api/movies',
-          movieData,
-          {
-            headers
-          }
-        );
-        console.log('Create movie response:', res.data);
-        setSuccess('Movie created successfully');
+        const res = await api.post("/movies", movieData, {
+          headers,
+        });
+        console.log("Create movie response:", res.data);
+        setSuccess("Movie created successfully");
         // Reset form after successful creation
         setMovieData(initialMovieData);
       }
     } catch (err: any) {
-      console.error('Error saving movie:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Failed to save movie');
+      console.error("Error saving movie:", err.response?.data || err.message);
+      setError(err.response?.data?.message || "Failed to save movie");
     } finally {
       setSubmitting(false);
     }
@@ -162,14 +159,20 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6"
+          role="alert"
+        >
           <strong className="font-bold">Error!</strong>
           <span className="block sm:inline"> {error}</span>
         </div>
       )}
 
       {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
+        <div
+          className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6"
+          role="alert"
+        >
           <strong className="font-bold">Success!</strong>
           <span className="block sm:inline"> {success}</span>
         </div>
@@ -178,7 +181,10 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <div className="mb-4">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -193,7 +199,10 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="desc" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="desc"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Description <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -208,7 +217,10 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="year"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Year
             </label>
             <input
@@ -222,7 +234,10 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="genre" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="genre"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Genre
             </label>
             <select
@@ -251,7 +266,10 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="duration"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Duration
             </label>
             <input
@@ -266,7 +284,10 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="limit" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="limit"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Age Limit
             </label>
             <input
@@ -289,7 +310,9 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
                 onChange={handleChange}
                 className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
               />
-              <span className="ml-2 text-sm text-gray-700">This is a series</span>
+              <span className="ml-2 text-sm text-gray-700">
+                This is a series
+              </span>
             </label>
           </div>
         </div>
@@ -297,7 +320,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
         <div>
           <FileUpload
             label="Main Image (Poster) *"
-            onFileUpload={(url) => handleFileUpload('img', url)}
+            onFileUpload={(url) => handleFileUpload("img", url)}
             accept="image/*"
             folder="images"
             existingUrl={movieData.img}
@@ -305,7 +328,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
 
           <FileUpload
             label="Title Image"
-            onFileUpload={(url) => handleFileUpload('imgTitle', url)}
+            onFileUpload={(url) => handleFileUpload("imgTitle", url)}
             accept="image/*"
             folder="images"
             existingUrl={movieData.imgTitle}
@@ -313,7 +336,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
 
           <FileUpload
             label="Thumbnail Image"
-            onFileUpload={(url) => handleFileUpload('imgSm', url)}
+            onFileUpload={(url) => handleFileUpload("imgSm", url)}
             accept="image/*"
             folder="images"
             existingUrl={movieData.imgSm}
@@ -321,7 +344,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
 
           <FileUpload
             label="Trailer"
-            onFileUpload={(url) => handleFileUpload('trailer', url)}
+            onFileUpload={(url) => handleFileUpload("trailer", url)}
             accept="video/*"
             folder="trailers"
             existingUrl={movieData.trailer}
@@ -329,7 +352,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
 
           <FileUpload
             label="Video"
-            onFileUpload={(url) => handleFileUpload('video', url)}
+            onFileUpload={(url) => handleFileUpload("video", url)}
             accept="video/*"
             folder="videos"
             existingUrl={movieData.video}
@@ -359,7 +382,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           ) : (
             <>
               <FaSave className="-ml-1 mr-2 h-4 w-4" />
-              {isEdit ? 'Update Movie' : 'Create Movie'}
+              {isEdit ? "Update Movie" : "Create Movie"}
             </>
           )}
         </button>
@@ -368,4 +391,4 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
   );
 };
 
-export default MovieForm; 
+export default MovieForm;

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import api from '@/services/api';
 import { FaStar, FaThumbsUp, FaComment, FaChartBar } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import RatingStars from '../RatingStars';
@@ -45,11 +46,9 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
     try {
       setLoading(true);
       
-      const token = localStorage.getItem('admin-auth-token');
-      const response = await axios.get('/api/reviews/stats', {
-        headers: {
-          token: `Bearer ${token}`,
-        },
+      const token = (typeof window !== 'undefined' && localStorage.getItem('admin')) ? JSON.parse(localStorage.getItem('admin') as string)?.accessToken : undefined;
+      const response = await api.get('/reviews/stats', {
+        headers: token ? { token: `Bearer ${token}` } : undefined,
       });
       
       setStats(response.data);

@@ -71,18 +71,16 @@ export default function Watch() {
         setMovie(res.data);
         
         // Check if movie is in user's lists
-        const userRes = await axios.get('/api/users/lists-status', {
+        const profileRes = await axios.get('/api/users/profile', {
           headers: {
             token: `Bearer ${user?.accessToken}`,
           },
-          params: {
-            movieId: id,
-          },
         });
-        
-        setInMyList(userRes.data.inMyList);
-        setInFavorites(userRes.data.inFavorites);
-        setInWatchlist(userRes.data.inWatchlist);
+        const userData = profileRes.data;
+        const movieId = Array.isArray(id) ? id[0] : (id as string);
+        setInMyList(userData.myList?.some((m: any) => (m._id || m)?.toString() === movieId));
+        setInFavorites(userData.favorites?.some((m: any) => (m._id || m)?.toString() === movieId));
+        setInWatchlist(userData.watchlist?.some((m: any) => (m._id || m)?.toString() === movieId));
       } catch (err) {
         setError('Failed to load movie');
         console.error(err);
@@ -96,7 +94,7 @@ export default function Watch() {
       
       try {
         const res = await axios.get(
-          `/api/reviews/user/${user.id}/movie/${id}`,
+          `/api/reviews/user/${user._id}/movie/${id}`,
           {
             headers: {
               token: `Bearer ${user.accessToken}`,
@@ -109,7 +107,7 @@ export default function Watch() {
           setUserRating(res.data.rating);
         }
       } catch (err: any) {
-        // 404 means the user hasn't reviewed this movie yet, which is fine
+        // 404 means no review yet; suppress log
         if (err.response?.status !== 404) {
           console.error('Error fetching user review:', err);
         }
@@ -123,11 +121,16 @@ export default function Watch() {
   const handleMyList = async () => {
     try {
       const action = inMyList ? 'remove' : 'add';
-      await axios.put(`/api/users/mylist/${action}/${id}`, {}, {
-        headers: {
-          token: `Bearer ${user?.accessToken}`,
-        },
-      });
+      const movieId = Array.isArray(id) ? id[0] : (id as string);
+      if (action === 'add') {
+        await axios.post(`/api/users/mylist`, { movieId }, {
+          headers: { token: `Bearer ${user?.accessToken}` },
+        });
+      } else {
+        await axios.delete(`/api/users/mylist/${movieId}`, {
+          headers: { token: `Bearer ${user?.accessToken}` },
+        });
+      }
       setInMyList(!inMyList);
     } catch (err) {
       console.error('Error updating my list:', err);
@@ -137,11 +140,16 @@ export default function Watch() {
   const handleFavorites = async () => {
     try {
       const action = inFavorites ? 'remove' : 'add';
-      await axios.put(`/api/users/favorites/${action}/${id}`, {}, {
-        headers: {
-          token: `Bearer ${user?.accessToken}`,
-        },
-      });
+      const movieId = Array.isArray(id) ? id[0] : (id as string);
+      if (action === 'add') {
+        await axios.post(`/api/users/favorites`, { movieId }, {
+          headers: { token: `Bearer ${user?.accessToken}` },
+        });
+      } else {
+        await axios.delete(`/api/users/favorites/${movieId}`, {
+          headers: { token: `Bearer ${user?.accessToken}` },
+        });
+      }
       setInFavorites(!inFavorites);
     } catch (err) {
       console.error('Error updating favorites:', err);
@@ -151,11 +159,16 @@ export default function Watch() {
   const handleWatchlist = async () => {
     try {
       const action = inWatchlist ? 'remove' : 'add';
-      await axios.put(`/api/users/watchlist/${action}/${id}`, {}, {
-        headers: {
-          token: `Bearer ${user?.accessToken}`,
-        },
-      });
+      const movieId = Array.isArray(id) ? id[0] : (id as string);
+      if (action === 'add') {
+        await axios.post(`/api/users/watchlist`, { movieId }, {
+          headers: { token: `Bearer ${user?.accessToken}` },
+        });
+      } else {
+        await axios.delete(`/api/users/watchlist/${movieId}`, {
+          headers: { token: `Bearer ${user?.accessToken}` },
+        });
+      }
       setInWatchlist(!inWatchlist);
     } catch (err) {
       console.error('Error updating watchlist:', err);
@@ -282,7 +295,7 @@ export default function Watch() {
           }
         );
       } else {
-        // Create new review
+        // Create new review (server is idempotent if duplicate exists)
         const res = await axios.post(
           '/api/reviews',
           {

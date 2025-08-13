@@ -36,9 +36,6 @@ async function updateMovieRatings(movieId) {
 
 // Create a review
 router.post("/", verify, async (req, res) => {
-  if (req.user.isAdmin) {
-    return res.status(403).json("Admins cannot create reviews");
-  }
 
   try {
     // Check if movie exists
@@ -54,7 +51,12 @@ router.post("/", verify, async (req, res) => {
     });
 
     if (existingReview) {
-      return res.status(400).json("You have already reviewed this movie");
+      // Convert duplicate into update to be idempotent for client UX
+      existingReview.rating = req.body.rating;
+      existingReview.review = req.body.review || existingReview.review || "";
+      await existingReview.save();
+      const updatedRatings = await updateMovieRatings(req.body.movieId);
+      return res.status(200).json({ review: existingReview, movieRatings: updatedRatings });
     }
 
     // Get user info for storing username

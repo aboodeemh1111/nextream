@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
+import api from '@/services/api';
 import { use } from 'react';
 import { FaEdit, FaTrash, FaPlus, FaArrowLeft } from 'react-icons/fa';
 import Image from 'next/image';
@@ -54,12 +55,13 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
 
     const fetchMovies = async () => {
       try {
-        const res = await axios.get('/api/movies', {
+        const res = await api.get('/movies', {
           headers: {
             token: `Bearer ${user?.accessToken}`,
           },
         });
-        setAvailableMovies(res.data);
+        const payload = res.data;
+        setAvailableMovies(Array.isArray(payload?.data) ? payload.data : []);
       } catch (err: any) {
         console.error('Failed to load movies:', err);
       }

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import axios from 'axios';
+import api from '@/services/api';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 
@@ -52,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('Setting auth token:', `Bearer ${storedToken.substring(0, 15)}...`);
           
           // Verify token is valid by making a test request
-          axios.get('/api/users/profile', {
+          api.get('/users/profile', {
             headers: {
               token: `Bearer ${storedToken}`
             }
@@ -88,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       
-      const res = await axios.post('/api/auth/login', { email, password });
+      const res = await api.post('/auth/login', { email, password });
       
       // Check if user is admin
       if (!res.data.isAdmin) {

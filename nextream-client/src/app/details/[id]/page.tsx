@@ -92,9 +92,9 @@ export default function MovieDetails() {
         
         const userData = res.data;
         setUserLists({
-          myList: userData.myList?.some((item: any) => item.movieId === movieId) || false,
-          favorites: userData.favorites?.some((item: any) => item.movieId === movieId) || false,
-          watchlist: userData.watchlist?.some((item: any) => item.movieId === movieId) || false,
+          myList: userData.myList?.some((item: any) => (item._id || item)?.toString() === movieId) || false,
+          favorites: userData.favorites?.some((item: any) => (item._id || item)?.toString() === movieId) || false,
+          watchlist: userData.watchlist?.some((item: any) => (item._id || item)?.toString() === movieId) || false,
         });
       } catch (err) {
         console.error('Error fetching user lists:', err);
@@ -111,16 +111,26 @@ export default function MovieDetails() {
     try {
       setUpdatingList(listType);
       const isAdding = !userLists[listType];
-      
-      await axios.put(
-        `/api/users/${isAdding ? 'add' : 'remove'}/${listType}`,
-        { movieId },
-        {
-          headers: {
-            token: `Bearer ${user.accessToken}`,
-          },
+      const headers = { token: `Bearer ${user.accessToken}` };
+      if (listType === 'myList') {
+        if (isAdding) {
+          await axios.post('/api/users/mylist', { movieId }, { headers });
+        } else {
+          await axios.delete(`/api/users/mylist/${movieId}`, { headers });
         }
-      );
+      } else if (listType === 'favorites') {
+        if (isAdding) {
+          await axios.post('/api/users/favorites', { movieId }, { headers });
+        } else {
+          await axios.delete(`/api/users/favorites/${movieId}`, { headers });
+        }
+      } else if (listType === 'watchlist') {
+        if (isAdding) {
+          await axios.post('/api/users/watchlist', { movieId }, { headers });
+        } else {
+          await axios.delete(`/api/users/watchlist/${movieId}`, { headers });
+        }
+      }
       
       setUserLists((prev) => ({
         ...prev,

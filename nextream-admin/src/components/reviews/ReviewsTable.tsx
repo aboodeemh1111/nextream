@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import Link from 'next/link';
-import { FaCheck, FaTimes, FaTrash, FaEye, FaThumbsUp } from 'react-icons/fa';
-import RatingStars from '../RatingStars';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import api from "@/services/api";
+import Link from "next/link";
+import { FaCheck, FaTimes, FaTrash, FaEye, FaThumbsUp } from "react-icons/fa";
+import RatingStars from "../RatingStars";
 
 interface Review {
   _id: string;
@@ -20,14 +21,14 @@ interface Review {
 }
 
 interface ReviewsTableProps {
-  filter?: 'all' | 'approved' | 'pending';
+  filter?: "all" | "approved" | "pending";
   limit?: number;
   movieId?: string;
   onReviewUpdated?: () => void;
 }
 
 const ReviewsTable: React.FC<ReviewsTableProps> = ({
-  filter = 'all',
+  filter = "all",
   limit,
   movieId,
   onReviewUpdated,
@@ -44,39 +45,39 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      
-      let url = '/api/reviews';
+
+      let url = "/reviews";
       const params = new URLSearchParams();
-      
-      if (filter === 'approved') {
-        params.append('approved', 'true');
-      } else if (filter === 'pending') {
-        params.append('approved', 'false');
+
+      if (filter === "approved") {
+        params.append("approved", "true");
+      } else if (filter === "pending") {
+        params.append("approved", "false");
       }
-      
+
       if (movieId) {
-        params.append('movieId', movieId);
+        params.append("movieId", movieId);
       }
-      
+
       if (limit) {
-        params.append('limit', limit.toString());
+        params.append("limit", limit.toString());
       }
-      
+
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      
-      const token = localStorage.getItem('admin-auth-token');
-      const response = await axios.get(url, {
+
+      const token = localStorage.getItem("admin-auth-token");
+      const response = await api.get(url, {
         headers: {
           token: `Bearer ${token}`,
         },
       });
-      
+
       setReviews(response.data);
     } catch (err) {
-      console.error('Error fetching reviews:', err);
-      setError('Failed to load reviews');
+      console.error("Error fetching reviews:", err);
+      setError("Failed to load reviews");
     } finally {
       setLoading(false);
     }
@@ -85,10 +86,10 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
   const handleApproveReview = async (reviewId: string, approve: boolean) => {
     try {
       setProcessingId(reviewId);
-      
-      const token = localStorage.getItem('admin-auth-token');
-      await axios.put(
-        `/api/reviews/${reviewId}/approve`,
+
+      const token = localStorage.getItem("admin-auth-token");
+      await api.put(
+        `/reviews/${reviewId}/approve`,
         { approved: approve },
         {
           headers: {
@@ -96,49 +97,49 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
           },
         }
       );
-      
+
       // Update the reviews list
       setReviews((prevReviews) =>
         prevReviews.map((review) =>
           review._id === reviewId ? { ...review, approved: approve } : review
         )
       );
-      
+
       if (onReviewUpdated) {
         onReviewUpdated();
       }
     } catch (err) {
-      console.error('Error updating review:', err);
+      console.error("Error updating review:", err);
     } finally {
       setProcessingId(null);
     }
   };
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!window.confirm('Are you sure you want to delete this review?')) {
+    if (!window.confirm("Are you sure you want to delete this review?")) {
       return;
     }
-    
+
     try {
       setProcessingId(reviewId);
-      
-      const token = localStorage.getItem('admin-auth-token');
-      await axios.delete(`/api/reviews/${reviewId}`, {
+
+      const token = localStorage.getItem("admin-auth-token");
+      await api.delete(`/reviews/${reviewId}`, {
         headers: {
           token: `Bearer ${token}`,
         },
       });
-      
+
       // Update the reviews list
       setReviews((prevReviews) =>
         prevReviews.filter((review) => review._id !== reviewId)
       );
-      
+
       if (onReviewUpdated) {
         onReviewUpdated();
       }
     } catch (err) {
-      console.error('Error deleting review:', err);
+      console.error("Error deleting review:", err);
     } finally {
       setProcessingId(null);
     }
@@ -146,10 +147,10 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -162,11 +163,7 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
   }
 
   if (error) {
-    return (
-      <div className="bg-red-100 text-red-700 p-4 rounded">
-        {error}
-      </div>
-    );
+    return <div className="bg-red-100 text-red-700 p-4 rounded">{error}</div>;
   }
 
   if (reviews.length === 0) {
@@ -182,25 +179,46 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
               User
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
               Movie
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
               Rating
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
               Date
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
               Status
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
               Likes
             </th>
-            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
               Actions
             </th>
           </tr>
@@ -256,7 +274,7 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
                   >
                     <FaEye />
                   </Link>
-                  
+
                   {review.approved ? (
                     <button
                       onClick={() => handleApproveReview(review._id, false)}
@@ -276,7 +294,7 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
                       <FaCheck />
                     </button>
                   )}
-                  
+
                   <button
                     onClick={() => handleDeleteReview(review._id)}
                     disabled={processingId === review._id}
@@ -295,4 +313,4 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
   );
 };
 
-export default ReviewsTable; 
+export default ReviewsTable;

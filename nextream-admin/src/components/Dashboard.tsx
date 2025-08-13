@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/SimpleAuthContext";
+import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
 import {
   FaUsers,
@@ -115,7 +115,7 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        // Fetch real data from the API
+        // Fetch real data from the API via proxy
         const response = await api.get("/admin/stats");
 
         if (response.data) {

@@ -1,11 +1,11 @@
 "use client";
 
 import axios from "axios";
+import Cookies from "js-cookie";
 
-// Create an axios instance with default config
+// Create an axios instance with default config. Use Next.js rewrite proxy to avoid CORS.
 const api = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL || "https://nextream-api.onrender.com",
+  baseURL: "/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -15,9 +15,19 @@ const api = axios.create({
 // Add a request interceptor to add the auth token to every request
 api.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
+    let token = null;
+    if (typeof window !== "undefined") {
+      try {
+        const storedUser = localStorage.getItem("admin");
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          token = parsed?.accessToken || null;
+        }
+      } catch {}
+      if (!token) {
+        token = Cookies.get("admin") || null;
+      }
+    }
 
     if (token) {
       config.headers["token"] = `Bearer ${token}`;

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
+import api from '@/services/api';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaEye } from 'react-icons/fa';
@@ -38,19 +39,16 @@ export default function MoviesPage() {
         setLoading(true);
         setError(null);
         
-        const headers = {
-          token: `Bearer ${user.accessToken}`
-        };
-        
-        // Use the proxied endpoint only
-        const res = await axios.get('/api/movies', { headers });
-        
-        if (res.data && Array.isArray(res.data)) {
-          setMovies(res.data);
+        const headers = { token: `Bearer ${user.accessToken}` };
+        // Use shared axios instance and adapt to paginated shape { data, page, pageSize, total }
+        const res = await api.get('/movies', { headers });
+        const payload = res.data;
+        if (payload && Array.isArray(payload.data)) {
+          setMovies(payload.data);
           console.log('Successfully loaded', res.data.length, 'movies');
         } else {
           setError('Invalid data format received from server');
-          console.error('Invalid data format:', res.data);
+          console.error('Invalid data format:', payload);
         }
       } catch (err: any) {
         console.error('Error fetching movies:', err.response?.data || err.message);

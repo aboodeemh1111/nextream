@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
+import api from '@/services/api';
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaEye } from 'react-icons/fa';
 import Image from 'next/image';
 
@@ -52,7 +53,7 @@ export default function ListsPage() {
       setLoading(true);
       console.log('Fetching lists with token:', user.accessToken.substring(0, 15) + '...');
       
-      const res = await axios.get('/api/lists/all', {
+      const res = await api.get('/lists/all', {
         headers: {
           token: `Bearer ${user.accessToken}`,
         },
@@ -100,7 +101,7 @@ export default function ListsPage() {
     }
 
     try {
-      await axios.delete(`/api/lists/${id}`, {
+      await api.delete(`/lists/${id}`, {
         headers: {
           token: `Bearer ${user?.accessToken}`,
         },

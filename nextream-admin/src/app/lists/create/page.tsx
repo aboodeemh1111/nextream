@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
+import api from '@/services/api';
 
 export default function CreateListPage() {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function CreateListPage() {
     e.preventDefault();
 
     try {
-      await axios.post(
-        '/api/lists',
+      await api.post(
+        '/lists',
         list,
         {
           headers: {
