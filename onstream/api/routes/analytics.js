@@ -359,4 +359,33 @@ router.get("/dashboard", verify, async (req, res) => {
   }
 });
 
+// GET QoE metrics (placeholder until player QoE beacons are added)
+router.get("/qoe", verify, async (req, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ message: "Admin required" });
+  }
+  try {
+    // Without client-side QoE beacons, provide placeholders derived from available data
+    // You can replace this later with real metrics from a playback telemetry pipeline
+    const deviceBreakdown = [
+      { device: "unknown", sessions: 0, errorRate: 0, avgStartupMs: 0, rebufferRatio: 0 },
+    ];
+    const geoBreakdown = [
+      { country: "unknown", sessions: 0, errorRate: 0, avgStartupMs: 0, rebufferRatio: 0 },
+    ];
+    res.status(200).json({
+      summary: {
+        sessions: 0,
+        errorRate: 0,
+        avgStartupMs: 0,
+        rebufferRatio: 0,
+      },
+      deviceBreakdown,
+      geoBreakdown,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch QoE metrics", error: err.message });
+  }
+});
+
 module.exports = router; 

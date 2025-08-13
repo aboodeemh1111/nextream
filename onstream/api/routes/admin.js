@@ -3,6 +3,7 @@ const Movie = require("../models/Movie");
 const User = require("../models/User");
 const List = require("../models/List");
 const verify = require("../verifyToken");
+const AuditLog = require("../models/AuditLog");
 
 // GET DASHBOARD STATS
 router.get("/stats", verify, async (req, res) => {
@@ -76,6 +77,40 @@ router.get("/stats", verify, async (req, res) => {
       error: "Failed to fetch dashboard statistics",
       details: err.message
     });
+  }
+});
+
+// Minimal KPIs (DAU/WAU/MAU placeholders) for dashboard expansion
+router.get("/kpis", verify, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+  try {
+    const today = new Date(new Date().setHours(0, 0, 0, 0));
+    const week = new Date();
+    week.setDate(week.getDate() - 7);
+    const month = new Date();
+    month.setMonth(month.getMonth() - 1);
+
+    const [dau, wau, mau, totalUsers] = await Promise.all([
+      User.countDocuments({ updatedAt: { $gte: today } }),
+      User.countDocuments({ updatedAt: { $gte: week } }),
+      User.countDocuments({ updatedAt: { $gte: month } }),
+      User.countDocuments(),
+    ]);
+
+    res.status(200).json({ dau, wau, mau, totalUsers });
+  } catch (err) {
+    res.status(500).json({ error: "FAILED_TO_FETCH_KPIS", message: err.message });
+  }
+});
+
+// Example audit-log search shortcut
+router.get("/audit-preview", verify, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+  try {
+    const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(20).lean();
+    res.status(200).json(logs);
+  } catch (err) {
+    res.status(500).json(err);
   }
 });
 

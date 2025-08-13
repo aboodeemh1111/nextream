@@ -3,30 +3,31 @@ const Review = require("../models/Review");
 const Movie = require("../models/Movie");
 const User = require("../models/User");
 const verify = require("../verifyToken");
+const AuditLog = require("../models/AuditLog");
 
 // Helper function to update movie ratings
 async function updateMovieRatings(movieId) {
   try {
     // Get all approved reviews for the movie
     const reviews = await Review.find({ movieId, approved: true });
-    
+
     // Calculate new rating values
     const numRatings = reviews.length;
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    const avgRating = numRatings > 0 ? (totalRating / numRatings) : 0;
-    
+    const avgRating = numRatings > 0 ? totalRating / numRatings : 0;
+
     // Update the movie
     await Movie.findByIdAndUpdate(movieId, {
       numRatings,
       totalRating,
       avgRating: parseFloat(avgRating.toFixed(2)), // Round to 2 decimal places
     });
-    
+
     // Return the updated rating info
-    return { 
-      numRatings, 
-      totalRating, 
-      avgRating: parseFloat(avgRating.toFixed(2))
+    return {
+      numRatings,
+      totalRating,
+      avgRating: parseFloat(avgRating.toFixed(2)),
     };
   } catch (err) {
     console.error("Error updating movie ratings:", err);
@@ -36,7 +37,6 @@ async function updateMovieRatings(movieId) {
 
 // Create a review
 router.post("/", verify, async (req, res) => {
-
   try {
     // Check if movie exists
     const movie = await Movie.findById(req.body.movieId);
@@ -56,12 +56,14 @@ router.post("/", verify, async (req, res) => {
       existingReview.review = req.body.review || existingReview.review || "";
       await existingReview.save();
       const updatedRatings = await updateMovieRatings(req.body.movieId);
-      return res.status(200).json({ review: existingReview, movieRatings: updatedRatings });
+      return res
+        .status(200)
+        .json({ review: existingReview, movieRatings: updatedRatings });
     }
 
     // Get user info for storing username
     const user = await User.findById(req.user.id);
-    
+
     // Create new review
     const newReview = new Review({
       userId: req.user.id,
@@ -73,13 +75,24 @@ router.post("/", verify, async (req, res) => {
     });
 
     const savedReview = await newReview.save();
-    
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        action: "REVIEW_CREATE",
+        entityType: "Review",
+        entityId: savedReview._id.toString(),
+        metadata: { movieId: req.body.movieId, rating: req.body.rating },
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+    } catch {}
+
     // Update movie ratings
     const updatedRatings = await updateMovieRatings(req.body.movieId);
-    
+
     res.status(201).json({
       review: savedReview,
-      movieRatings: updatedRatings
+      movieRatings: updatedRatings,
     });
   } catch (err) {
     res.status(500).json(err);
@@ -101,17 +114,17 @@ router.put("/:id", verify, async (req, res) => {
         },
         { new: true }
       );
-      
+
       // Update movie ratings if the rating changed
       if (req.body.rating && req.body.rating !== review.rating) {
         const updatedRatings = await updateMovieRatings(review.movieId);
         res.status(200).json({
           review: updatedReview,
-          movieRatings: updatedRatings
+          movieRatings: updatedRatings,
         });
       } else {
         res.status(200).json({
-          review: updatedReview
+          review: updatedReview,
         });
       }
     } else {
@@ -132,13 +145,24 @@ router.delete("/:id", verify, async (req, res) => {
     if (review.userId === req.user.id || req.user.isAdmin) {
       const movieId = review.movieId;
       await Review.findByIdAndDelete(req.params.id);
-      
+      try {
+        await AuditLog.create({
+          userId: req.user.id,
+          action: "REVIEW_DELETE",
+          entityType: "Review",
+          entityId: req.params.id,
+          metadata: { movieId },
+          ip: req.ip,
+          userAgent: req.headers["user-agent"],
+        });
+      } catch {}
+
       // Update movie ratings
       const updatedRatings = await updateMovieRatings(movieId);
-      
+
       res.status(200).json({
         message: "The review has been deleted",
-        movieRatings: updatedRatings
+        movieRatings: updatedRatings,
       });
     } else {
       res.status(403).json("You can delete only your review");
@@ -178,9 +202,9 @@ router.put("/:id/like", verify, async (req, res) => {
 // Get all reviews for a movie
 router.get("/movie/:movieId", async (req, res) => {
   try {
-    const reviews = await Review.find({ 
+    const reviews = await Review.find({
       movieId: req.params.movieId,
-      approved: true 
+      approved: true,
     }).sort({ createdAt: -1 });
     res.status(200).json(reviews);
   } catch (err) {
@@ -197,11 +221,11 @@ router.get("/user/:userId/movie/:movieId", verify, async (req, res) => {
         userId: req.params.userId,
         movieId: req.params.movieId,
       });
-      
+
       if (!review) {
         return res.status(404).json("Review not found");
       }
-      
+
       res.status(200).json(review);
     } else {
       res.status(403).json("You can only access your own reviews");
@@ -274,7 +298,7 @@ router.put("/:id/approve", verify, async (req, res) => {
     if (!review) {
       return res.status(404).json("Review not found");
     }
-    
+
     const updatedReview = await Review.findByIdAndUpdate(
       req.params.id,
       {
@@ -282,13 +306,24 @@ router.put("/:id/approve", verify, async (req, res) => {
       },
       { new: true }
     );
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        action: "REVIEW_APPROVE",
+        entityType: "Review",
+        entityId: req.params.id,
+        metadata: { approved: req.body.approved },
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+    } catch {}
 
     // Update movie ratings since approval status changed
     const updatedRatings = await updateMovieRatings(review.movieId);
-    
+
     res.status(200).json({
       review: updatedReview,
-      movieRatings: updatedRatings
+      movieRatings: updatedRatings,
     });
   } catch (err) {
     res.status(500).json(err);
@@ -356,9 +391,7 @@ router.get("/stats", verify, async (req, res) => {
     ]);
 
     // Get recent reviews
-    const recentReviews = await Review.find()
-      .sort({ createdAt: -1 })
-      .limit(10);
+    const recentReviews = await Review.find().sort({ createdAt: -1 }).limit(10);
 
     res.status(200).json({
       totalReviews,
@@ -373,4 +406,4 @@ router.get("/stats", verify, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

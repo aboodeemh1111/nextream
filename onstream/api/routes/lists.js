@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const List = require("../models/List");
 const verify = require("../verifyToken");
+const AuditLog = require("../models/AuditLog");
 
 // CREATE LIST
 router.post("/", verify, async (req, res) => {
@@ -11,6 +12,18 @@ router.post("/", verify, async (req, res) => {
   const newList = new List(req.body);
   try {
     const savedList = await newList.save();
+    // Audit log
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        action: "LIST_CREATE",
+        entityType: "List",
+        entityId: savedList._id.toString(),
+        metadata: { body: req.body },
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+    } catch {}
     res.status(201).json(savedList);
   } catch (err) {
     res.status(500).json(err);
@@ -29,6 +42,18 @@ router.put("/:id", verify, async (req, res) => {
       { $set: req.body },
       { new: true }
     ).populate('content');
+    // Audit log
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        action: "LIST_UPDATE",
+        entityType: "List",
+        entityId: req.params.id,
+        metadata: { body: req.body },
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+    } catch {}
     res.status(200).json(updatedList);
   } catch (err) {
     res.status(500).json(err);
@@ -43,6 +68,16 @@ router.delete("/:id", verify, async (req, res) => {
 
   try {
     await List.findByIdAndDelete(req.params.id);
+    try {
+      await AuditLog.create({
+        userId: req.user.id,
+        action: "LIST_DELETE",
+        entityType: "List",
+        entityId: req.params.id,
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+    } catch {}
     res.status(200).json("The list has been deleted");
   } catch (err) {
     res.status(500).json(err);
@@ -59,7 +94,7 @@ router.get("/find/:id", verify, async (req, res) => {
   }
 });
 
-// GET ALL LISTS (FOR ADMIN)
+// GET ALL LISTS (FOR ADMIN) with pagination
 router.get("/all", verify, async (req, res) => {
   try {
     // Log the request for debugging
@@ -73,9 +108,14 @@ router.get("/all", verify, async (req, res) => {
       });
     }
 
-    const lists = await List.find().populate('content').sort({ createdAt: -1 });
+    const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+    const pageSize = Math.min(Math.max(parseInt(req.query.pageSize || "50", 10), 1), 200);
+    const [lists, total] = await Promise.all([
+      List.find().populate('content').sort({ createdAt: -1 }).skip((page - 1) * pageSize).limit(pageSize).lean(),
+      List.countDocuments(),
+    ]);
     console.log(`Successfully retrieved ${lists.length} lists for admin user ${req.user.id}`);
-    res.status(200).json(lists);
+    res.status(200).json({ data: lists, page, pageSize, total });
   } catch (err) {
     console.error(`Error in GET /lists/all:`, err);
     res.status(500).json({

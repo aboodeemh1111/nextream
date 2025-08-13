@@ -58,20 +58,27 @@ router.get("/find/:id", async (req, res) => {
   }
 });
 
-//GET ALL
+//GET ALL (paginated)
 router.get("/", verify, async (req, res) => {
-  const query = req.query.new;
-  if (req.user.isAdmin) {
-    try {
-      const users = query
-        ? await User.find().sort({ _id: -1 }).limit(5)
-        : await User.find();
-      res.status(200).json(users);
-    } catch (err) {
-      res.status(500).json(err);
+  const queryNew = req.query.new;
+  if (!req.user.isAdmin) {
+    return res.status(403).json("You are not allowed to see all users!");
+  }
+  try {
+    const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+    const pageSize = Math.min(Math.max(parseInt(req.query.pageSize || "50", 10), 1), 200);
+    const filter = {};
+    if (queryNew) {
+      const data = await User.find().sort({ _id: -1 }).limit(5).lean();
+      return res.status(200).json({ data, page: 1, pageSize: data.length, total: data.length });
     }
-  } else {
-    res.status(403).json("You are not allowed to see all users!");
+    const [data, total] = await Promise.all([
+      User.find(filter).sort({ createdAt: -1 }).skip((page - 1) * pageSize).limit(pageSize).lean(),
+      User.countDocuments(filter),
+    ]);
+    res.status(200).json({ data, page, pageSize, total });
+  } catch (err) {
+    res.status(500).json(err);
   }
 });
 

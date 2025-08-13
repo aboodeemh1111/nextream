@@ -15,6 +15,8 @@ const adminRoute = require("./routes/admin");
 const analyticsRoute = require("./routes/analytics");
 const reviewRoute = require("./routes/reviews");
 const commentRoute = require("./routes/comments");
+const alertsRoute = require("./routes/alerts");
+const auditLogsRoute = require("./routes/auditLogs");
 
 dotenv.config();
 
@@ -103,6 +105,8 @@ app.use("/api/admin", adminRoute);
 app.use("/api/analytics", analyticsRoute);
 app.use("/api/reviews", reviewRoute);
 app.use("/api/comments", commentRoute);
+app.use("/api/admin/alerts", alertsRoute);
+app.use("/api/admin/audit-logs", auditLogsRoute);
 
 // Also mount routes without /api prefix for direct access
 app.use("/auth", authRoute);
@@ -113,6 +117,8 @@ app.use("/admin", adminRoute);
 app.use("/analytics", analyticsRoute);
 app.use("/reviews", reviewRoute);
 app.use("/comments", commentRoute);
+app.use("/admin/alerts", alertsRoute);
+app.use("/admin/audit-logs", auditLogsRoute);
 
 // Basic route for health check
 app.get('/', (req, res) => {
