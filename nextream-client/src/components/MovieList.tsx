@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import MovieCard from './MovieCard';
+import RowHeader from './RowHeader';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 
@@ -157,9 +158,7 @@ const MovieList = ({ listId, title, cardSize = 'medium' }: MovieListProps) => {
 
   return (
     <div className="mb-8" ref={containerRef}>
-      <h2 className="text-white text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-4 px-4">
-        {title || list.title}
-      </h2>
+      <RowHeader title={title || list.title} exploreHref={`/movies?list=${list._id}`} />
       
       <div 
         className="relative group"
@@ -180,13 +179,13 @@ const MovieList = ({ listId, title, cardSize = 'medium' }: MovieListProps) => {
         <div className="overflow-hidden px-4">
           <div 
             ref={listRef}
-            className="flex transition-transform duration-500 ease-in-out"
+            className="flex transition-transform duration-500 ease-in-out snap-x snap-mandatory"
             style={{ transform: `translateX(-${transformDistance}%)` }}
           >
             {list.content.map((movie) => (
               <div 
                 key={movie._id} 
-                className="flex-shrink-0 px-1 sm:px-2"
+                className="flex-shrink-0 px-1 sm:px-2 snap-start"
                 style={{ width: itemWidth }}
               >
                 <MovieCard movie={movie} size={cardSize} />
