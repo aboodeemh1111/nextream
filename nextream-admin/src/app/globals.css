@@ -36,3 +36,51 @@ body {
 .surface {
   background-color: #0f1115;
 }
+
+/* Force dark theme overrides for common light utilities used in admin */
+/* Neutral backgrounds */
+.bg-white {
+  background-color: #0f1115 !important;
+}
+.bg-gray-50 {
+  background-color: #0b0b0f !important;
+}
+.bg-gray-100 {
+  background-color: #0e1014 !important;
+}
+
+/* Text colors */
+.text-gray-900 {
+  color: #e6e6e6 !important;
+}
+.text-gray-800 {
+  color: #d1d5db !important;
+}
+.text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+/* Borders and dividers */
+.border-gray-200 {
+  border-color: #1f232b !important;
+}
+.divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1f232b !important;
+}
+
+/* Tables */
+thead.bg-gray-50 {
+  background-color: #0f1115 !important;
+}
+tbody.divide-gray-200 {
+  --tw-divide-opacity: 1;
+  border-color: #1f232b !important;
+}
+
+/* Hover states */
+.hover\:bg-gray-50:hover {
+  background-color: #101318 !important;
+}
+.hover\:bg-gray-100:hover {
+  background-color: #141821 !important;
+}
