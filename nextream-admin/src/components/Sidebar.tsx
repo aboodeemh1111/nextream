@@ -116,7 +116,7 @@ const Sidebar = () => {
       <aside 
         id="mobile-sidebar"
         className={`
-          fixed top-0 left-0 h-full bg-gray-900 text-white z-40
+          fixed top-0 left-0 h-full bg-gray-950 text-gray-100 z-40
           transition-all duration-300 ease-in-out shadow-xl
           ${isCollapsed ? 'w-20' : 'w-64'} 
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
