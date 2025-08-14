@@ -45,67 +45,17 @@ export default function UsersPage() {
           }
         );
         
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          setUsers(res.data);
-        } else {
-          // Use mock data if no users are returned
-          setUsers([
-            {
-              _id: '1',
-              username: 'john_doe',
-              email: 'john@example.com',
-              profilePic: 'https://randomuser.me/api/portraits/men/1.jpg',
-              isAdmin: false,
-              createdAt: '2023-01-15T10:30:00.000Z'
-            },
-            {
-              _id: '2',
-              username: 'jane_smith',
-              email: 'jane@example.com',
-              profilePic: 'https://randomuser.me/api/portraits/women/1.jpg',
-              isAdmin: true,
-              createdAt: '2023-02-20T14:45:00.000Z'
-            },
-            {
-              _id: '3',
-              username: 'mike_johnson',
-              email: 'mike@example.com',
-              isAdmin: false,
-              createdAt: '2023-03-10T09:15:00.000Z'
-            },
-            {
-              _id: '4',
-              username: 'sarah_williams',
-              email: 'sarah@example.com',
-              profilePic: 'https://randomuser.me/api/portraits/women/2.jpg',
-              isAdmin: false,
-              createdAt: '2023-04-05T16:30:00.000Z'
-            }
-          ]);
-        }
+        const payload = res.data;
+        const usersArray = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
+        setUsers(usersArray);
       } catch (err: any) {
         console.error('Error fetching users:', err.response?.data || err.message);
-        setError('Failed to load users');
-        
-        // Use mock data if API call fails
-        setUsers([
-          {
-            _id: '1',
-            username: 'john_doe',
-            email: 'john@example.com',
-            profilePic: 'https://randomuser.me/api/portraits/men/1.jpg',
-            isAdmin: false,
-            createdAt: '2023-01-15T10:30:00.000Z'
-          },
-          {
-            _id: '2',
-            username: 'jane_smith',
-            email: 'jane@example.com',
-            profilePic: 'https://randomuser.me/api/portraits/women/1.jpg',
-            isAdmin: true,
-            createdAt: '2023-02-20T14:45:00.000Z'
-          }
-        ]);
+        setError(err.response?.data?.message || 'Failed to load users');
+        setUsers([]);
       } finally {
         setLoading(false);
       }

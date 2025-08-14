@@ -39,67 +39,20 @@ interface Stats {
   }[];
 }
 
-// Mock data for the dashboard
-const MOCK_STATS: Stats = {
-  userCount: 1250,
-  movieCount: 250,
-  listCount: 45,
-  totalViews: 25000,
-  newUsers: 120,
-  newUsersChange: 12.5,
-  popularMovies: [
-    {
-      _id: "1",
-      title: "Inception",
-      views: 5200,
-      img: "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=100&auto=format&fit=crop",
-    },
-    {
-      _id: "2",
-      title: "The Shawshank Redemption",
-      views: 4800,
-      img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=100&auto=format&fit=crop",
-    },
-    {
-      _id: "3",
-      title: "The Dark Knight",
-      views: 4500,
-      img: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=100&auto=format&fit=crop",
-    },
-  ],
-  recentUsers: [
-    {
-      _id: "1",
-      username: "johndoe",
-      email: "john@example.com",
-      profilePic:
-        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop",
-      createdAt: new Date().toISOString(),
-      isAdmin: false,
-    },
-    {
-      _id: "2",
-      username: "janedoe",
-      email: "jane@example.com",
-      profilePic:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop",
-      createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      isAdmin: false,
-    },
-    {
-      _id: "3",
-      username: "admin",
-      email: "admin@example.com",
-      profilePic:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop",
-      createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-      isAdmin: true,
-    },
-  ],
+// Minimal empty state used until backend responds
+const EMPTY_STATS: Stats = {
+  userCount: 0,
+  movieCount: 0,
+  listCount: 0,
+  totalViews: 0,
+  newUsers: 0,
+  newUsersChange: 0,
+  popularMovies: [],
+  recentUsers: [],
 };
 
 const Dashboard = () => {
-  const [stats, setStats] = useState<Stats>(MOCK_STATS);
+  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
@@ -115,17 +68,10 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        // Fetch real data from the API via proxy
-        const response = await api.get("/admin/stats");
-
-        if (response.data) {
-          setStats(response.data);
-          console.log("Dashboard stats loaded:", response.data);
-        } else {
-          // Fallback to mock data if response is empty
-          console.log("Using mock data as fallback");
-          setStats(MOCK_STATS);
-        }
+        const response = await api.get("/admin/stats", {
+          headers: { token: `Bearer ${user.accessToken}` },
+        });
+        setStats(response.data || EMPTY_STATS);
       } catch (err: any) {
         console.error(
           "Error fetching dashboard stats:",
@@ -135,9 +81,7 @@ const Dashboard = () => {
           "Failed to load dashboard data. " +
             (err.response?.data?.message || err.message)
         );
-
-        // Use mock data if API call fails
-        setStats(MOCK_STATS);
+        setStats(EMPTY_STATS);
       } finally {
         setLoading(false);
       }
