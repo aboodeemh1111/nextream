@@ -3,63 +3,59 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
+        protocol: "http",
+        hostname: "localhost",
       },
       {
-        protocol: 'https',
-        hostname: 'image.tmdb.org',
+        protocol: "https",
+        hostname: "image.tmdb.org",
       },
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
       {
-        protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com',
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
       },
       {
-        protocol: 'https',
-        hostname: 'nextream-api.onrender.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'nextstream.onrender.com',
+        protocol: "https",
+        hostname: "nextream.onrender.com",
       },
     ],
-    domains: ['localhost', 'nextstream.onrender.com', 'nextream-api.onrender.com'],
+    domains: ["localhost", "nextream.onrender.com"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    formats: ['image/webp'],
+    formats: ["image/webp"],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
+    contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    unoptimized: process.env.NODE_ENV === 'development',
+    unoptimized: process.env.NODE_ENV === "development",
   },
   async rewrites() {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       return [
         {
-          source: '/api/:path*',
-          destination: 'http://localhost:8800/api/:path*',
-        }
+          source: "/api/:path*",
+          destination: "http://localhost:8800/api/:path*",
+        },
       ];
     }
     // Production rewrites only in non-development
     return [
       {
-        source: '/auth/:path*',
-        destination: 'https://nextream-api.onrender.com/auth/:path*',
+        source: "/auth/:path*",
+        destination: "https://nextream.onrender.com/auth/:path*",
       },
       {
-        source: '/api/auth/:path*',
-        destination: 'https://nextream-api.onrender.com/api/auth/:path*',
+        source: "/api/auth/:path*",
+        destination: "https://nextream.onrender.com/api/auth/:path*",
       },
       {
-        source: '/api/:path*',
-        destination: 'https://nextream-api.onrender.com/api/:path*',
-      }
+        source: "/api/:path*",
+        destination: "https://nextream.onrender.com/api/:path*",
+      },
     ];
   },
   // Add headers to handle CORS
@@ -67,12 +63,19 @@ const nextConfig = {
     return [
       {
         // Apply these headers to all routes
-        source: '/:path*',
+        source: "/:path*",
         headers: [
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, token' },
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET,DELETE,PATCH,POST,PUT",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value:
+              "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, token",
+          },
         ],
       },
     ];
@@ -93,21 +96,25 @@ const nextConfig = {
     // This is experimental but can be helpful for debugging
     // or working around specific issues with the build.
     serverActions: {
-      bodySizeLimit: '2mb',
+      bodySizeLimit: "2mb",
     },
   },
   serverExternalPackages: [],
   async headers() {
     return [
       {
-        source: '/sw.js',
+        source: "/sw.js",
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' },
-          { key: 'Service-Worker-Allowed', value: '/' },
+          {
+            key: "Cache-Control",
+            value:
+              "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          },
+          { key: "Service-Worker-Allowed", value: "/" },
         ],
       },
     ];
   },
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;
