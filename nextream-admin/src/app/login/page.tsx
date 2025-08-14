@@ -189,18 +189,6 @@ export default function Login() {
               {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
           </div>
-
-          <div className="text-center text-sm text-gray-500 mt-4">
-            <p>Use admin credentials to access the dashboard.</p>
-            <p className="mt-1">
-              Demo: <span className="font-semibold">admin@example.com</span> /{" "}
-              <span className="font-semibold">password</span>
-            </p>
-            <p className="mt-2 text-xs">
-              Note: This is a demo account. In a production environment, you
-              would use your own admin credentials.
-            </p>
-          </div>
         </form>
       </div>
     </div>
