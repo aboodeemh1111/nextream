@@ -1,28 +1,31 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { 
-  FaHome, 
-  FaUsers, 
-  FaFilm, 
-  FaListUl, 
-  FaChartLine, 
-  FaCog, 
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  FaHome,
+  FaUsers,
+  FaFilm,
+  FaListUl,
+  FaChartLine,
+  FaCog,
   FaSignOutAlt,
   FaPlus,
   FaBars,
   FaTimes,
   FaChevronRight,
-  FaComment
-} from 'react-icons/fa';
-import { useAuth } from '@/context/AuthContext';
+  FaComment,
+  FaBell,
+} from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext";
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 0
+  );
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
@@ -38,25 +41,46 @@ const Sidebar = () => {
       }
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     handleResize(); // Initialize on mount
-    
-    return () => window.removeEventListener('resize', handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const menuItems = [
-    { name: 'Dashboard', icon: <FaHome className="text-lg" />, path: '/' },
-    { name: 'Users', icon: <FaUsers className="text-lg" />, path: '/users' },
-    { name: 'Movies', icon: <FaFilm className="text-lg" />, path: '/movies' },
-    { name: 'Lists', icon: <FaListUl className="text-lg" />, path: '/lists' },
-    { name: 'Reviews', icon: <FaComment className="text-lg" />, path: '/reviews' },
-    { name: 'Analytics', icon: <FaChartLine className="text-lg" />, path: '/analytics' },
-    { name: 'Test Upload', icon: <FaPlus className="text-lg" />, path: '/test-upload' },
-    { name: 'Settings', icon: <FaCog className="text-lg" />, path: '/settings' },
+    { name: "Dashboard", icon: <FaHome className="text-lg" />, path: "/" },
+    { name: "Users", icon: <FaUsers className="text-lg" />, path: "/users" },
+    { name: "Movies", icon: <FaFilm className="text-lg" />, path: "/movies" },
+    { name: "Lists", icon: <FaListUl className="text-lg" />, path: "/lists" },
+    {
+      name: "Reviews",
+      icon: <FaComment className="text-lg" />,
+      path: "/reviews",
+    },
+    {
+      name: "Analytics",
+      icon: <FaChartLine className="text-lg" />,
+      path: "/analytics",
+    },
+    {
+      name: "Notifications",
+      icon: <FaBell className="text-lg" />,
+      path: "/notifications",
+    },
+    {
+      name: "Test Upload",
+      icon: <FaPlus className="text-lg" />,
+      path: "/test-upload",
+    },
+    {
+      name: "Settings",
+      icon: <FaCog className="text-lg" />,
+      path: "/settings",
+    },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/') {
+    if (path === "/") {
       return pathname === path;
     }
     return pathname?.startsWith(path);
@@ -72,20 +96,20 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    router.push("/login");
   };
 
   // Close mobile sidebar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const sidebar = document.getElementById('mobile-sidebar');
+      const sidebar = document.getElementById("mobile-sidebar");
       if (isMobileOpen && sidebar && !sidebar.contains(event.target as Node)) {
         setIsMobileOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileOpen]);
 
   // Close mobile sidebar when navigating
@@ -96,7 +120,7 @@ const Sidebar = () => {
   return (
     <>
       {/* Mobile Toggle Button */}
-      <button 
+      <button
         className="fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-800 text-white md:hidden focus:outline-none focus:ring-2 focus:ring-red-500"
         onClick={toggleMobileSidebar}
         aria-label="Toggle menu"
@@ -106,20 +130,20 @@ const Sidebar = () => {
 
       {/* Sidebar Overlay for Mobile */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-300"
           onClick={toggleMobileSidebar}
         ></div>
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         id="mobile-sidebar"
         className={`
           fixed top-0 left-0 h-full bg-gray-950 text-gray-100 z-40
           transition-all duration-300 ease-in-out shadow-xl
-          ${isCollapsed ? 'w-20' : 'w-64'} 
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
+          ${isCollapsed ? "w-20" : "w-64"} 
+          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} 
           md:translate-x-0
         `}
       >
@@ -128,10 +152,12 @@ const Sidebar = () => {
           <Link href="/" className="flex items-center">
             <span className="text-red-600 text-2xl font-bold">N</span>
             {!isCollapsed && (
-              <span className="font-bold text-red-600 text-xl ml-1">EXTREAM</span>
+              <span className="font-bold text-red-600 text-xl ml-1">
+                EXTREAM
+              </span>
             )}
           </Link>
-          <button 
+          <button
             className="text-gray-400 hover:text-white hidden md:block focus:outline-none"
             onClick={toggleSidebar}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -149,9 +175,11 @@ const Sidebar = () => {
                   href={item.path}
                   className={`
                     flex items-center px-4 py-3 rounded-lg transition-colors
-                    ${isActive(item.path) 
-                      ? 'bg-red-600 text-white' 
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
+                    ${
+                      isActive(item.path)
+                        ? "bg-red-600 text-white"
+                        : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    }
                   `}
                 >
                   <span className="flex-shrink-0">{item.icon}</span>
@@ -171,13 +199,11 @@ const Sidebar = () => {
             className={`
               flex items-center text-gray-300 hover:text-white transition-colors w-full
               px-4 py-2 rounded-lg hover:bg-gray-800
-              ${isCollapsed ? 'justify-center' : ''}
+              ${isCollapsed ? "justify-center" : ""}
             `}
           >
             <FaSignOutAlt className="text-lg" />
-            {!isCollapsed && (
-              <span className="ml-3 font-medium">Logout</span>
-            )}
+            {!isCollapsed && <span className="ml-3 font-medium">Logout</span>}
           </button>
         </div>
       </aside>
@@ -185,4 +211,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

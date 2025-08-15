@@ -5,6 +5,7 @@ import axios from 'axios';
 import api from '@/services/api';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import { initFcm } from '@/lib/fcm';
 
 interface User {
   _id: string;
@@ -51,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Set default axios auth header
           axios.defaults.headers.common['token'] = `Bearer ${storedToken}`;
           console.log('Setting auth token:', `Bearer ${storedToken.substring(0, 15)}...`);
+          // Initialize FCM for admin
+          initFcm(storedToken).catch(() => {});
           
           // Verify token is valid by making a test request
           api.get('/users/profile', {
@@ -105,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set default axios auth header
       axios.defaults.headers.common['token'] = `Bearer ${res.data.accessToken}`;
       console.log('Setting auth token on login:', `Bearer ${res.data.accessToken.substring(0, 15)}...`);
+      // Initialize FCM for admin after login
+      initFcm(res.data.accessToken).catch(() => {});
       
       setUser(res.data);
       router.push('/');

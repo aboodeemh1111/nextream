@@ -1,13 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import Navbar from '@/components/Navbar';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { FaUser, FaEdit, FaLock, FaSignOutAlt, FaHistory, FaHeart, FaList, FaEye, FaClock } from 'react-icons/fa';
-import MovieCard from '@/components/MovieCard';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import Navbar from "@/components/Navbar";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import {
+  FaUser,
+  FaEdit,
+  FaLock,
+  FaSignOutAlt,
+  FaHistory,
+  FaHeart,
+  FaList,
+  FaEye,
+  FaClock,
+} from "react-icons/fa";
+import MovieCard from "@/components/MovieCard";
+import { initFcm } from "@/lib/fcm";
 
 interface Movie {
   _id: string;
@@ -53,57 +64,75 @@ interface ProfileSummary {
   profilePic?: string;
   subscriptionStatus?: { plan?: string; isActive?: boolean };
   preferences?: any;
-  metrics: { totalWatchTime: number; totalTitlesWatched: number; inProgress: number; favoritesCount: number; myListCount: number };
+  metrics: {
+    totalWatchTime: number;
+    totalTitlesWatched: number;
+    inProgress: number;
+    favoritesCount: number;
+    myListCount: number;
+  };
   topGenres: { genre: string; count: number }[];
   recentLogins: { date?: string; device?: string; location?: string }[];
 }
 
 export default function Profile() {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState("profile");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [summary, setSummary] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, logout } = useAuth();
   const router = useRouter();
+  const [notifPrefs, setNotifPrefs] = useState<any>(null);
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('/api/users/profile', {
+        const res = await axios.get("/api/users/profile", {
           headers: {
             token: `Bearer ${user.accessToken}`,
           },
         });
         setProfile(res.data);
         // Fetch summary
-        const sum = await axios.get('/api/users/profile/summary', {
-          headers: { token: `Bearer ${user.accessToken}` }
+        const sum = await axios.get("/api/users/profile/summary", {
+          headers: { token: `Bearer ${user.accessToken}` },
         });
         setSummary(sum.data);
       } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError('Failed to load profile');
+        console.error("Error fetching profile:", err);
+        setError("Failed to load profile");
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserProfile();
+    // Load notification preferences
+    (async () => {
+      try {
+        const res = await axios.get("/api/notifications/prefs", {
+          headers: { token: `Bearer ${user.accessToken}` },
+        });
+        setNotifPrefs(res.data || {});
+      } catch {}
+    })();
   }, [user, router]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -111,11 +140,14 @@ export default function Profile() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
     return formatDate(dateString);
   };
 
@@ -135,9 +167,11 @@ export default function Profile() {
       <main className="min-h-screen bg-gray-900">
         <Navbar />
         <div className="container mx-auto px-4 pt-24 pb-12 text-center">
-          <div className="text-white text-xl">{error || 'Profile not available'}</div>
-          <button 
-            onClick={() => router.push('/')}
+          <div className="text-white text-xl">
+            {error || "Profile not available"}
+          </div>
+          <button
+            onClick={() => router.push("/")}
             className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
           >
             Go Home
@@ -150,82 +184,196 @@ export default function Profile() {
   return (
     <main className="min-h-screen bg-gray-900">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 pt-24 pb-12">
         {/* Profile Header */}
         <div className="bg-gray-800 rounded-lg p-6 mb-8 flex flex-col md:flex-row items-center md:items-start gap-6">
           <div className="w-32 h-32 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden flex-shrink-0">
             {profile.profilePic ? (
-              <Image 
-                src={profile.profilePic} 
-                alt={profile.username} 
-                width={128} 
-                height={128} 
+              <Image
+                src={profile.profilePic}
+                alt={profile.username}
+                width={128}
+                height={128}
                 className="object-cover w-full h-full"
               />
             ) : (
               <FaUser className="text-gray-500 text-5xl" />
             )}
           </div>
-          
+
           <div className="text-center md:text-left">
-            <h1 className="text-white text-3xl font-bold mb-2">{profile.username}</h1>
+            <h1 className="text-white text-3xl font-bold mb-2">
+              {profile.username}
+            </h1>
             <p className="text-gray-400 mb-2">{profile.email}</p>
             {summary?.subscriptionStatus?.plan && (
               <p className="text-xs inline-block px-2 py-1 rounded bg-red-600/20 text-red-400 mb-4">
-                Plan: {summary.subscriptionStatus.plan} {summary.subscriptionStatus?.isActive ? '(Active)' : '(Inactive)'}
+                Plan: {summary.subscriptionStatus.plan}{" "}
+                {summary.subscriptionStatus?.isActive
+                  ? "(Active)"
+                  : "(Inactive)"}
               </p>
             )}
-            
-            <button 
+
+            <button
               className="bg-gray-700 text-white px-4 py-2 rounded flex items-center mx-auto md:mx-0 hover:bg-gray-600"
-              onClick={() => router.push('/profile/edit')}
+              onClick={() => router.push("/profile/edit")}
             >
               <FaEdit className="mr-2" /> Edit Profile
             </button>
           </div>
         </div>
 
+        {/* Notification Preferences */}
+        {user && (
+          <div className="bg-gray-800 rounded-lg p-4 mb-8">
+            <h2 className="text-white text-lg font-semibold mb-3">
+              Notification Preferences
+            </h2>
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                onClick={async () => {
+                  const token = await initFcm(user.accessToken);
+                  if (token) setPushEnabled(true);
+                }}
+              >
+                {pushEnabled ? "Push Enabled" : "Enable Push Notifications"}
+              </button>
+              <p className="text-gray-300 text-sm">
+                Enable browser push to receive updates.
+              </p>
+            </div>
+            {notifPrefs && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="flex items-center gap-2 text-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={!!notifPrefs.marketing}
+                    onChange={async (e) => {
+                      try {
+                        setNotifSaving(true);
+                        const res = await axios.post(
+                          "/api/notifications/prefs",
+                          { marketing: e.target.checked },
+                          { headers: { token: `Bearer ${user.accessToken}` } }
+                        );
+                        setNotifPrefs(res.data || {});
+                      } finally {
+                        setNotifSaving(false);
+                      }
+                    }}
+                    disabled={notifSaving}
+                  />
+                  Marketing
+                </label>
+                <label className="flex items-center gap-2 text-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={!!notifPrefs.product}
+                    onChange={async (e) => {
+                      try {
+                        setNotifSaving(true);
+                        const res = await axios.post(
+                          "/api/notifications/prefs",
+                          { product: e.target.checked },
+                          { headers: { token: `Bearer ${user.accessToken}` } }
+                        );
+                        setNotifPrefs(res.data || {});
+                      } finally {
+                        setNotifSaving(false);
+                      }
+                    }}
+                    disabled={notifSaving}
+                  />
+                  Product Updates
+                </label>
+                <label className="flex items-center gap-2 text-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={!!notifPrefs.reminders}
+                    onChange={async (e) => {
+                      try {
+                        setNotifSaving(true);
+                        const res = await axios.post(
+                          "/api/notifications/prefs",
+                          { reminders: e.target.checked },
+                          { headers: { token: `Bearer ${user.accessToken}` } }
+                        );
+                        setNotifPrefs(res.data || {});
+                      } finally {
+                        setNotifSaving(false);
+                      }
+                    }}
+                    disabled={notifSaving}
+                  />
+                  Watch Reminders
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Quick Stats + Top Genres */}
         {summary && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-gray-800 rounded-lg p-4">
               <p className="text-gray-400 text-sm">Total watch time</p>
-              <p className="text-white text-2xl font-semibold">{Math.round(summary.metrics.totalWatchTime / 60)} min</p>
+              <p className="text-white text-2xl font-semibold">
+                {Math.round(summary.metrics.totalWatchTime / 60)} min
+              </p>
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
               <p className="text-gray-400 text-sm">Titles watched</p>
-              <p className="text-white text-2xl font-semibold">{summary.metrics.totalTitlesWatched}</p>
+              <p className="text-white text-2xl font-semibold">
+                {summary.metrics.totalTitlesWatched}
+              </p>
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
               <p className="text-gray-400 text-sm">In progress</p>
-              <p className="text-white text-2xl font-semibold">{summary.metrics.inProgress}</p>
+              <p className="text-white text-2xl font-semibold">
+                {summary.metrics.inProgress}
+              </p>
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
               <p className="text-gray-400 text-sm">Favorites</p>
-              <p className="text-white text-2xl font-semibold">{summary.metrics.favoritesCount}</p>
+              <p className="text-white text-2xl font-semibold">
+                {summary.metrics.favoritesCount}
+              </p>
             </div>
             <div className="md:col-span-2 bg-gray-800 rounded-lg p-4">
-              <p className="text-white text-lg font-semibold mb-2">Top genres</p>
+              <p className="text-white text-lg font-semibold mb-2">
+                Top genres
+              </p>
               <div className="flex flex-wrap gap-2">
                 {summary.topGenres.length === 0 ? (
                   <span className="text-gray-400 text-sm">No data yet</span>
-                ) : summary.topGenres.map((g) => (
-                  <span key={g.genre} className="px-2 py-1 rounded bg-white/10 text-white text-sm">
-                    {g.genre} <span className="text-gray-400">×{g.count}</span>
-                  </span>
-                ))}
+                ) : (
+                  summary.topGenres.map((g) => (
+                    <span
+                      key={g.genre}
+                      className="px-2 py-1 rounded bg-white/10 text-white text-sm"
+                    >
+                      {g.genre}{" "}
+                      <span className="text-gray-400">×{g.count}</span>
+                    </span>
+                  ))
+                )}
               </div>
             </div>
             <div className="md:col-span-2 bg-gray-800 rounded-lg p-4">
-              <p className="text-white text-lg font-semibold mb-2">Recent logins</p>
+              <p className="text-white text-lg font-semibold mb-2">
+                Recent logins
+              </p>
               {summary.recentLogins.length === 0 ? (
                 <p className="text-gray-400 text-sm">No recent login data</p>
               ) : (
                 <ul className="text-gray-300 text-sm space-y-1">
                   {summary.recentLogins.map((l, idx) => (
                     <li key={idx}>
-                      {formatDate(l.date || new Date().toISOString())} • {l.device || 'device'} • {l.location || 'unknown'}
+                      {formatDate(l.date || new Date().toISOString())} •{" "}
+                      {l.device || "device"} • {l.location || "unknown"}
                     </li>
                   ))}
                 </ul>
@@ -233,51 +381,75 @@ export default function Profile() {
             </div>
           </div>
         )}
-        
+
         {/* Navigation Tabs */}
         <div className="flex flex-wrap border-b border-gray-700 mb-6">
-          <button 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === 'profile' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => setActiveTab('profile')}
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "profile"
+                ? "text-red-500 border-b-2 border-red-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("profile")}
           >
             Overview
           </button>
-          <button 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === 'watching' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => setActiveTab('watching')}
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "watching"
+                ? "text-red-500 border-b-2 border-red-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("watching")}
           >
             <FaEye className="inline mr-1" /> Continue Watching
           </button>
-          <button 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === 'mylist' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => setActiveTab('mylist')}
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "mylist"
+                ? "text-red-500 border-b-2 border-red-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("mylist")}
           >
             <FaList className="inline mr-1" /> My List
           </button>
-          <button 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === 'favorites' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => setActiveTab('favorites')}
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "favorites"
+                ? "text-red-500 border-b-2 border-red-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("favorites")}
           >
             <FaHeart className="inline mr-1" /> Favorites
           </button>
-          <button 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === 'watchlist' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => setActiveTab('watchlist')}
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "watchlist"
+                ? "text-red-500 border-b-2 border-red-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("watchlist")}
           >
             <FaClock className="inline mr-1" /> Want to Watch
           </button>
-          <button 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === 'history' ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => setActiveTab('history')}
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "history"
+                ? "text-red-500 border-b-2 border-red-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("history")}
           >
             <FaHistory className="inline mr-1" /> Watch History
           </button>
         </div>
-        
+
         {/* Tab Content */}
         <div className="mt-6">
           {/* Overview Tab */}
-          {activeTab === 'profile' && (
+          {activeTab === "profile" && (
             <div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {/* Continue Watching Section */}
@@ -285,16 +457,18 @@ export default function Profile() {
                   <h2 className="text-white text-lg font-semibold mb-4 flex items-center">
                     <FaEye className="mr-2" /> Continue Watching
                   </h2>
-                  
+
                   {profile.currentlyWatching.length === 0 ? (
-                    <p className="text-gray-400 text-sm">No shows in progress</p>
+                    <p className="text-gray-400 text-sm">
+                      No shows in progress
+                    </p>
                   ) : (
                     <div className="space-y-4">
                       {profile.currentlyWatching.slice(0, 3).map((item) => (
                         <div key={item._id} className="flex items-center">
                           <div className="w-16 h-16 relative flex-shrink-0 mr-3">
-                            <Image 
-                              src={item.movie.imgSm || item.movie.img} 
+                            <Image
+                              src={item.movie.imgSm || item.movie.img}
                               alt={item.movie.title}
                               fill
                               sizes="64px"
@@ -302,10 +476,12 @@ export default function Profile() {
                             />
                           </div>
                           <div>
-                            <h3 className="text-white text-sm font-medium">{item.movie.title}</h3>
+                            <h3 className="text-white text-sm font-medium">
+                              {item.movie.title}
+                            </h3>
                             <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-                              <div 
-                                className="bg-red-600 h-1.5 rounded-full" 
+                              <div
+                                className="bg-red-600 h-1.5 rounded-full"
                                 style={{ width: `${item.progress}%` }}
                               ></div>
                             </div>
@@ -315,11 +491,11 @@ export default function Profile() {
                           </div>
                         </div>
                       ))}
-                      
+
                       {profile.currentlyWatching.length > 3 && (
-                        <button 
+                        <button
                           className="text-gray-400 text-sm hover:text-white"
-                          onClick={() => setActiveTab('watching')}
+                          onClick={() => setActiveTab("watching")}
                         >
                           View all ({profile.currentlyWatching.length})
                         </button>
@@ -327,22 +503,24 @@ export default function Profile() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* My List Section */}
                 <div className="bg-gray-800 rounded-lg p-4">
                   <h2 className="text-white text-lg font-semibold mb-4 flex items-center">
                     <FaList className="mr-2" /> My List
                   </h2>
-                  
+
                   {profile.myList.length === 0 ? (
-                    <p className="text-gray-400 text-sm">No titles in your list</p>
+                    <p className="text-gray-400 text-sm">
+                      No titles in your list
+                    </p>
                   ) : (
                     <div className="space-y-4">
                       {profile.myList.slice(0, 3).map((movie) => (
                         <div key={movie._id} className="flex items-center">
                           <div className="w-16 h-16 relative flex-shrink-0 mr-3">
-                            <Image 
-                              src={movie.imgSm || movie.img} 
+                            <Image
+                              src={movie.imgSm || movie.img}
                               alt={movie.title}
                               fill
                               sizes="64px"
@@ -350,16 +528,20 @@ export default function Profile() {
                             />
                           </div>
                           <div>
-                            <h3 className="text-white text-sm font-medium">{movie.title}</h3>
-                            <p className="text-gray-400 text-xs">{movie.year}</p>
+                            <h3 className="text-white text-sm font-medium">
+                              {movie.title}
+                            </h3>
+                            <p className="text-gray-400 text-xs">
+                              {movie.year}
+                            </p>
                           </div>
                         </div>
                       ))}
-                      
+
                       {profile.myList.length > 3 && (
-                        <button 
+                        <button
                           className="text-gray-400 text-sm hover:text-white"
-                          onClick={() => setActiveTab('mylist')}
+                          onClick={() => setActiveTab("mylist")}
                         >
                           View all ({profile.myList.length})
                         </button>
@@ -367,13 +549,13 @@ export default function Profile() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Favorites Section */}
                 <div className="bg-gray-800 rounded-lg p-4">
                   <h2 className="text-white text-lg font-semibold mb-4 flex items-center">
                     <FaHeart className="mr-2" /> Favorites
                   </h2>
-                  
+
                   {profile.favorites.length === 0 ? (
                     <p className="text-gray-400 text-sm">No favorites added</p>
                   ) : (
@@ -381,8 +563,8 @@ export default function Profile() {
                       {profile.favorites.slice(0, 3).map((movie) => (
                         <div key={movie._id} className="flex items-center">
                           <div className="w-16 h-16 relative flex-shrink-0 mr-3">
-                            <Image 
-                              src={movie.imgSm || movie.img} 
+                            <Image
+                              src={movie.imgSm || movie.img}
                               alt={movie.title}
                               fill
                               sizes="64px"
@@ -390,16 +572,20 @@ export default function Profile() {
                             />
                           </div>
                           <div>
-                            <h3 className="text-white text-sm font-medium">{movie.title}</h3>
-                            <p className="text-gray-400 text-xs">{movie.year}</p>
+                            <h3 className="text-white text-sm font-medium">
+                              {movie.title}
+                            </h3>
+                            <p className="text-gray-400 text-xs">
+                              {movie.year}
+                            </p>
                           </div>
                         </div>
                       ))}
-                      
+
                       {profile.favorites.length > 3 && (
-                        <button 
+                        <button
                           className="text-gray-400 text-sm hover:text-white"
-                          onClick={() => setActiveTab('favorites')}
+                          onClick={() => setActiveTab("favorites")}
                         >
                           View all ({profile.favorites.length})
                         </button>
@@ -410,16 +596,20 @@ export default function Profile() {
               </div>
             </div>
           )}
-          
+
           {/* Continue Watching Tab */}
-          {activeTab === 'watching' && (
+          {activeTab === "watching" && (
             <div>
-              <h2 className="text-white text-xl font-bold mb-4">Continue Watching</h2>
-              
+              <h2 className="text-white text-xl font-bold mb-4">
+                Continue Watching
+              </h2>
+
               {profile.currentlyWatching.length === 0 ? (
                 <div className="text-center py-12 bg-gray-800 rounded-lg">
                   <FaEye className="text-gray-500 text-5xl mx-auto mb-4" />
-                  <h3 className="text-white text-lg mb-2">No shows in progress</h3>
+                  <h3 className="text-white text-lg mb-2">
+                    No shows in progress
+                  </h3>
                   <p className="text-gray-400">
                     Start watching a show or movie and it will appear here.
                   </p>
@@ -427,10 +617,13 @@ export default function Profile() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {profile.currentlyWatching.map((item) => (
-                    <div key={item._id} className="bg-gray-800 rounded-lg overflow-hidden">
+                    <div
+                      key={item._id}
+                      className="bg-gray-800 rounded-lg overflow-hidden"
+                    >
                       <div className="relative h-40">
-                        <Image 
-                          src={item.movie.imgSm || item.movie.img} 
+                        <Image
+                          src={item.movie.imgSm || item.movie.img}
                           alt={item.movie.title}
                           fill
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -439,24 +632,30 @@ export default function Profile() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
                         <div className="absolute bottom-0 left-0 right-0 p-3">
                           <div className="w-full bg-gray-700 rounded-full h-1.5">
-                            <div 
-                              className="bg-red-600 h-1.5 rounded-full" 
+                            <div
+                              className="bg-red-600 h-1.5 rounded-full"
                               style={{ width: `${item.progress}%` }}
                             ></div>
                           </div>
                         </div>
                       </div>
                       <div className="p-3">
-                        <h3 className="text-white font-medium mb-1">{item.movie.title}</h3>
+                        <h3 className="text-white font-medium mb-1">
+                          {item.movie.title}
+                        </h3>
                         <div className="flex justify-between items-center">
-                          <p className="text-gray-400 text-sm">{item.movie.year}</p>
+                          <p className="text-gray-400 text-sm">
+                            {item.movie.year}
+                          </p>
                           <p className="text-gray-400 text-xs">
                             {calculateTimeAgo(item.lastWatchedAt)}
                           </p>
                         </div>
-                        <button 
+                        <button
                           className="w-full mt-3 bg-red-600 text-white py-1.5 rounded hover:bg-red-700"
-                          onClick={() => router.push(`/watch?videoId=${item.movie._id}`)}
+                          onClick={() =>
+                            router.push(`/watch?videoId=${item.movie._id}`)
+                          }
                         >
                           Resume
                         </button>
@@ -467,16 +666,18 @@ export default function Profile() {
               )}
             </div>
           )}
-          
+
           {/* My List Tab */}
-          {activeTab === 'mylist' && (
+          {activeTab === "mylist" && (
             <div>
               <h2 className="text-white text-xl font-bold mb-4">My List</h2>
-              
+
               {profile.myList.length === 0 ? (
                 <div className="text-center py-12 bg-gray-800 rounded-lg">
                   <FaList className="text-gray-500 text-5xl mx-auto mb-4" />
-                  <h3 className="text-white text-lg mb-2">Your list is empty</h3>
+                  <h3 className="text-white text-lg mb-2">
+                    Your list is empty
+                  </h3>
                   <p className="text-gray-400">
                     Add shows and movies to your list to watch them later.
                   </p>
@@ -492,12 +693,12 @@ export default function Profile() {
               )}
             </div>
           )}
-          
+
           {/* Favorites Tab */}
-          {activeTab === 'favorites' && (
+          {activeTab === "favorites" && (
             <div>
               <h2 className="text-white text-xl font-bold mb-4">Favorites</h2>
-              
+
               {profile.favorites.length === 0 ? (
                 <div className="text-center py-12 bg-gray-800 rounded-lg">
                   <FaHeart className="text-gray-500 text-5xl mx-auto mb-4" />
@@ -517,16 +718,20 @@ export default function Profile() {
               )}
             </div>
           )}
-          
+
           {/* Watchlist Tab */}
-          {activeTab === 'watchlist' && (
+          {activeTab === "watchlist" && (
             <div>
-              <h2 className="text-white text-xl font-bold mb-4">Want to Watch</h2>
-              
+              <h2 className="text-white text-xl font-bold mb-4">
+                Want to Watch
+              </h2>
+
               {profile.watchlist.length === 0 ? (
                 <div className="text-center py-12 bg-gray-800 rounded-lg">
                   <FaClock className="text-gray-500 text-5xl mx-auto mb-4" />
-                  <h3 className="text-white text-lg mb-2">Your watchlist is empty</h3>
+                  <h3 className="text-white text-lg mb-2">
+                    Your watchlist is empty
+                  </h3>
                   <p className="text-gray-400">
                     Add shows and movies you want to watch in the future.
                   </p>
@@ -542,12 +747,14 @@ export default function Profile() {
               )}
             </div>
           )}
-          
+
           {/* Watch History Tab */}
-          {activeTab === 'history' && (
+          {activeTab === "history" && (
             <div>
-              <h2 className="text-white text-xl font-bold mb-4">Watch History</h2>
-              
+              <h2 className="text-white text-xl font-bold mb-4">
+                Watch History
+              </h2>
+
               {profile.watchHistory.length === 0 ? (
                 <div className="text-center py-12 bg-gray-800 rounded-lg">
                   <FaHistory className="text-gray-500 text-5xl mx-auto mb-4" />
@@ -559,10 +766,13 @@ export default function Profile() {
               ) : (
                 <div className="space-y-4">
                   {profile.watchHistory.map((item) => (
-                    <div key={item._id} className="bg-gray-800 rounded-lg p-4 flex items-center">
+                    <div
+                      key={item._id}
+                      className="bg-gray-800 rounded-lg p-4 flex items-center"
+                    >
                       <div className="w-20 h-20 relative flex-shrink-0 mr-4">
-                        <Image 
-                          src={item.movie.imgSm || item.movie.img} 
+                        <Image
+                          src={item.movie.imgSm || item.movie.img}
                           alt={item.movie.title}
                           fill
                           sizes="80px"
@@ -570,15 +780,21 @@ export default function Profile() {
                         />
                       </div>
                       <div className="flex-grow">
-                        <h3 className="text-white font-medium">{item.movie.title}</h3>
-                        <p className="text-gray-400 text-sm">{item.movie.year}</p>
+                        <h3 className="text-white font-medium">
+                          {item.movie.title}
+                        </h3>
+                        <p className="text-gray-400 text-sm">
+                          {item.movie.year}
+                        </p>
                         <p className="text-gray-500 text-xs mt-1">
                           Watched on {formatDate(item.watchedAt)}
                         </p>
                       </div>
-                      <button 
+                      <button
                         className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 ml-4"
-                        onClick={() => router.push(`/watch?videoId=${item.movie._id}`)}
+                        onClick={() =>
+                          router.push(`/watch?videoId=${item.movie._id}`)
+                        }
                       >
                         Watch Again
                       </button>
@@ -592,4 +808,4 @@ export default function Profile() {
       </div>
     </main>
   );
-} 
+}

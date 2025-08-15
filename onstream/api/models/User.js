@@ -51,6 +51,25 @@ const UserSchema = new mongoose.Schema(
       endDate: { type: Date },
       isActive: { type: Boolean, default: true }
     },
+    // Push notifications
+    deviceTokens: [
+      {
+        token: { type: String, index: true },
+        platform: { type: String, enum: ["web"], default: "web" },
+        userAgent: { type: String },
+        subscribedTopics: [{ type: String }],
+        createdAt: { type: Date, default: Date.now }
+      }
+    ],
+    notificationPrefs: {
+      marketing: { type: Boolean, default: true },
+      product: { type: Boolean, default: true },
+      reminders: { type: Boolean, default: true },
+      quietHours: {
+        start: { type: String, default: null }, // e.g., '22:00'
+        end: { type: String, default: null } // e.g., '08:00'
+      }
+    },
     // User preferences for UI/Playback/Accessibility
     preferences: {
       autoplayPreviews: { type: Boolean, default: true },
@@ -74,5 +93,6 @@ UserSchema.index({ email: 1 });
 UserSchema.index({ username: 1 });
 UserSchema.index({ 'watchHistory.movie': 1 });
 UserSchema.index({ 'currentlyWatching.movie': 1 });
+UserSchema.index({ 'deviceTokens.token': 1 });
 
 module.exports = mongoose.model("User", UserSchema);

@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import axios from 'axios';
 import api from '@/lib/axios'; // Import the custom axios instance
+import { initFcm } from '@/lib/fcm';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -41,6 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Set the token in axios headers
         if (parsedUser?.accessToken) {
           axios.defaults.headers.common['token'] = `Bearer ${parsedUser.accessToken}`;
+          // Initialize FCM in background (non-blocking)
+          initFcm(parsedUser.accessToken).catch(() => {});
         }
       } catch (err) {
         console.error('Error parsing stored user:', err);
@@ -64,6 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set the token in axios headers
       if (res.data?.accessToken) {
         axios.defaults.headers.common['token'] = `Bearer ${res.data.accessToken}`;
+        // Initialize FCM after login
+        initFcm(res.data.accessToken).catch(() => {});
       }
       
       router.push('/');
