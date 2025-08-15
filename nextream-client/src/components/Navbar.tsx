@@ -38,6 +38,20 @@ const Navbar = () => {
   const [searchGenre, setSearchGenre] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<
+    Array<{
+      _id: string;
+      title?: string;
+      body?: string;
+      data?: any;
+      read?: boolean;
+      createdAt?: string;
+    }>
+  >([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifUnread, setNotifUnread] = useState(0);
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -59,13 +73,19 @@ const Navbar = () => {
       setRecentSearches(JSON.parse(savedSearches));
     }
 
-    // Handle clicks outside of search suggestions
+    // Handle clicks outside of search and notifications
     const handleClickOutside = (event: MouseEvent) => {
       if (
         searchRef.current &&
         !searchRef.current.contains(event.target as Node)
       ) {
         setShowSuggestions(false);
+      }
+      if (
+        notifRef.current &&
+        !notifRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
       }
     };
 
@@ -74,6 +94,53 @@ const Navbar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const fetchNotifications = async () => {
+    if (!user?.accessToken) return;
+    try {
+      setNotifLoading(true);
+      const res = await axios.get("/api/notifications", {
+        headers: { token: `Bearer ${user.accessToken}` },
+      });
+      const items = Array.isArray(res.data) ? res.data : [];
+      setNotifications(items);
+      setNotifUnread(items.filter((n: any) => !n.read).length);
+    } catch (err) {
+      console.error("Failed to load notifications", err);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.accessToken) {
+      fetchNotifications().catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.accessToken]);
+
+  const openNotification = async (n: {
+    _id: string;
+    data?: any;
+    read?: boolean;
+  }) => {
+    try {
+      if (!n.read) {
+        await axios.patch(`/api/notifications/${n._id}/read`, null, {
+          headers: { token: `Bearer ${user?.accessToken}` },
+        });
+        setNotifications((prev) =>
+          prev.map((it) => (it._id === n._id ? { ...it, read: true } : it))
+        );
+        setNotifUnread((c) => Math.max(0, c - 1));
+      }
+    } catch (err) {
+      // ignore
+    }
+    const link = n?.data?.deepLink || "/";
+    router.push(link);
+    setShowNotifications(false);
+  };
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -276,9 +343,15 @@ const Navbar = () => {
                       value={searchType}
                       onChange={(e) => setSearchType(e.target.value)}
                     >
-                      <option className="bg-black text-white" value="all">All</option>
-                      <option className="bg-black text-white" value="movie">Movies</option>
-                      <option className="bg-black text-white" value="series">Series</option>
+                      <option className="bg-black text-white" value="all">
+                        All
+                      </option>
+                      <option className="bg-black text-white" value="movie">
+                        Movies
+                      </option>
+                      <option className="bg-black text-white" value="series">
+                        Series
+                      </option>
                     </select>
                   </div>
 
@@ -291,20 +364,54 @@ const Navbar = () => {
                       value={searchGenre}
                       onChange={(e) => setSearchGenre(e.target.value)}
                     >
-                      <option className="bg-black text-white" value="">Any Genre</option>
-                      <option className="bg-black text-white" value="action">Action</option>
-                      <option className="bg-black text-white" value="comedy">Comedy</option>
-                      <option className="bg-black text-white" value="crime">Crime</option>
-                      <option className="bg-black text-white" value="fantasy">Fantasy</option>
-                      <option className="bg-black text-white" value="historical">Historical</option>
-                      <option className="bg-black text-white" value="horror">Horror</option>
-                      <option className="bg-black text-white" value="romance">Romance</option>
-                      <option className="bg-black text-white" value="sci-fi">Sci-fi</option>
-                      <option className="bg-black text-white" value="thriller">Thriller</option>
-                      <option className="bg-black text-white" value="western">Western</option>
-                      <option className="bg-black text-white" value="animation">Animation</option>
-                      <option className="bg-black text-white" value="drama">Drama</option>
-                      <option className="bg-black text-white" value="documentary">Documentary</option>
+                      <option className="bg-black text-white" value="">
+                        Any Genre
+                      </option>
+                      <option className="bg-black text-white" value="action">
+                        Action
+                      </option>
+                      <option className="bg-black text-white" value="comedy">
+                        Comedy
+                      </option>
+                      <option className="bg-black text-white" value="crime">
+                        Crime
+                      </option>
+                      <option className="bg-black text-white" value="fantasy">
+                        Fantasy
+                      </option>
+                      <option
+                        className="bg-black text-white"
+                        value="historical"
+                      >
+                        Historical
+                      </option>
+                      <option className="bg-black text-white" value="horror">
+                        Horror
+                      </option>
+                      <option className="bg-black text-white" value="romance">
+                        Romance
+                      </option>
+                      <option className="bg-black text-white" value="sci-fi">
+                        Sci-fi
+                      </option>
+                      <option className="bg-black text-white" value="thriller">
+                        Thriller
+                      </option>
+                      <option className="bg-black text-white" value="western">
+                        Western
+                      </option>
+                      <option className="bg-black text-white" value="animation">
+                        Animation
+                      </option>
+                      <option className="bg-black text-white" value="drama">
+                        Drama
+                      </option>
+                      <option
+                        className="bg-black text-white"
+                        value="documentary"
+                      >
+                        Documentary
+                      </option>
                     </select>
                   </div>
 
@@ -411,7 +518,71 @@ const Navbar = () => {
           </button>
 
           <div className="hidden md:block w-px h-6 bg-white/10" />
-          <FaBell className="text-white/90" />
+          <div className="relative" ref={notifRef}>
+            <button
+              className="relative text-white/90 hover:text-white"
+              aria-label="Notifications"
+              onClick={() => {
+                const next = !showNotifications;
+                setShowNotifications(next);
+                if (next) fetchNotifications();
+              }}
+            >
+              <FaBell />
+              {notifUnread > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full">
+                  {notifUnread}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-auto bg-black/70 backdrop-blur-md rounded-xl shadow-2xl border border-white/10 z-50">
+                <div className="px-4 py-2 text-sm text-gray-300 border-b border-gray-800 flex items-center justify-between">
+                  <span>Notifications</span>
+                  <button
+                    className="text-xs text-gray-400 hover:text-white"
+                    onClick={() => fetchNotifications()}
+                  >
+                    Refresh
+                  </button>
+                </div>
+                {notifLoading ? (
+                  <div className="p-4 text-gray-400 text-sm">Loading...</div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-4 text-gray-400 text-sm">
+                    No notifications
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-white/10">
+                    {notifications.map((n) => (
+                      <li
+                        key={n._id}
+                        className={`p-3 cursor-pointer hover:bg-white/5 ${
+                          n.read ? "opacity-80" : ""
+                        }`}
+                        onClick={() => openNotification(n)}
+                      >
+                        <div className="text-white text-sm font-medium line-clamp-1">
+                          {n.title || "Notification"}
+                        </div>
+                        {n.body && (
+                          <div className="text-gray-300 text-xs mt-0.5 line-clamp-2">
+                            {n.body}
+                          </div>
+                        )}
+                        {n.createdAt && (
+                          <div className="text-gray-500 text-[11px] mt-1">
+                            {new Date(n.createdAt).toLocaleString()}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="relative">
             <div
@@ -521,9 +692,15 @@ const Navbar = () => {
                     value={searchType}
                     onChange={(e) => setSearchType(e.target.value)}
                   >
-                    <option className="bg-black text-white" value="all">All</option>
-                    <option className="bg-black text-white" value="movie">Movies</option>
-                    <option className="bg-black text-white" value="series">Series</option>
+                    <option className="bg-black text-white" value="all">
+                      All
+                    </option>
+                    <option className="bg-black text-white" value="movie">
+                      Movies
+                    </option>
+                    <option className="bg-black text-white" value="series">
+                      Series
+                    </option>
                   </select>
                 </div>
 
@@ -536,20 +713,48 @@ const Navbar = () => {
                     value={searchGenre}
                     onChange={(e) => setSearchGenre(e.target.value)}
                   >
-                    <option className="bg-black text-white" value="">Any Genre</option>
-                    <option className="bg-black text-white" value="action">Action</option>
-                    <option className="bg-black text-white" value="comedy">Comedy</option>
-                    <option className="bg-black text-white" value="crime">Crime</option>
-                    <option className="bg-black text-white" value="fantasy">Fantasy</option>
-                    <option className="bg-black text-white" value="historical">Historical</option>
-                    <option className="bg-black text-white" value="horror">Horror</option>
-                    <option className="bg-black text-white" value="romance">Romance</option>
-                    <option className="bg-black text-white" value="sci-fi">Sci-fi</option>
-                    <option className="bg-black text-white" value="thriller">Thriller</option>
-                    <option className="bg-black text-white" value="western">Western</option>
-                    <option className="bg-black text-white" value="animation">Animation</option>
-                    <option className="bg-black text-white" value="drama">Drama</option>
-                    <option className="bg-black text-white" value="documentary">Documentary</option>
+                    <option className="bg-black text-white" value="">
+                      Any Genre
+                    </option>
+                    <option className="bg-black text-white" value="action">
+                      Action
+                    </option>
+                    <option className="bg-black text-white" value="comedy">
+                      Comedy
+                    </option>
+                    <option className="bg-black text-white" value="crime">
+                      Crime
+                    </option>
+                    <option className="bg-black text-white" value="fantasy">
+                      Fantasy
+                    </option>
+                    <option className="bg-black text-white" value="historical">
+                      Historical
+                    </option>
+                    <option className="bg-black text-white" value="horror">
+                      Horror
+                    </option>
+                    <option className="bg-black text-white" value="romance">
+                      Romance
+                    </option>
+                    <option className="bg-black text-white" value="sci-fi">
+                      Sci-fi
+                    </option>
+                    <option className="bg-black text-white" value="thriller">
+                      Thriller
+                    </option>
+                    <option className="bg-black text-white" value="western">
+                      Western
+                    </option>
+                    <option className="bg-black text-white" value="animation">
+                      Animation
+                    </option>
+                    <option className="bg-black text-white" value="drama">
+                      Drama
+                    </option>
+                    <option className="bg-black text-white" value="documentary">
+                      Documentary
+                    </option>
                   </select>
                 </div>
 
