@@ -1,12 +1,8 @@
 /* global self, importScripts, firebase */
-importScripts(
-  "https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"
-);
-importScripts(
-  "https://www.gstatic.com/firebasejs/10.12.3/firebase-messaging-compat.js"
-);
+importScripts('https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.3/firebase-messaging-compat.js');
 
-// IMPORTANT: These are public web config values. Update to your Firebase project if different.
+// IMPORTANT: Public web config values for your Firebase project
 firebase.initializeApp({
   apiKey: "AIzaSyB91ogaobBfR_bflbdUjr8J_hHBkI7G_JI",
   authDomain: "onstream-6a46b.firebaseapp.com",
@@ -17,14 +13,18 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Background messages
 messaging.onBackgroundMessage(({ notification, data }) => {
   const { title, body, image } = notification || {};
-  const options = { body, icon: "/vercel.svg", image, data };
-  self.registration.showNotification(title || "Nextream", options);
+  const options = { body, icon: '/vercel.svg', image, data };
+  self.registration.showNotification(title || 'Nextream', options);
 });
 
-self.addEventListener("notificationclick", (event) => {
+// Click to open deep link
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification?.data?.deepLink || "/";
+  const url = event.notification?.data?.deepLink || '/';
   event.waitUntil(self.clients.openWindow(url));
 });
+
+

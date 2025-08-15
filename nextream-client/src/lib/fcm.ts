@@ -1,12 +1,13 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
+// Use env when available; otherwise fall back to known public web config
 const app = initializeApp({
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyB91ogaobBfR_bflbdUjr8J_hHBkI7G_JI',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'onstream-6a46b.firebaseapp.com',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'onstream-6a46b',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '635674662728',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:635674662728:web:603b0f17a1e43fd096457d',
 });
 
 export async function initFcm(accessToken?: string) {
@@ -16,7 +17,7 @@ export async function initFcm(accessToken?: string) {
 
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     const messaging = getMessaging(app);
-    const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY!;
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
     const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
 
     if (token && accessToken) {
@@ -24,6 +25,13 @@ export async function initFcm(accessToken?: string) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', token: `Bearer ${accessToken}` },
         body: JSON.stringify({ token, platform: 'web', userAgent: navigator.userAgent }),
+      });
+
+      // Subscribe to a default topic so topic sends can reach clients
+      await fetch('/api/notifications/topics/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', token: `Bearer ${accessToken}` },
+        body: JSON.stringify({ token, topic: 'all-users' }),
       });
     }
 
