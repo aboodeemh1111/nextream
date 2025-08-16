@@ -72,10 +72,27 @@ export default function TVShowDetailPage() {
     }
   };
 
-  const loadEpisodes = async (seasonId: string) => {
+  const loadEpisodes = async (seasonId: string, seasonNumber?: number) => {
     if (episodes[seasonId]) return;
-    const res = await api.get(`/tv/admin/seasons/${seasonId}/episodes`);
-    setEpisodes((prev) => ({ ...prev, [seasonId]: res.data || [] }));
+    try {
+      const res = await api.get(`/tv/admin/seasons/${seasonId}/episodes`);
+      setEpisodes((prev) => ({ ...prev, [seasonId]: res.data || [] }));
+    } catch (err) {
+      // Fallback to public published episodes by seasonNumber
+      if (seasonNumber != null) {
+        try {
+          const pub = await api.get(
+            `/tv/${id}/seasons/${seasonNumber}/episodes`
+          );
+          setEpisodes((prev) => ({ ...prev, [seasonId]: pub.data || [] }));
+        } catch (e) {
+          console.error("Failed to load episodes for season", seasonId, e);
+          setEpisodes((prev) => ({ ...prev, [seasonId]: [] }));
+        }
+      } else {
+        setEpisodes((prev) => ({ ...prev, [seasonId]: [] }));
+      }
+    }
   };
 
   const addEpisode = async (season: Season) => {
@@ -151,7 +168,7 @@ export default function TVShowDetailPage() {
                       <div className="flex items-center gap-2">
                         <button
                           className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
-                          onClick={() => loadEpisodes(s._id)}
+                          onClick={() => loadEpisodes(s._id, s.seasonNumber)}
                         >
                           Load episodes
                         </button>
