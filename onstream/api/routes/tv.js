@@ -1,0 +1,118 @@
+const router = require('express').Router();
+const verify = require('../verifyToken');
+const TVShow = require('../models/TVShow');
+const Season = require('../models/Season');
+const Episode = require('../models/Episode');
+
+// Public: list shows
+router.get('/', async (req, res) => {
+  try {
+    const { page = 1, pageSize = 20, q, genre, status, sort = '-createdAt' } = req.query;
+    const filter = { published: true };
+    if (q) filter.title = { $regex: q, $options: 'i' };
+    if (genre) filter.genres = genre;
+    if (status) filter.status = status;
+    const skip = (Number(page) - 1) * Number(pageSize);
+    const [data, total] = await Promise.all([
+      TVShow.find(filter).sort(sort).skip(skip).limit(Number(pageSize)).lean(),
+      TVShow.countDocuments(filter),
+    ]);
+    res.json({ data, page: Number(page), pageSize: Number(pageSize), total });
+  } catch (err) {
+    res.status(500).json({ error: 'TV_LIST_FAILED', message: err.message });
+  }
+});
+
+// Public: show details
+router.get('/:showId', async (req, res) => {
+  try {
+    const show = await TVShow.findById(req.params.showId).lean();
+    if (!show || !show.published) return res.status(404).json({ message: 'Not found' });
+    const seasons = await Season.find({ showId: show._id, published: true }).sort({ seasonNumber: 1 }).lean();
+    res.json({ show, seasons });
+  } catch (err) {
+    res.status(500).json({ error: 'TV_GET_FAILED', message: err.message });
+  }
+});
+
+// Public: episodes by season
+router.get('/:showId/seasons/:seasonNumber/episodes', async (req, res) => {
+  try {
+    const season = await Season.findOne({ showId: req.params.showId, seasonNumber: Number(req.params.seasonNumber), published: true }).lean();
+    if (!season) return res.status(404).json({ message: 'Season not found' });
+    const eps = await Episode.find({ seasonId: season._id, published: true }).sort({ episodeNumber: 1 }).lean();
+    res.json(eps);
+  } catch (err) {
+    res.status(500).json({ error: 'EPISODE_LIST_FAILED', message: err.message });
+  }
+});
+
+// Public: episode details
+router.get('/episodes/:episodeId', async (req, res) => {
+  try {
+    const ep = await Episode.findById(req.params.episodeId).lean();
+    if (!ep || !ep.published) return res.status(404).json({ message: 'Not found' });
+    res.json(ep);
+  } catch (err) {
+    res.status(500).json({ error: 'EPISODE_GET_FAILED', message: err.message });
+  }
+});
+
+// Admin: create/update show
+router.post('/', verify, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json('You are not allowed!');
+    const created = await TVShow.create(req.body);
+    res.json(created);
+  } catch (err) {
+    res.status(500).json({ error: 'TV_CREATE_FAILED', message: err.message });
+  }
+});
+
+router.patch('/:showId', verify, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json('You are not allowed!');
+    const updated = await TVShow.findByIdAndUpdate(req.params.showId, { $set: req.body }, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'TV_UPDATE_FAILED', message: err.message });
+  }
+});
+
+// Admin: seasons
+router.post('/:showId/seasons', verify, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json('You are not allowed!');
+    const payload = { ...req.body, showId: req.params.showId };
+    const s = await Season.create(payload);
+    await TVShow.updateOne({ _id: req.params.showId }, { $inc: { seasonsCount: 1 } });
+    res.json(s);
+  } catch (err) {
+    res.status(500).json({ error: 'SEASON_CREATE_FAILED', message: err.message });
+  }
+});
+
+// Admin: episodes (single create)
+router.post('/:showId/seasons/:seasonId/episodes', verify, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) return res.status(403).json('You are not allowed!');
+    const season = await Season.findOne({ _id: req.params.seasonId, showId: req.params.showId });
+    if (!season) return res.status(404).json({ message: 'Season not found' });
+    const payload = {
+      ...req.body,
+      showId: season.showId,
+      seasonId: season._id,
+      seasonNumber: season.seasonNumber,
+    };
+    const ep = await Episode.create(payload);
+    await Season.updateOne({ _id: season._id }, { $inc: { episodesCount: 1 } });
+    await TVShow.updateOne({ _id: season.showId }, { $inc: { episodesCount: 1 } });
+    res.json(ep);
+  } catch (err) {
+    res.status(500).json({ error: 'EPISODE_CREATE_FAILED', message: err.message });
+  }
+});
+
+module.exports = router;
+
+

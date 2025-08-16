@@ -68,6 +68,11 @@ const Sidebar = () => {
       path: "/notifications",
     },
     {
+      name: "TV Shows",
+      icon: <span className="text-lg">📺</span>,
+      path: "/tv",
+    },
+    {
       name: "Test Upload",
       icon: <FaPlus className="text-lg" />,
       path: "/test-upload",

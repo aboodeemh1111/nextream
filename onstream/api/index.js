@@ -18,6 +18,7 @@ const commentRoute = require("./routes/comments");
 const alertsRoute = require("./routes/alerts");
 const auditLogsRoute = require("./routes/auditLogs");
 const notificationsRoute = require("./routes/notifications");
+const tvRoute = require("./routes/tv");
 
 dotenv.config();
 
@@ -107,6 +108,7 @@ app.use("/api/analytics", analyticsRoute);
 app.use("/api/reviews", reviewRoute);
 app.use("/api/comments", commentRoute);
 app.use("/api/notifications", notificationsRoute);
+app.use("/api/tv", tvRoute);
 app.use("/api/admin/alerts", alertsRoute);
 app.use("/api/admin/audit-logs", auditLogsRoute);
 
@@ -122,6 +124,7 @@ app.use("/comments", commentRoute);
 app.use("/admin/alerts", alertsRoute);
 app.use("/admin/audit-logs", auditLogsRoute);
 app.use("/notifications", notificationsRoute);
+app.use("/tv", tvRoute);
 
 // Basic route for health check
 app.get('/', (req, res) => {
