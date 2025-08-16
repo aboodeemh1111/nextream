@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import AdminLayout from "@/components/AdminLayout";
 import api from "@/services/api";
 import Link from "next/link";
+import Toast from "@/components/Toast";
 
 interface TVShow {
   _id: string;
@@ -34,12 +35,19 @@ export default function TVShowDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newSeasonNumber, setNewSeasonNumber] = useState<number>(1);
+  const [newSeasonNumberInput, setNewSeasonNumberInput] = useState<string>("");
   const [episodes, setEpisodes] = useState<Record<string, Episode[]>>({});
   const clientBase =
     process.env.NEXT_PUBLIC_CLIENT_BASE_URL || "http://localhost:3000";
   const [preview, setPreview] = useState<{ url: string; title: string } | null>(
     null
   );
+  const [reordering, setReordering] = useState(false);
+  const [order, setOrder] = useState<string[]>([]);
+  const [toast, setToast] = useState<{
+    msg: string;
+    type?: "success" | "error" | "info";
+  } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -50,6 +58,7 @@ export default function TVShowDetailPage() {
       ]);
       setShow(s.data?.show || null);
       setSeasons(seas.data || []);
+      setOrder((seas.data || []).map((s: any) => s._id));
     } catch (e: any) {
       setError(e.response?.data?.message || "Failed to load show");
     } finally {
@@ -64,14 +73,47 @@ export default function TVShowDetailPage() {
   const createSeason = async () => {
     try {
       setCreating(true);
-      await api.post(`/tv/${id}/seasons`, {
-        seasonNumber: newSeasonNumber,
-        published: true,
-      });
-      setNewSeasonNumber((n) => n + 1);
+      // Avoid duplicate numbers locally if possible
+      const used = new Set(seasons.map((s) => s.seasonNumber));
+      const desired =
+        newSeasonNumberInput.trim() === ""
+          ? undefined
+          : Number(newSeasonNumberInput);
+      let number =
+        desired && !Number.isNaN(desired) ? desired : newSeasonNumber || 1;
+      if (used.has(number)) {
+        // find next free number
+        let candidate = number + 1;
+        while (used.has(candidate)) candidate++;
+        number = candidate;
+      }
+      try {
+        await api.post(`/tv/${id}/seasons`, {
+          seasonNumber: number,
+          published: true,
+        });
+      } catch (err: any) {
+        if (err?.response?.status === 409) {
+          // server says duplicate; pick the next highest + 1 and retry once
+          const max = seasons.reduce(
+            (m, s) => Math.max(m, s.seasonNumber || 0),
+            0
+          );
+          const bumped = max + 1 || 1;
+          await api.post(`/tv/${id}/seasons`, {
+            seasonNumber: bumped,
+            published: true,
+          });
+          number = bumped;
+        } else {
+          throw err;
+        }
+      }
+      setNewSeasonNumber(number + 1);
+      setNewSeasonNumberInput("");
       await fetchData();
     } catch (e) {
-      // ignore minimal
+      console.error("Create season failed", e);
     } finally {
       setCreating(false);
     }
@@ -114,6 +156,38 @@ export default function TVShowDetailPage() {
     } catch {}
   };
 
+  const deleteSeason = async (seasonId: string) => {
+    if (!confirm("Delete this season and its episodes?")) return;
+    try {
+      await api.delete(`/tv/admin/seasons/${seasonId}`);
+      await fetchData();
+      setToast({ msg: "Season deleted", type: "success" });
+    } catch (e) {
+      setToast({ msg: "Failed to delete season", type: "error" });
+      /* ignore */
+    }
+  };
+
+  const moveSeason = (fromIdx: number, toIdx: number) => {
+    setOrder((prev) => {
+      const arr = [...prev];
+      const [m] = arr.splice(fromIdx, 1);
+      arr.splice(toIdx, 0, m);
+      return arr;
+    });
+  };
+
+  const saveReorder = async () => {
+    try {
+      setReordering(true);
+      await api.post(`/tv/admin/${id}/seasons/reorder`, { seasons: order });
+      await fetchData();
+    } catch {
+    } finally {
+      setReordering(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
@@ -131,16 +205,46 @@ export default function TVShowDetailPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">{show.title}</h1>
-              <Link
-                href="/tv"
-                className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700"
-              >
-                Back
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/tv/${id}/edit`}
+                  className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700"
+                >
+                  Edit Show
+                </Link>
+                <Link
+                  href="/tv"
+                  className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700"
+                >
+                  Back
+                </Link>
+              </div>
             </div>
             {show.overview && (
               <p className="text-gray-300 max-w-3xl">{show.overview}</p>
             )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {(show as any)?.poster && (
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">Poster</div>
+                  <img
+                    src={(show as any).poster}
+                    alt="Poster"
+                    className="w-full max-w-xs rounded border border-white/10"
+                  />
+                </div>
+              )}
+              {(show as any)?.backdrop && (
+                <div className="md:col-span-2">
+                  <div className="text-xs text-gray-400 mb-1">Banner</div>
+                  <img
+                    src={(show as any).backdrop}
+                    alt="Backdrop"
+                    className="w-full rounded border border-white/10"
+                  />
+                </div>
+              )}
+            </div>
 
             <div className="bg-gray-950 border border-gray-800 rounded p-4">
               <div className="flex items-center justify-between mb-3">
@@ -149,8 +253,9 @@ export default function TVShowDetailPage() {
                   <input
                     type="number"
                     className="w-24 px-2 py-1 rounded bg-gray-900 border border-gray-800"
-                    value={newSeasonNumber}
-                    onChange={(e) => setNewSeasonNumber(Number(e.target.value))}
+                    value={newSeasonNumberInput}
+                    placeholder={String(newSeasonNumber)}
+                    onChange={(e) => setNewSeasonNumberInput(e.target.value)}
                   />
                   <button
                     className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white disabled:opacity-60"
@@ -163,88 +268,130 @@ export default function TVShowDetailPage() {
               </div>
 
               <div className="space-y-2">
-                {seasons.map((s) => (
-                  <div
-                    key={s._id}
-                    className="p-3 bg-black/30 rounded border border-white/10"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">Season {s.seasonNumber}</div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
-                          onClick={() => loadEpisodes(s._id, s.seasonNumber)}
-                        >
-                          Load episodes
-                        </button>
-                        <button
-                          className="text-sm px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
-                          onClick={() => addEpisode(s)}
-                        >
-                          Quick add
-                        </button>
-                        <Link
-                          href={`/tv/${id}/seasons/${s._id}/episodes/new`}
-                          className="text-sm px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          New episode
-                        </Link>
-                      </div>
-                    </div>
-                    {episodes[s._id] && (
-                      <ul className="mt-2 divide-y divide-white/10">
-                        {episodes[s._id].map((e) => (
-                          <li
-                            key={e._id}
-                            className="py-2 text-sm flex items-center justify-between"
+                {order.map((sid, idx) => {
+                  const s = seasons.find((x) => x._id === sid)!;
+                  if (!s) return null;
+                  return (
+                    <div
+                      key={s._id}
+                      className="p-3 bg-black/30 rounded border border-white/10"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium">
+                          Season {s.seasonNumber}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-40"
+                            disabled={idx === 0}
+                            onClick={() => moveSeason(idx, idx - 1)}
                           >
-                            <span>
-                              E{e.episodeNumber} — {e.title}
-                            </span>
-                            <div className="flex items-center gap-3">
-                              <button
-                                className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
-                                onClick={() => {
-                                  const url = (e as any)?.videoSources?.[0]
-                                    ?.url;
-                                  if (url) {
-                                    setPreview({
-                                      url,
-                                      title: `E${e.episodeNumber} — ${e.title}`,
-                                    });
-                                  } else {
-                                    alert(
-                                      "No video source found for this episode"
-                                    );
-                                  }
-                                }}
-                              >
-                                Play
-                              </button>
-                              <a
-                                className="text-red-400 hover:underline"
-                                href={`${clientBase}/watch/episode/${e._id}`}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Open
-                              </a>
-                              <Link
-                                className="text-blue-400 hover:underline"
-                                href={`/tv/${id}/seasons/${s._id}/episodes/${e._id}`}
-                              >
-                                Edit
-                              </Link>
-                            </div>
-                          </li>
-                        ))}
-                        {episodes[s._id].length === 0 && (
-                          <li className="py-2 text-gray-400">No episodes</li>
-                        )}
-                      </ul>
-                    )}
-                  </div>
-                ))}
+                            ↑
+                          </button>
+                          <button
+                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-40"
+                            disabled={idx === order.length - 1}
+                            onClick={() => moveSeason(idx, idx + 1)}
+                          >
+                            ↓
+                          </button>
+                          <button
+                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            onClick={() => loadEpisodes(s._id, s.seasonNumber)}
+                          >
+                            Load episodes
+                          </button>
+                          <button
+                            className="text-sm px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => addEpisode(s)}
+                          >
+                            Quick add
+                          </button>
+                          <Link
+                            href={`/tv/${id}/seasons/${s._id}/episodes/new`}
+                            className="text-sm px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            New episode
+                          </Link>
+                          <button
+                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            onClick={() => deleteSeason(s._id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      {episodes[s._id] && (
+                        <ul className="mt-2 divide-y divide-white/10">
+                          {episodes[s._id].map((e) => (
+                            <li
+                              key={e._id}
+                              className="py-2 text-sm flex items-center justify-between"
+                            >
+                              <span>
+                                E{e.episodeNumber} — {e.title}
+                              </span>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                                  onClick={() => {
+                                    const url = (e as any)?.videoSources?.[0]
+                                      ?.url;
+                                    if (url) {
+                                      setPreview({
+                                        url,
+                                        title: `E${e.episodeNumber} — ${e.title}`,
+                                      });
+                                    } else {
+                                      alert(
+                                        "No video source found for this episode"
+                                      );
+                                    }
+                                  }}
+                                >
+                                  Play
+                                </button>
+                                <a
+                                  className="text-red-400 hover:underline"
+                                  href={`${clientBase}/watch/episode/${e._id}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  Open
+                                </a>
+                                <Link
+                                  className="text-blue-400 hover:underline"
+                                  href={`/tv/${id}/seasons/${s._id}/episodes/${e._id}`}
+                                >
+                                  Edit
+                                </Link>
+                              </div>
+                            </li>
+                          ))}
+                          {episodes[s._id].length === 0 && (
+                            <li className="py-2 text-gray-400">No episodes</li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <button
+                  className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
+                  disabled={reordering}
+                  onClick={async () => {
+                    try {
+                      await saveReorder();
+                      setToast({ msg: "Order saved", type: "success" });
+                    } catch {
+                      setToast({ msg: "Failed to save order", type: "error" });
+                    }
+                  }}
+                >
+                  {reordering ? "Saving..." : "Save Order"}
+                </button>
               </div>
             </div>
 
@@ -271,6 +418,13 @@ export default function TVShowDetailPage() {
           </div>
         )}
       </div>
+      {toast && (
+        <Toast
+          message={toast.msg}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </AdminLayout>
   );
 }

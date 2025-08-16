@@ -4,12 +4,13 @@ const { Schema } = mongoose;
 const TVShowSchema = new Schema(
   {
     title: { type: String, required: true, index: true },
-    slug: { type: String, unique: true, index: true },
+    slug: { type: String, unique: true, index: true, sparse: true },
     overview: String,
     genres: [String],
     status: { type: String, enum: ['ongoing', 'ended'], default: 'ongoing' },
     poster: String,
     backdrop: String,
+    trailerUrl: String,
     tags: [String],
     tmdbId: Number,
     rating: Number,

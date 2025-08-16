@@ -4,6 +4,7 @@ import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import api from "@/services/api";
 import { useRouter } from "next/navigation";
+import VideoUploader from "@/components/VideoUploader";
 
 export default function NewTVShowPage() {
   const router = useRouter();
@@ -11,13 +12,28 @@ export default function NewTVShowPage() {
   const [overview, setOverview] = useState("");
   const [genres, setGenres] = useState("");
   const [published, setPublished] = useState(false);
+  const [poster, setPoster] = useState("");
+  const [backdrop, setBackdrop] = useState("");
+  const [trailerUrl, setTrailerUrl] = useState("");
+  const [slug, setSlug] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isValidUrl = (u: string) => {
+    try { if (!u) return true; new URL(u); return true; } catch { return false; }
+  };
 
   const handleCreate = async () => {
     try {
       setLoading(true);
       setError(null);
+      if (!title.trim()) {
+        setError("Title is required");
+        return;
+      }
+      if (trailerUrl && !isValidUrl(trailerUrl)) {
+        setError("Trailer URL is invalid");
+        return;
+      }
       const payload: any = {
         title,
         overview,
@@ -27,11 +43,20 @@ export default function NewTVShowPage() {
           .filter(Boolean),
         published,
         isSeries: true,
+        poster,
+        backdrop,
+        trailerUrl,
       };
+      if (slug.trim()) payload.slug = slug.trim().toLowerCase();
       const res = await api.post("/tv", payload);
       router.push(`/tv/${res.data._id}`);
     } catch (e: any) {
-      setError(e.response?.data?.message || "Failed to create show");
+      const msg = e.response?.data?.message || "Failed to create show";
+      if (e.response?.status === 409) {
+        setError("A show with this title/slug already exists. Please choose a different title or slug.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -65,6 +90,55 @@ export default function NewTVShowPage() {
               onChange={(e) => setOverview(e.target.value)}
               placeholder="Short description"
             />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm mb-1">Poster</label>
+              <VideoUploader
+                storagePathBuilder={(f) => `shows/${Date.now()}-${f.name}`}
+                initialUrl={poster}
+                onUploaded={setPoster}
+                accept="image/*"
+              />
+              {poster && (
+                <img src={poster} alt="Poster preview" className="mt-2 w-32 rounded border border-white/10" />
+              )}
+            </div>
+            <div>
+              <label className="block text-sm mb-1">Banner / Backdrop</label>
+              <VideoUploader
+                storagePathBuilder={(f) => `shows/${Date.now()}-banner-${f.name}`}
+                initialUrl={backdrop}
+                onUploaded={setBackdrop}
+                accept="image/*"
+              />
+              {backdrop && (
+                <img src={backdrop} alt="Backdrop preview" className="mt-2 w-full max-w-md rounded border border-white/10" />
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm mb-1">Trailer URL (optional)</label>
+            <input
+              className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+              value={trailerUrl}
+              onChange={(e) => setTrailerUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+          <div>
+            <details>
+              <summary className="cursor-pointer text-sm text-gray-300">Advanced (custom slug)</summary>
+              <div className="mt-2">
+                <label className="block text-sm mb-1">Slug (optional)</label>
+                <input
+                  className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder="auto-generated from title if left empty"
+                />
+              </div>
+            </details>
           </div>
           <div>
             <label className="block text-sm mb-1">

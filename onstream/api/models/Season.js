@@ -8,6 +8,7 @@ const SeasonSchema = new Schema(
     name: String,
     overview: String,
     poster: String,
+    backdrop: String,
     airDate: Date,
     published: { type: Boolean, default: false },
     episodesCount: { type: Number, default: 0 },
