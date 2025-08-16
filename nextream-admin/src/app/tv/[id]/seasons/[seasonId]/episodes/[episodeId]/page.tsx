@@ -4,13 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "@/components/AdminLayout";
 import api from "@/services/api";
-import {
-  getStorage,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-} from "firebase/storage";
-import storage from "@/lib/firebase";
+import VideoUploader from "@/components/VideoUploader";
+import SubtitleUploader from "@/components/SubtitleUploader";
 
 interface Episode {
   _id: string;
@@ -67,42 +62,14 @@ export default function EpisodeEditorPage() {
     })();
   }, [episodeId]);
 
-  const uploadFile = async (
-    file: File,
-    path: string,
-    onProgress?: (pct: number) => void
-  ) => {
-    const s = getStorage();
-    const r = ref(s, path);
-    const task = uploadBytesResumable(r, file, { contentType: file.type });
-    return await new Promise<string>((resolve, reject) => {
-      task.on(
-        "state_changed",
-        (snap) =>
-          onProgress?.(
-            Math.round((snap.bytesTransferred * 100) / snap.totalBytes)
-          ),
-        reject,
-        async () => resolve(await getDownloadURL(task.snapshot.ref))
-      );
-    });
-  };
-
-  const onUploadVideo = async (file: File) => {
-    const path = `episodes/${showId}/seasons/${seasonId}/episodes/${episodeId}/${Date.now()}-${
+  const buildVideoPath = (file: File) =>
+    `episodes/${showId}/seasons/${seasonId}/episodes/${episodeId}/${Date.now()}-${
       file.name
     }`;
-    const url = await uploadFile(file, path, setVideoProgress);
-    setVideoUrl(url);
-  };
-
-  const onUploadSubtitle = async (file: File) => {
-    const path = `episodes/${showId}/seasons/${seasonId}/episodes/${episodeId}/sub-${Date.now()}-${
+  const buildSubPath = (file: File) =>
+    `episodes/${showId}/seasons/${seasonId}/episodes/${episodeId}/sub-${Date.now()}-${
       file.name
     }`;
-    const url = await uploadFile(file, path);
-    setSubtitleUrl(url);
-  };
 
   const save = async () => {
     try {
@@ -191,23 +158,12 @@ export default function EpisodeEditorPage() {
 
             <div className="border-t border-gray-800 pt-4">
               <h2 className="text-lg font-semibold mb-2">Video Upload</h2>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) =>
-                  e.target.files && onUploadVideo(e.target.files[0])
-                }
+              <VideoUploader
+                storagePathBuilder={buildVideoPath}
+                initialUrl={videoUrl}
+                onUploaded={(u) => setVideoUrl(u)}
+                onError={(e) => setError(e.message)}
               />
-              {videoProgress > 0 && videoProgress < 100 && (
-                <div className="text-sm text-gray-300 mt-1">
-                  Uploading: {videoProgress}%
-                </div>
-              )}
-              {videoUrl && (
-                <div className="text-sm text-green-400 mt-1 break-all">
-                  Video URL saved
-                </div>
-              )}
             </div>
 
             <div>
@@ -221,12 +177,11 @@ export default function EpisodeEditorPage() {
                   onChange={(e) => setSubtitleLang(e.target.value)}
                   placeholder="en"
                 />
-                <input
-                  type="file"
-                  accept="text/vtt,.vtt"
-                  onChange={(e) =>
-                    e.target.files && onUploadSubtitle(e.target.files[0])
-                  }
+                <SubtitleUploader
+                  storagePathBuilder={buildSubPath}
+                  initialUrl={subtitleUrl}
+                  onUploaded={(u) => setSubtitleUrl(u)}
+                  onError={(e) => setError(e.message)}
                 />
               </div>
               {subtitleUrl && (
