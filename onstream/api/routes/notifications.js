@@ -62,7 +62,7 @@ router.post('/topics/subscribe', verify, async (req, res) => {
   try {
     const { token, topic } = req.body;
     if (!token || !topic) return res.status(400).json({ message: 'token and topic required' });
-    if (!admin?.messaging) return res.status(500).json({ error: 'FCM_NOT_CONFIGURED' });
+    if (!admin?.apps?.length) return res.status(500).json({ error: 'FCM_NOT_CONFIGURED', message: 'Firebase Admin app not initialized' });
     await admin.messaging().subscribeToTopic([token], topic);
     await User.updateOne(
       { _id: req.user.id, 'deviceTokens.token': token },
@@ -78,7 +78,7 @@ router.post('/topics/unsubscribe', verify, async (req, res) => {
   try {
     const { token, topic } = req.body;
     if (!token || !topic) return res.status(400).json({ message: 'token and topic required' });
-    if (!admin?.messaging) return res.status(500).json({ error: 'FCM_NOT_CONFIGURED' });
+    if (!admin?.apps?.length) return res.status(500).json({ error: 'FCM_NOT_CONFIGURED', message: 'Firebase Admin app not initialized' });
     await admin.messaging().unsubscribeFromTopic([token], topic);
     await User.updateOne(
       { _id: req.user.id, 'deviceTokens.token': token },
@@ -98,7 +98,7 @@ router.post('/send/user', verify, async (req, res) => {
     const users = await User.find({ _id: { $in: userIds } }, { deviceTokens: 1 }).lean();
     const tokens = users.flatMap(u => (u.deviceTokens || []).map(d => d.token));
     if (!tokens.length) return res.json({ sent: 0, success: 0 });
-    if (!admin?.messaging) return res.status(500).json({ error: 'FCM_NOT_CONFIGURED' });
+    if (!admin?.apps?.length) return res.status(500).json({ error: 'FCM_NOT_CONFIGURED', message: 'Firebase Admin app not initialized' });
 
     const response = await admin.messaging().sendEachForMulticast({
       tokens,
@@ -133,7 +133,7 @@ router.post('/send/topic', verify, async (req, res) => {
     if (!req.user.isAdmin) return res.status(403).json('You are not allowed!');
     const { topic, notification = {}, data = {} } = req.body;
     if (!topic) return res.status(400).json({ message: 'topic required' });
-    if (!admin?.messaging) return res.status(500).json({ error: 'FCM_NOT_CONFIGURED' });
+    if (!admin?.apps?.length) return res.status(500).json({ error: 'FCM_NOT_CONFIGURED', message: 'Firebase Admin app not initialized' });
     const id = await admin.messaging().send({ topic, notification, data, webpush: { fcmOptions: { link: data?.deepLink || '/' } } });
     res.json({ id });
   } catch (err) {
@@ -171,5 +171,18 @@ router.post('/events/open', async (req, res) => {
 });
 
 module.exports = router;
+
+// Health/status endpoint for debugging FCM configuration
+router.get('/health', (req, res) => {
+  try {
+    const projectId = !!process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = !!process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = !!process.env.FIREBASE_PRIVATE_KEY;
+    const adminInitialized = Array.isArray(admin?.apps) && admin.apps.length > 0;
+    res.json({ adminInitialized, env: { projectId, clientEmail, privateKey } });
+  } catch (err) {
+    res.status(500).json({ error: 'HEALTH_CHECK_FAILED', message: err.message });
+  }
+});
 
 
