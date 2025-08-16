@@ -129,8 +129,33 @@ router.post("/:showId/seasons/:seasonId/episodes", verify, async (req, res) => {
       showId: req.params.showId,
     });
     if (!season) return res.status(404).json({ message: "Season not found" });
+    // Determine/validate episode number
+    let episodeNumber = Number(req.body.episodeNumber);
+    if (!episodeNumber) {
+      const last = await Episode.find({ seasonId: season._id })
+        .sort({ episodeNumber: -1 })
+        .limit(1)
+        .lean();
+      episodeNumber = last.length ? Number(last[0].episodeNumber || 0) + 1 : 1;
+    } else {
+      const exists = await Episode.findOne({
+        seasonId: season._id,
+        episodeNumber,
+      }).lean();
+      if (exists) {
+        return res
+          .status(409)
+          .json({
+            error: "DUPLICATE_EPISODE",
+            message: "Episode number already exists in this season",
+            episodeNumber,
+          });
+      }
+    }
+
     const payload = {
       ...req.body,
+      episodeNumber,
       showId: season.showId,
       seasonId: season._id,
       seasonNumber: season.seasonNumber,
@@ -143,6 +168,14 @@ router.post("/:showId/seasons/:seasonId/episodes", verify, async (req, res) => {
     );
     res.json(ep);
   } catch (err) {
+    if (err?.code === 11000) {
+      return res
+        .status(409)
+        .json({
+          error: "DUPLICATE_EPISODE",
+          message: "Episode number already exists in this season",
+        });
+    }
     res
       .status(500)
       .json({ error: "EPISODE_CREATE_FAILED", message: err.message });
