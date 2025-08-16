@@ -1,6 +1,10 @@
 /* global self, importScripts, firebase */
-importScripts('https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.3/firebase-messaging-compat.js');
+importScripts(
+  "https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"
+);
+importScripts(
+  "https://www.gstatic.com/firebasejs/10.12.3/firebase-messaging-compat.js"
+);
 
 // IMPORTANT: Public web config values for your Firebase project
 firebase.initializeApp({
@@ -16,15 +20,13 @@ const messaging = firebase.messaging();
 // Background messages
 messaging.onBackgroundMessage(({ notification, data }) => {
   const { title, body, image } = notification || {};
-  const options = { body, icon: '/vercel.svg', image, data };
-  self.registration.showNotification(title || 'Nextream', options);
+  const options = { body, icon: "/vercel.svg", image, data };
+  self.registration.showNotification(title || "Nextream", options);
 });
 
 // Click to open deep link
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification?.data?.deepLink || '/';
+  const url = event.notification?.data?.deepLink || "/";
   event.waitUntil(self.clients.openWindow(url));
 });
-
-
