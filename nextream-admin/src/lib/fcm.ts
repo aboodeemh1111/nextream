@@ -35,14 +35,25 @@ export async function initFcm(accessToken?: string) {
         }),
       });
 
-      await fetch("/api/notifications/topics/subscribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          token: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ token, topic: "admins" }),
-      });
+      // Only subscribe to topic if backend FCM is configured
+      try {
+        const hc = await fetch("/api/notifications/health");
+        const ok = hc.ok ? await hc.json() : null;
+        if (ok?.adminInitialized) {
+          await fetch("/api/notifications/topics/subscribe", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              token: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ token, topic: "admins" }),
+          });
+        } else {
+          console.warn("FCM backend not configured; skipping topic subscribe");
+        }
+      } catch {
+        console.warn("FCM health check failed; skipping topic subscribe");
+      }
     }
 
     onMessage(messaging, (payload) => {

@@ -3,6 +3,7 @@ const verify = require("../verifyToken");
 const TVShow = require("../models/TVShow");
 const Season = require("../models/Season");
 const Episode = require("../models/Episode");
+const mongoose = require("mongoose");
 
 // Public: list shows
 router.get("/", async (req, res) => {
@@ -143,13 +144,11 @@ router.post("/:showId/seasons/:seasonId/episodes", verify, async (req, res) => {
         episodeNumber,
       }).lean();
       if (exists) {
-        return res
-          .status(409)
-          .json({
-            error: "DUPLICATE_EPISODE",
-            message: "Episode number already exists in this season",
-            episodeNumber,
-          });
+        return res.status(409).json({
+          error: "DUPLICATE_EPISODE",
+          message: "Episode number already exists in this season",
+          episodeNumber,
+        });
       }
     }
 
@@ -169,12 +168,10 @@ router.post("/:showId/seasons/:seasonId/episodes", verify, async (req, res) => {
     res.json(ep);
   } catch (err) {
     if (err?.code === 11000) {
-      return res
-        .status(409)
-        .json({
-          error: "DUPLICATE_EPISODE",
-          message: "Episode number already exists in this season",
-        });
+      return res.status(409).json({
+        error: "DUPLICATE_EPISODE",
+        message: "Episode number already exists in this season",
+      });
     }
     res
       .status(500)
@@ -230,7 +227,12 @@ router.get("/admin/:showId/seasons", verify, async (req, res) => {
 router.get("/admin/seasons/:seasonId/episodes", verify, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
-    const eps = await Episode.find({ seasonId: req.params.seasonId })
+    const { seasonId } = req.params;
+    if (!mongoose.isValidObjectId(seasonId)) {
+      return res.status(400).json({ error: "INVALID_SEASON_ID" });
+    }
+    const sid = new mongoose.Types.ObjectId(seasonId);
+    const eps = await Episode.find({ seasonId: sid })
       .sort({ episodeNumber: 1 })
       .lean();
     res.json(eps);

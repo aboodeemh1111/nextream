@@ -35,6 +35,11 @@ export default function TVShowDetailPage() {
   const [creating, setCreating] = useState(false);
   const [newSeasonNumber, setNewSeasonNumber] = useState<number>(1);
   const [episodes, setEpisodes] = useState<Record<string, Episode[]>>({});
+  const clientBase =
+    process.env.NEXT_PUBLIC_CLIENT_BASE_URL || "http://localhost:3000";
+  const [preview, setPreview] = useState<{ url: string; title: string } | null>(
+    null
+  );
 
   const fetchData = async () => {
     try {
@@ -197,10 +202,30 @@ export default function TVShowDetailPage() {
                               E{e.episodeNumber} — {e.title}
                             </span>
                             <div className="flex items-center gap-3">
+                              <button
+                                className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                                onClick={() => {
+                                  const url = (e as any)?.videoSources?.[0]
+                                    ?.url;
+                                  if (url) {
+                                    setPreview({
+                                      url,
+                                      title: `E${e.episodeNumber} — ${e.title}`,
+                                    });
+                                  } else {
+                                    alert(
+                                      "No video source found for this episode"
+                                    );
+                                  }
+                                }}
+                              >
+                                Play
+                              </button>
                               <a
                                 className="text-red-400 hover:underline"
-                                href={`/watch/episode/${e._id}`}
+                                href={`${clientBase}/watch/episode/${e._id}`}
                                 target="_blank"
+                                rel="noreferrer"
                               >
                                 Open
                               </a>
@@ -222,6 +247,27 @@ export default function TVShowDetailPage() {
                 ))}
               </div>
             </div>
+
+            {preview && (
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                <div className="bg-gray-950 border border-gray-800 rounded w-[90vw] max-w-4xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm text-gray-300">{preview.title}</div>
+                    <button
+                      className="text-gray-400 hover:text-white"
+                      onClick={() => setPreview(null)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <div className="w-full">
+                    <video controls className="w-full h-auto">
+                      <source src={preview.url} />
+                    </video>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
