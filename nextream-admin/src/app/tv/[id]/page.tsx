@@ -18,6 +18,8 @@ interface Season {
   seasonNumber: number;
   name?: string;
   published?: boolean;
+  poster?: string;
+  backdrop?: string;
 }
 interface Episode {
   _id: string;
@@ -48,6 +50,14 @@ export default function TVShowDetailPage() {
     msg: string;
     type?: "success" | "error" | "info";
   } | null>(null);
+  const [editingSeason, setEditingSeason] = useState<Season | null>(null);
+  const [editFields, setEditFields] = useState({
+    name: "",
+    poster: "",
+    backdrop: "",
+    published: false,
+  });
+  const [savingSeason, setSavingSeason] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -88,23 +98,17 @@ export default function TVShowDetailPage() {
         number = candidate;
       }
       try {
-        await api.post(`/tv/${id}/seasons`, {
+        await api.post(`/tv/${id}/seasons?auto=1`, {
           seasonNumber: number,
           published: true,
         });
       } catch (err: any) {
         if (err?.response?.status === 409) {
-          // server says duplicate; pick the next highest + 1 and retry once
-          const max = seasons.reduce(
-            (m, s) => Math.max(m, s.seasonNumber || 0),
-            0
-          );
-          const bumped = max + 1 || 1;
-          await api.post(`/tv/${id}/seasons`, {
-            seasonNumber: bumped,
+          // Let backend auto-assign: retry with auto flag
+          const resp = await api.post(`/tv/${id}/seasons?auto=1`, {
             published: true,
           });
-          number = bumped;
+          number = resp?.data?.seasonNumber || number + 1;
         } else {
           throw err;
         }
@@ -154,6 +158,69 @@ export default function TVShowDetailPage() {
       setEpisodes({});
       await loadEpisodes(season._id);
     } catch {}
+  };
+
+  const toggleEpisodePublish = async (seasonId: string, ep: Episode) => {
+    try {
+      const next = !ep.published;
+      await api.patch(`/tv/admin/episodes/${ep._id}`, { published: next });
+      setEpisodes((prev) => ({
+        ...prev,
+        [seasonId]: (prev[seasonId] || []).map((e) =>
+          e._id === ep._id ? { ...e, published: next } : e
+        ),
+      }));
+      setToast({
+        msg: `Episode ${next ? "published" : "unpublished"}`,
+        type: "success",
+      });
+    } catch (e) {
+      setToast({ msg: "Failed to update episode", type: "error" });
+    }
+  };
+
+  const deleteEpisode = async (seasonId: string, episodeId: string) => {
+    if (!confirm("Delete this episode?")) return;
+    try {
+      await api.delete(`/tv/admin/episodes/${episodeId}`);
+      setEpisodes((prev) => ({
+        ...prev,
+        [seasonId]: (prev[seasonId] || []).filter((e) => e._id !== episodeId),
+      }));
+      setToast({ msg: "Episode deleted", type: "success" });
+    } catch (e) {
+      setToast({ msg: "Failed to delete episode", type: "error" });
+    }
+  };
+
+  const openEditSeason = (s: Season) => {
+    setEditingSeason(s);
+    setEditFields({
+      name: s.name || "",
+      poster: s.poster || "",
+      backdrop: s.backdrop || "",
+      published: Boolean(s.published),
+    });
+  };
+
+  const saveSeason = async () => {
+    if (!editingSeason) return;
+    try {
+      setSavingSeason(true);
+      await api.patch(`/tv/admin/seasons/${editingSeason._id}`, {
+        name: editFields.name || undefined,
+        poster: editFields.poster || undefined,
+        backdrop: editFields.backdrop || undefined,
+        published: editFields.published,
+      });
+      setEditingSeason(null);
+      await fetchData();
+      setToast({ msg: "Season updated", type: "success" });
+    } catch (e) {
+      setToast({ msg: "Failed to update season", type: "error" });
+    } finally {
+      setSavingSeason(false);
+    }
   };
 
   const deleteSeason = async (seasonId: string) => {
@@ -302,6 +369,12 @@ export default function TVShowDetailPage() {
                             Load episodes
                           </button>
                           <button
+                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            onClick={() => openEditSeason(s)}
+                          >
+                            Edit
+                          </button>
+                          <button
                             className="text-sm px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
                             onClick={() => addEpisode(s)}
                           >
@@ -351,6 +424,12 @@ export default function TVShowDetailPage() {
                                 >
                                   Play
                                 </button>
+                                <button
+                                  className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                                  onClick={() => toggleEpisodePublish(s._id, e)}
+                                >
+                                  {e.published ? "Unpublish" : "Publish"}
+                                </button>
                                 <a
                                   className="text-red-400 hover:underline"
                                   href={`${clientBase}/watch/episode/${e._id}`}
@@ -365,6 +444,12 @@ export default function TVShowDetailPage() {
                                 >
                                   Edit
                                 </Link>
+                                <button
+                                  className="text-sm px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
+                                  onClick={() => deleteEpisode(s._id, e._id)}
+                                >
+                                  Delete
+                                </button>
                               </div>
                             </li>
                           ))}
@@ -411,6 +496,98 @@ export default function TVShowDetailPage() {
                     <video controls className="w-full h-auto">
                       <source src={preview.url} />
                     </video>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {editingSeason && (
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                <div className="bg-gray-950 border border-gray-800 rounded w-[90vw] max-w-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm text-gray-300">
+                      Edit Season {editingSeason.seasonNumber}
+                    </div>
+                    <button
+                      className="text-gray-400 hover:text-white"
+                      onClick={() => setEditingSeason(null)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Name</div>
+                      <input
+                        className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                        value={editFields.name}
+                        onChange={(e) =>
+                          setEditFields((f) => ({ ...f, name: e.target.value }))
+                        }
+                        placeholder="e.g. Season 1"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">
+                        Poster URL
+                      </div>
+                      <input
+                        className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                        value={editFields.poster}
+                        onChange={(e) =>
+                          setEditFields((f) => ({
+                            ...f,
+                            poster: e.target.value,
+                          }))
+                        }
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">
+                        Banner URL
+                      </div>
+                      <input
+                        className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                        value={editFields.backdrop}
+                        onChange={(e) =>
+                          setEditFields((f) => ({
+                            ...f,
+                            backdrop: e.target.value,
+                          }))
+                        }
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={editFields.published}
+                        onChange={(e) =>
+                          setEditFields((f) => ({
+                            ...f,
+                            published: e.target.checked,
+                          }))
+                        }
+                      />
+                      Published
+                    </label>
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <button
+                        className="px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700"
+                        onClick={() => setEditingSeason(null)}
+                        disabled={savingSeason}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white disabled:opacity-60"
+                        onClick={saveSeason}
+                        disabled={savingSeason}
+                      >
+                        {savingSeason ? "Saving..." : "Save"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

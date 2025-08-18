@@ -6,6 +6,7 @@ const nextConfig = {
       "image.tmdb.org",
       "images.unsplash.com",
       "nextream.onrender.com",
+      "firebasestorage.googleapis.com",
     ],
     remotePatterns: [
       {

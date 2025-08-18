@@ -140,6 +140,10 @@ router.post("/:showId/seasons", verify, async (req, res) => {
     if (!show) return res.status(404).json({ message: "Show not found" });
 
     // Determine / validate season number
+    const allowAuto =
+      String(req.query.auto).toLowerCase() === "1" ||
+      String(req.query.auto).toLowerCase() === "true" ||
+      req.body?.auto === true;
     let seasonNumber = Number(req.body.seasonNumber);
     if (!seasonNumber) {
       const last = await Season.find({ showId })
@@ -150,18 +154,42 @@ router.post("/:showId/seasons", verify, async (req, res) => {
     } else {
       const exists = await Season.findOne({ showId, seasonNumber }).lean();
       if (exists) {
-        return res.status(409).json({
-          error: "DUPLICATE_SEASON",
-          message: "Season number already exists for this show",
-          seasonNumber,
-        });
+        if (allowAuto) {
+          const last = await Season.find({ showId })
+            .sort({ seasonNumber: -1 })
+            .limit(1)
+            .lean();
+          seasonNumber = last.length
+            ? Number(last[0].seasonNumber || 0) + 1
+            : 1;
+        } else {
+          return res.status(409).json({
+            error: "DUPLICATE_SEASON",
+            message: "Season number already exists for this show",
+            seasonNumber,
+          });
+        }
       }
     }
 
     const payload = { ...req.body, showId, seasonNumber };
-    const s = await Season.create(payload);
-    await TVShow.updateOne({ _id: showId }, { $inc: { seasonsCount: 1 } });
-    res.json(s);
+    try {
+      const s = await Season.create(payload);
+      await TVShow.updateOne({ _id: showId }, { $inc: { seasonsCount: 1 } });
+      return res.json(s);
+    } catch (errCreate) {
+      if (allowAuto && errCreate?.code === 11000) {
+        const last = await Season.find({ showId })
+          .sort({ seasonNumber: -1 })
+          .limit(1)
+          .lean();
+        const nextNum = last.length ? Number(last[0].seasonNumber || 0) + 1 : 1;
+        const s2 = await Season.create({ ...payload, seasonNumber: nextNum });
+        await TVShow.updateOne({ _id: showId }, { $inc: { seasonsCount: 1 } });
+        return res.json(s2);
+      }
+      throw errCreate;
+    }
   } catch (err) {
     if (err?.code === 11000) {
       return res.status(409).json({
