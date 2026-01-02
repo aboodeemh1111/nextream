@@ -184,33 +184,63 @@ export default function NewTVShowPage() {
       const showId = showRes.data._id;
 
       // 2. Create seasons and episodes
+      const createdSeasonIds: { localIndex: number; seasonId: string; seasonNumber: number }[] = [];
+
       for (let i = 0; i < seasons.length; i++) {
         const season = seasons[i];
-        setCreatingProgress(`Creating Season ${season.seasonNumber}...`);
+        setCreatingProgress(`Creating Season ${i + 1}...`);
 
-        const seasonRes = await api.post(`/tv/${showId}/seasons?auto=1`, {
-          seasonNumber: season.seasonNumber,
-          name: season.name || undefined,
-          poster: season.poster || undefined,
-          backdrop: season.backdrop || undefined,
-          published: season.published,
-        });
+        let seasonRes;
+        try {
+          // Let the API auto-assign season numbers to avoid conflicts
+          // Pass auto: true in body as backup in case query string is stripped by proxy
+          seasonRes = await api.post(`/tv/${showId}/seasons`, {
+            auto: true,
+            name: season.name || `Season ${i + 1}`,
+            poster: season.poster || undefined,
+            backdrop: season.backdrop || undefined,
+            published: season.published,
+          });
+        } catch (seasonErr: any) {
+          // If still 409, retry with explicit request for auto-numbering
+          if (seasonErr?.response?.status === 409) {
+            console.log('Season creation 409, retrying with auto...');
+            seasonRes = await api.post(`/tv/${showId}/seasons`, {
+              auto: true,
+              name: season.name || `Season ${i + 1}`,
+              published: season.published,
+            });
+          } else {
+            throw seasonErr;
+          }
+        }
+
         const seasonId = seasonRes.data._id;
+        const actualSeasonNumber = seasonRes.data.seasonNumber;
+        createdSeasonIds.push({ localIndex: i, seasonId, seasonNumber: actualSeasonNumber });
 
         // Create episodes for this season
         for (let j = 0; j < season.episodes.length; j++) {
           const ep = season.episodes[j];
-          setCreatingProgress(`Creating S${season.seasonNumber}E${ep.episodeNumber}: ${ep.title}...`);
+          setCreatingProgress(`Creating S${actualSeasonNumber}E${j + 1}: ${ep.title}...`);
 
-          await api.post(`/tv/${showId}/seasons/${seasonId}/episodes`, {
-            episodeNumber: ep.episodeNumber,
-            title: ep.title,
-            overview: ep.overview || undefined,
-            duration: ep.duration || undefined,
-            stillPath: ep.stillPath || undefined,
-            videoSources: ep.videoUrl ? [{ label: "Default", url: ep.videoUrl }] : [],
-            published: ep.published,
-          });
+          try {
+            await api.post(`/tv/${showId}/seasons/${seasonId}/episodes`, {
+              title: ep.title,
+              overview: ep.overview || undefined,
+              duration: ep.duration || undefined,
+              stillPath: ep.stillPath || undefined,
+              videoSources: ep.videoUrl ? [{ label: "Default", url: ep.videoUrl }] : [],
+              published: ep.published,
+            });
+          } catch (epErr: any) {
+            // If duplicate episode, just continue
+            if (epErr?.response?.status === 409) {
+              console.warn(`Episode conflict, skipping: ${ep.title}`);
+              continue;
+            }
+            throw epErr;
+          }
         }
       }
 
@@ -634,10 +664,10 @@ export default function NewTVShowPage() {
                   <div className="flex flex-col items-center flex-1">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all ${idx < currentStep
-                          ? "bg-green-600 text-white"
-                          : idx === currentStep
-                            ? "bg-red-600 text-white ring-4 ring-red-600/30"
-                            : "bg-gray-700 text-gray-400"
+                        ? "bg-green-600 text-white"
+                        : idx === currentStep
+                          ? "bg-red-600 text-white ring-4 ring-red-600/30"
+                          : "bg-gray-700 text-gray-400"
                         }`}
                     >
                       {idx < currentStep ? "✓" : idx + 1}
