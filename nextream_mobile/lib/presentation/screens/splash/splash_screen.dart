@@ -15,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     // Simulate splash duration
-    Timer(const Duration(seconds: 4), () {
+    Timer(const Duration(seconds: 9), () {
       if (mounted) {
         context.go('/home');
       }
