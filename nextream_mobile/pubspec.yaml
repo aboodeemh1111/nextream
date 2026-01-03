@@ -1,0 +1,52 @@
+name: nextream_mobile
+description: "Nextream - A streaming platform mobile app"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+  
+  # Navigation
+  go_router: ^14.2.0
+  
+  # Networking
+  dio: ^5.4.3+1
+  
+  # Storage
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.2.3
+  
+  # UI Components
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  flutter_rating_bar: ^4.0.1
+  
+  # Video Player
+  video_player: ^2.9.1
+  chewie: ^1.8.1
+  
+  # Utils
+  intl: ^0.19.0
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  riverpod_generator: ^2.4.0
+  build_runner: ^2.4.9
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
