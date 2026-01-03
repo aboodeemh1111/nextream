@@ -78,9 +78,19 @@ class HomeNotifier extends StateNotifier<HomeState> {
       );
     } catch (e) {
       print('Error loading home: $e');
+      String errorMsg = 'Failed to load content';
+      if (e.toString().contains('SocketException') || e.toString().contains('Connection')) {
+        errorMsg = 'No internet connection';
+      } else if (e.toString().contains('401') || e.toString().contains('403')) {
+        errorMsg = 'Please login to continue';
+      } else if (e.toString().contains('404')) {
+        errorMsg = 'Content not found';
+      } else if (e.toString().contains('500')) {
+        errorMsg = 'Server error. Please try again later.';
+      }
       state = state.copyWith(
         isLoading: false,
-        error: 'Failed to load content',
+        error: errorMsg,
       );
     }
   }
