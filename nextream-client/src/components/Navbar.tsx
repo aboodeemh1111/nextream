@@ -114,7 +114,7 @@ const Navbar = () => {
 
   useEffect(() => {
     if (user?.accessToken) {
-      fetchNotifications().catch(() => {});
+      fetchNotifications().catch(() => { });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.accessToken]);
@@ -251,11 +251,10 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled
           ? "bg-black/80 backdrop-blur-md"
           : "bg-gradient-to-b from-black/60 to-transparent"
-      }`}
+        }`}
     >
       {/* Decorative gradient underline */}
       <div className="pointer-events-none absolute inset-x-0 top-full h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent" />
@@ -263,9 +262,13 @@ const Navbar = () => {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center">
           <Link href="/" className="mr-8">
-            <span className="font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-fuchsia-500 to-cyan-400 text-2xl">
-              NEXTREAM
-            </span>
+            <Image
+              src="/logo.png"
+              alt="Nextream"
+              width={120}
+              height={40}
+              className="h-8 w-auto object-contain"
+            />
           </Link>
           <div className="hidden md:flex space-x-6">
             <Link href="/" className="text-white/90 hover:text-white">
@@ -317,9 +320,8 @@ const Navbar = () => {
                 )}
                 <button
                   type="button"
-                  className={`absolute right-3 top-2 ${
-                    showAdvancedSearch ? "text-red-500" : "text-gray-400"
-                  } hover:text-red-500`}
+                  className={`absolute right-3 top-2 ${showAdvancedSearch ? "text-red-500" : "text-gray-400"
+                    } hover:text-red-500`}
                   onClick={toggleAdvancedSearch}
                   aria-label="Advanced Search"
                 >
@@ -558,9 +560,8 @@ const Navbar = () => {
                     {notifications.map((n) => (
                       <li
                         key={n._id}
-                        className={`p-3 cursor-pointer hover:bg-white/5 ${
-                          n.read ? "opacity-80" : ""
-                        }`}
+                        className={`p-3 cursor-pointer hover:bg-white/5 ${n.read ? "opacity-80" : ""
+                          }`}
                         onClick={() => openNotification(n)}
                       >
                         <div className="text-white text-sm font-medium line-clamp-1">
@@ -670,9 +671,8 @@ const Navbar = () => {
               )}
               <button
                 type="button"
-                className={`absolute right-3 top-2.5 ${
-                  showAdvancedSearch ? "text-red-500" : "text-gray-400"
-                } hover:text-red-500`}
+                className={`absolute right-3 top-2.5 ${showAdvancedSearch ? "text-red-500" : "text-gray-400"
+                  } hover:text-red-500`}
                 onClick={toggleAdvancedSearch}
                 aria-label="Advanced Search"
               >

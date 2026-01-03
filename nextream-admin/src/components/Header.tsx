@@ -63,9 +63,9 @@ const Header = () => {
     <header className="bg-gray-950 border-b border-gray-800 py-3 px-4 md:px-6 flex items-center justify-between shadow-sm">
       {/* Left section - Brand (visible on mobile) */}
       <div className="flex items-center md:hidden">
-        <h1 className="text-xl font-bold text-red-500">NEXTREAM</h1>
+        <Image src="/logo.png" alt="Nextream" width={100} height={32} className="h-6 w-auto" />
       </div>
-      
+
       {/* Middle section - Search */}
       <div className="hidden md:block flex-1 max-w-xl mx-4">
         <div className={`relative transition-all duration-200 ${searchFocused ? 'scale-105' : ''}`}>
@@ -79,25 +79,25 @@ const Header = () => {
           <FaSearch className="absolute right-4 top-3 text-gray-500" />
         </div>
       </div>
-      
+
       {/* Right section - User actions */}
       <div className="flex items-center space-x-1 md:space-x-4">
         {/* Help button */}
         <button className="p-2 text-gray-400 hover:text-gray-200 rounded-full hover:bg-gray-800 transition-colors hidden md:block">
           <FaQuestion className="text-lg" />
         </button>
-        
+
         {/* Dark mode toggle */}
-        <button 
+        <button
           className="p-2 text-gray-400 hover:text-gray-200 rounded-full hover:bg-gray-800 transition-colors hidden md:block"
           onClick={toggleDarkMode}
         >
           {darkMode ? <FaSun className="text-lg" /> : <FaMoon className="text-lg" />}
         </button>
-        
+
         {/* Notifications */}
         <div className="relative" ref={notificationRef}>
-          <button 
+          <button
             className="p-2 text-gray-400 hover:text-gray-200 rounded-full hover:bg-gray-800 transition-colors relative"
             onClick={toggleNotifications}
             aria-label="Notifications"
@@ -107,7 +107,7 @@ const Header = () => {
               {notifications.filter(n => !n.read).length}
             </span>
           </button>
-          
+
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-gray-950 rounded-lg shadow-lg py-2 z-50 border border-gray-800 max-h-96 overflow-y-auto">
               <div className="px-4 py-2 border-b border-gray-800">
@@ -120,8 +120,8 @@ const Header = () => {
               ) : (
                 <div>
                   {notifications.map(notification => (
-                    <div 
-                      key={notification.id} 
+                    <div
+                      key={notification.id}
                       className={`px-4 py-3 hover:bg-gray-900 border-l-4 ${notification.read ? 'border-transparent' : 'border-red-500'}`}
                     >
                       <p className="text-sm font-medium text-gray-200">{notification.text}</p>
@@ -138,20 +138,20 @@ const Header = () => {
             </div>
           )}
         </div>
-        
+
         {/* User profile */}
         <div className="relative" ref={dropdownRef}>
-          <div 
+          <div
             className="flex items-center space-x-2 cursor-pointer p-1 rounded-full hover:bg-gray-800 transition-colors"
             onClick={toggleDropdown}
           >
             <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
               {user?.profilePic ? (
-                <Image 
-                  src={user.profilePic} 
-                  alt={user.username || 'User'} 
-                  width={32} 
-                  height={32} 
+                <Image
+                  src={user.profilePic}
+                  alt={user.username || 'User'}
+                  width={32}
+                  height={32}
                   className="object-cover"
                 />
               ) : (
@@ -162,24 +162,24 @@ const Header = () => {
               {user?.username || 'User'}
             </span>
           </div>
-          
+
           {showDropdown && (
             <div className="absolute right-0 mt-2 w-56 bg-gray-950 rounded-lg shadow-lg py-2 z-50 border border-gray-800">
               <div className="px-4 py-3 border-b border-gray-800">
                 <p className="text-sm font-medium text-gray-200">{user?.username || 'User'}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email || 'user@example.com'}</p>
               </div>
-              
+
               <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-900">
                 <FaUser className="mr-3 text-gray-500" /> Profile
               </Link>
-              
+
               <Link href="/settings" className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-900">
                 <FaCog className="mr-3 text-gray-500" /> Settings
               </Link>
-              
+
               <div className="border-t border-gray-200 mt-1 pt-1">
-                <button 
+                <button
                   onClick={handleLogout}
                   className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-900"
                 >

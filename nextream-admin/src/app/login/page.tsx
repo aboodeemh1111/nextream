@@ -51,8 +51,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold text-red-600">NEXTREAM</h1>
-          <h2 className="mt-2 text-xl font-bold text-gray-900">
+          <Image src="/logo.png" alt="Nextream" width={140} height={50} className="h-12 w-auto mx-auto" />
+          <h2 className="mt-4 text-xl font-bold text-gray-900">
             Admin Dashboard
           </h2>
           <p className="mt-2 text-sm text-gray-600">

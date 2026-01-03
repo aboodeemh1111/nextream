@@ -27,21 +27,21 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate passwords match
     if (password !== confirmPassword) {
       setPasswordError('Passwords do not match');
       return;
     }
-    
+
     setPasswordError('');
     await register(username, email, password);
   };
 
   // Determine image source
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nextstream.onrender.com';
-  const imageSrc = useLocalImage 
-    ? '/images/login-bg.jpg' 
+  const imageSrc = useLocalImage
+    ? '/images/login-bg.jpg'
     : `${backendUrl}/images/register-bg.jpg`;
 
   return (
@@ -56,8 +56,8 @@ export default function Register() {
 
       {/* Navbar */}
       <div className="relative z-10 px-4 py-6">
-        <Link href="/" className="font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-fuchsia-500 to-cyan-400 text-3xl">
-          NEXTREAM
+        <Link href="/">
+          <Image src="/logo.png" alt="Nextream" width={140} height={50} className="h-10 w-auto" />
         </Link>
       </div>
 
@@ -150,7 +150,7 @@ export default function Register() {
                   Sign in
                 </Link>
               </p>
-              
+
               <p className="text-gray-500 text-xs mt-4">
                 By signing up, you agree to our Terms of Use and Privacy Policy.
               </p>

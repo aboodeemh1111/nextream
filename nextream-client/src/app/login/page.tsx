@@ -39,8 +39,8 @@ export default function Login() {
 
       {/* Navbar */}
       <div className="relative z-10 px-4 py-6">
-        <Link href="/" className="font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-fuchsia-500 to-cyan-400 text-3xl">
-          NEXTREAM
+        <Link href="/">
+          <Image src="/logo.png" alt="Nextream" width={140} height={50} className="h-10 w-auto" />
         </Link>
       </div>
 
@@ -109,7 +109,7 @@ export default function Login() {
                     Remember me
                   </label>
                 </div>
-                
+
                 <a href="#" className="text-gray-400 text-sm hover:text-white">
                   Need help?
                 </a>
@@ -123,7 +123,7 @@ export default function Login() {
                   Sign up now
                 </Link>
               </p>
-              
+
               <p className="text-gray-500 text-xs mt-4">
                 Protected by reCAPTCHA to ensure you're not a bot.
               </p>
