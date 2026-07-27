@@ -99,6 +99,10 @@ if (!fs.existsSync(imagesDir)) {
 // Serve static files from the public directory
 app.use(express.static(publicDir));
 
+// Signs storage keys into usable URLs on the way out, so the client and mobile
+// apps need no changes. Must come before the route mounts.
+app.use(require("./middleware/mediaUrls"));
+
 // API routes
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);

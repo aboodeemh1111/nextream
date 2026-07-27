@@ -4,11 +4,20 @@ const User = require("../models/User");
 const verify = require("../verifyToken");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const { validateMediaFields } = require("../storage/mediaFields");
 
 // CREATE MOVIE
 router.post("/", verify, async (req, res) => {
   if (!req.user.isAdmin) {
     return res.status(403).json("You are not allowed!");
+  }
+
+  // The admin app now submits storage keys. Reject anything that is neither an
+  // uploaded key, a legacy Firebase URL, nor an allowed media host, so a
+  // compromised admin session cannot repoint `video` at a third-party host.
+  const mediaError = validateMediaFields(req.body, "Movie");
+  if (mediaError) {
+    return res.status(400).json({ error: "INVALID_MEDIA_FIELD", message: mediaError });
   }
 
   const newMovie = new Movie(req.body);
@@ -27,6 +36,11 @@ router.post("/", verify, async (req, res) => {
 router.put("/:id", verify, async (req, res) => {
   if (!req.user.isAdmin) {
     return res.status(403).json("You are not allowed!");
+  }
+
+  const mediaError = validateMediaFields(req.body, "Movie");
+  if (mediaError) {
+    return res.status(400).json({ error: "INVALID_MEDIA_FIELD", message: mediaError });
   }
 
   try {

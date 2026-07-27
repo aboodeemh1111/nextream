@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const verify = require("../verifyToken");
+const { validateMediaFields } = require("../storage/mediaFields");
 const TVShow = require("../models/TVShow");
 const Season = require("../models/Season");
 const Episode = require("../models/Episode");
@@ -82,6 +83,9 @@ router.get("/episodes/:episodeId", async (req, res) => {
 router.post("/", verify, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+    const mediaError = validateMediaFields(req.body, "TVShow");
+    if (mediaError)
+      return res.status(400).json({ error: "INVALID_MEDIA_FIELD", message: mediaError });
     const payload = { ...req.body };
     if (!payload.slug && payload.title) {
       payload.slug = String(payload.title)
@@ -119,6 +123,9 @@ router.get("/admin/show/:showId", verify, async (req, res) => {
 router.patch("/:showId", verify, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+    const mediaError = validateMediaFields(req.body, "TVShow");
+    if (mediaError)
+      return res.status(400).json({ error: "INVALID_MEDIA_FIELD", message: mediaError });
     const updated = await TVShow.findByIdAndUpdate(
       req.params.showId,
       { $set: req.body },
@@ -134,6 +141,9 @@ router.patch("/:showId", verify, async (req, res) => {
 router.post("/:showId/seasons", verify, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+    const mediaError = validateMediaFields(req.body, "Season");
+    if (mediaError)
+      return res.status(400).json({ error: "INVALID_MEDIA_FIELD", message: mediaError });
     // Ensure show exists
     const showId = req.params.showId;
     const show = await TVShow.findById(showId).lean();
@@ -207,6 +217,9 @@ router.post("/:showId/seasons", verify, async (req, res) => {
 router.post("/:showId/seasons/:seasonId/episodes", verify, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+    const mediaError = validateMediaFields(req.body, "Episode");
+    if (mediaError)
+      return res.status(400).json({ error: "INVALID_MEDIA_FIELD", message: mediaError });
     const season = await Season.findOne({
       _id: req.params.seasonId,
       showId: req.params.showId,
@@ -360,6 +373,9 @@ router.get("/admin/seasons/:seasonId/episodes", verify, async (req, res) => {
 router.patch("/admin/seasons/:seasonId", verify, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+    const mediaError = validateMediaFields(req.body, "Season");
+    if (mediaError)
+      return res.status(400).json({ error: "INVALID_MEDIA_FIELD", message: mediaError });
     const updated = await Season.findByIdAndUpdate(
       req.params.seasonId,
       { $set: req.body },
@@ -376,6 +392,9 @@ router.patch("/admin/seasons/:seasonId", verify, async (req, res) => {
 router.patch("/admin/episodes/:episodeId", verify, async (req, res) => {
   try {
     if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+    const mediaError = validateMediaFields(req.body, "Episode");
+    if (mediaError)
+      return res.status(400).json({ error: "INVALID_MEDIA_FIELD", message: mediaError });
     const updated = await Episode.findByIdAndUpdate(
       req.params.episodeId,
       { $set: req.body },
