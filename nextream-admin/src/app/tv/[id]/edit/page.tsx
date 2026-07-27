@@ -301,13 +301,13 @@ export default function EditShowPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
           </div>
         ) : (
-          <div className="max-w-5xl mx-auto bg-gray-950 border border-gray-800 rounded p-4 space-y-4">
+          <div className="max-w-5xl mx-auto bg-card border border-border rounded p-4 space-y-4">
             <h1 className="text-2xl font-bold">Edit Show</h1>
             {error && (
               <div className="bg-red-100 text-red-700 px-3 py-2 rounded">
@@ -317,7 +317,7 @@ export default function EditShowPage() {
             <div>
               <label className="block text-sm mb-1">Title</label>
               <input
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -325,7 +325,7 @@ export default function EditShowPage() {
             <div>
               <label className="block text-sm mb-1">Overview</label>
               <textarea
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 rows={4}
                 value={overview}
                 onChange={(e) => setOverview(e.target.value)}
@@ -335,42 +335,26 @@ export default function EditShowPage() {
               <div>
                 <label className="block text-sm mb-1">Poster</label>
                 <VideoUploader
-                  storagePathBuilder={(f) =>
-                    `shows/${id}/poster-${Date.now()}-${f.name}`
-                  }
+                  prefix="shows"
                   initialUrl={poster}
                   onUploaded={setPoster}
                   accept="image/*"
                 />
-                {poster && (
-                  <img
-                    src={poster}
-                    className="mt-2 w-32 rounded border border-white/10"
-                  />
-                )}
               </div>
               <div>
                 <label className="block text-sm mb-1">Banner</label>
                 <VideoUploader
-                  storagePathBuilder={(f) =>
-                    `shows/${id}/banner-${Date.now()}-${f.name}`
-                  }
+                  prefix="shows"
                   initialUrl={backdrop}
                   onUploaded={setBackdrop}
                   accept="image/*"
                 />
-                {backdrop && (
-                  <img
-                    src={backdrop}
-                    className="mt-2 w-full max-w-md rounded border border-white/10"
-                  />
-                )}
               </div>
             </div>
             <div>
               <label className="block text-sm mb-1">Trailer URL</label>
               <input
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 value={trailerUrl}
                 onChange={(e) => setTrailerUrl(e.target.value)}
                 placeholder="https://..."
@@ -379,7 +363,7 @@ export default function EditShowPage() {
             <div>
               <label className="block text-sm mb-1">Slug</label>
               <input
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 placeholder="optional"
@@ -403,22 +387,22 @@ export default function EditShowPage() {
                 {saving ? "Saving..." : "Save"}
               </button>
               <button
-                className="px-4 py-2 rounded-md bg-gray-800 hover:bg-gray-700"
+                className="px-4 py-2 rounded-md bg-muted hover:bg-muted"
                 onClick={() => router.push(`/tv/${id}`)}
               >
                 Cancel
               </button>
             </div>
 
-            <div className="h-px bg-white/10 my-2" />
+            <div className="h-px bg-border my-2" />
 
-            <div className="bg-black/20 rounded p-3 border border-white/10">
+            <div className="bg-black/20 rounded p-3 border border-border">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold">Seasons</h2>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
-                    className="w-24 px-2 py-1 rounded bg-gray-900 border border-gray-800"
+                    className="w-24 px-2 py-1 rounded bg-background border border-input"
                     value={newSeasonNumberInput}
                     placeholder={String(newSeasonNumber)}
                     onChange={(e) => setNewSeasonNumberInput(e.target.value)}
@@ -440,7 +424,7 @@ export default function EditShowPage() {
                   return (
                     <div
                       key={s._id}
-                      className="p-3 bg-black/30 rounded border border-white/10"
+                      className="p-3 bg-black/30 rounded border border-border"
                     >
                       <div className="flex items-center justify-between">
                         <div className="font-medium">
@@ -448,27 +432,27 @@ export default function EditShowPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-40"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted disabled:opacity-40"
                             disabled={idx === 0}
                             onClick={() => moveSeason(idx, idx - 1)}
                           >
                             ↑
                           </button>
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-40"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted disabled:opacity-40"
                             disabled={idx === order.length - 1}
                             onClick={() => moveSeason(idx, idx + 1)}
                           >
                             ↓
                           </button>
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                             onClick={() => loadEpisodes(s._id, s.seasonNumber)}
                           >
                             Load episodes
                           </button>
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                             onClick={() => openEditSeason(s)}
                           >
                             Edit
@@ -486,7 +470,7 @@ export default function EditShowPage() {
                             New episode
                           </Link>
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                             onClick={() => deleteSeason(s._id)}
                           >
                             Delete
@@ -494,7 +478,7 @@ export default function EditShowPage() {
                         </div>
                       </div>
                       {episodes[s._id] && (
-                        <ul className="mt-2 divide-y divide-white/10">
+                        <ul className="mt-2 divide-y divide-border">
                           {episodes[s._id].map((e) => (
                             <li
                               key={e._id}
@@ -505,7 +489,7 @@ export default function EditShowPage() {
                               </span>
                               <div className="flex items-center gap-3">
                                 <button
-                                  className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                                  className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                                   onClick={() => {
                                     const url = (e as any)?.videoSources?.[0]
                                       ?.url;
@@ -524,7 +508,7 @@ export default function EditShowPage() {
                                   Play
                                 </button>
                                 <button
-                                  className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                                  className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                                   onClick={() => toggleEpisodePublish(s._id, e)}
                                 >
                                   {e.published ? "Unpublish" : "Publish"}
@@ -553,7 +537,7 @@ export default function EditShowPage() {
                             </li>
                           ))}
                           {episodes[s._id].length === 0 && (
-                            <li className="py-2 text-gray-400">No episodes</li>
+                            <li className="py-2 text-muted-foreground">No episodes</li>
                           )}
                         </ul>
                       )}
@@ -563,7 +547,7 @@ export default function EditShowPage() {
               </div>
               <div className="mt-3 flex items-center justify-end gap-2">
                 <button
-                  className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
+                  className="px-3 py-1 rounded bg-muted hover:bg-muted disabled:opacity-50"
                   disabled={reordering}
                   onClick={saveReorder}
                 >
@@ -576,11 +560,11 @@ export default function EditShowPage() {
       </div>
       {preview && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-950 border border-gray-800 rounded w-[90vw] max-w-4xl p-4">
+          <div className="bg-card border border-border rounded w-[90vw] max-w-4xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-300">{preview.title}</div>
+              <div className="text-sm text-muted-foreground">{preview.title}</div>
               <button
-                className="text-gray-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground"
                 onClick={() => setPreview(null)}
               >
                 Close
@@ -596,13 +580,13 @@ export default function EditShowPage() {
       )}
       {editingSeason && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-950 border border-gray-800 rounded w-[90vw] max-w-lg p-4">
+          <div className="bg-card border border-border rounded w-[90vw] max-w-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-300">
+              <div className="text-sm text-muted-foreground">
                 Edit Season {editingSeason.seasonNumber}
               </div>
               <button
-                className="text-gray-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground"
                 onClick={() => setEditingSeason(null)}
               >
                 Close
@@ -610,9 +594,9 @@ export default function EditShowPage() {
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-xs text-gray-400 mb-1">Name</div>
+                <div className="text-xs text-muted-foreground mb-1">Name</div>
                 <input
-                  className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                  className="w-full px-3 py-2 rounded bg-background border border-input"
                   value={editFields.name}
                   onChange={(e) =>
                     setEditFields((f) => ({ ...f, name: e.target.value }))
@@ -621,9 +605,9 @@ export default function EditShowPage() {
                 />
               </div>
               <div>
-                <div className="text-xs text-gray-400 mb-1">Poster URL</div>
+                <div className="text-xs text-muted-foreground mb-1">Poster URL</div>
                 <input
-                  className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                  className="w-full px-3 py-2 rounded bg-background border border-input"
                   value={editFields.poster}
                   onChange={(e) =>
                     setEditFields((f) => ({ ...f, poster: e.target.value }))
@@ -632,9 +616,9 @@ export default function EditShowPage() {
                 />
               </div>
               <div>
-                <div className="text-xs text-gray-400 mb-1">Banner URL</div>
+                <div className="text-xs text-muted-foreground mb-1">Banner URL</div>
                 <input
-                  className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                  className="w-full px-3 py-2 rounded bg-background border border-input"
                   value={editFields.backdrop}
                   onChange={(e) =>
                     setEditFields((f) => ({ ...f, backdrop: e.target.value }))
@@ -642,7 +626,7 @@ export default function EditShowPage() {
                   placeholder="https://..."
                 />
               </div>
-              <label className="flex items-center gap-2 text-sm text-gray-300">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input
                   type="checkbox"
                   checked={editFields.published}
@@ -657,7 +641,7 @@ export default function EditShowPage() {
               </label>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
-                  className="px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700"
+                  className="px-3 py-1.5 rounded bg-muted hover:bg-muted"
                   onClick={() => setEditingSeason(null)}
                   disabled={savingSeason}
                 >

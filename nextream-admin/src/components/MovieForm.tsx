@@ -157,7 +157,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
+    <form onSubmit={handleSubmit} className="bg-card rounded-lg shadow-md p-6">
       {error && (
         <div
           className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6"
@@ -183,7 +183,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <div className="mb-4">
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-muted-foreground mb-1"
             >
               Title <span className="text-red-500">*</span>
             </label>
@@ -193,7 +193,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
               name="title"
               value={movieData.title}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               required
             />
           </div>
@@ -201,7 +201,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <div className="mb-4">
             <label
               htmlFor="desc"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-muted-foreground mb-1"
             >
               Description <span className="text-red-500">*</span>
             </label>
@@ -211,7 +211,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
               value={movieData.desc}
               onChange={handleChange}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               required
             />
           </div>
@@ -219,7 +219,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <div className="mb-4">
             <label
               htmlFor="year"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-muted-foreground mb-1"
             >
               Year
             </label>
@@ -229,14 +229,14 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
               name="year"
               value={movieData.year}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
           <div className="mb-4">
             <label
               htmlFor="genre"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-muted-foreground mb-1"
             >
               Genre
             </label>
@@ -245,7 +245,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
               name="genre"
               value={movieData.genre}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             >
               <option value="">Select Genre</option>
               <option value="Action">Action</option>
@@ -268,7 +268,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <div className="mb-4">
             <label
               htmlFor="duration"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-muted-foreground mb-1"
             >
               Duration
             </label>
@@ -279,14 +279,14 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
               value={movieData.duration}
               onChange={handleChange}
               placeholder="e.g. 2h 15min"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
           <div className="mb-4">
             <label
               htmlFor="limit"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-muted-foreground mb-1"
             >
               Age Limit
             </label>
@@ -297,7 +297,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
               value={movieData.limit}
               onChange={handleChange}
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
@@ -308,9 +308,9 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
                 name="isSeries"
                 checked={movieData.isSeries}
                 onChange={handleChange}
-                className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                className="h-4 w-4 text-red-600 focus:ring-red-500 border-border rounded"
               />
-              <span className="ml-2 text-sm text-gray-700">
+              <span className="ml-2 text-sm text-muted-foreground">
                 This is a series
               </span>
             </label>
@@ -322,7 +322,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
             label="Main Image (Poster) *"
             onFileUpload={(url) => handleFileUpload("img", url)}
             accept="image/*"
-            folder="images"
+            prefix="images"
             existingUrl={movieData.img}
           />
 
@@ -330,7 +330,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
             label="Title Image"
             onFileUpload={(url) => handleFileUpload("imgTitle", url)}
             accept="image/*"
-            folder="images"
+            prefix="images"
             existingUrl={movieData.imgTitle}
           />
 
@@ -338,7 +338,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
             label="Thumbnail Image"
             onFileUpload={(url) => handleFileUpload("imgSm", url)}
             accept="image/*"
-            folder="images"
+            prefix="images"
             existingUrl={movieData.imgSm}
           />
 
@@ -346,7 +346,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
             label="Trailer"
             onFileUpload={(url) => handleFileUpload("trailer", url)}
             accept="video/*"
-            folder="trailers"
+            prefix="trailers"
             existingUrl={movieData.trailer}
           />
 
@@ -354,7 +354,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
             label="Video"
             onFileUpload={(url) => handleFileUpload("video", url)}
             accept="video/*"
-            folder="videos"
+            prefix="videos"
             existingUrl={movieData.video}
           />
         </div>
@@ -364,7 +364,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="inline-flex items-center px-4 py-2 border border-input shadow-sm text-sm font-medium rounded-md text-muted-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           <FaTimes className="-ml-1 mr-2 h-4 w-4" />
           Cancel

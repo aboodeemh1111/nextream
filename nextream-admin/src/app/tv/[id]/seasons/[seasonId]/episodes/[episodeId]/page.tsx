@@ -62,14 +62,6 @@ export default function EpisodeEditorPage() {
     })();
   }, [episodeId]);
 
-  const buildVideoPath = (file: File) =>
-    `episodes/${showId}/seasons/${seasonId}/episodes/${episodeId}/${Date.now()}-${
-      file.name
-    }`;
-  const buildSubPath = (file: File) =>
-    `episodes/${showId}/seasons/${seasonId}/episodes/${episodeId}/sub-${Date.now()}-${
-      file.name
-    }`;
 
   const save = async () => {
     try {
@@ -95,7 +87,7 @@ export default function EpisodeEditorPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
@@ -105,12 +97,12 @@ export default function EpisodeEditorPage() {
             {error}
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto bg-gray-950 border border-gray-800 rounded p-4 space-y-4">
+          <div className="max-w-3xl mx-auto bg-card border border-border rounded p-4 space-y-4">
             <h1 className="text-2xl font-bold">Edit Episode</h1>
             <div>
               <label className="block text-sm mb-1">Title</label>
               <input
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -120,7 +112,7 @@ export default function EpisodeEditorPage() {
                 <label className="block text-sm mb-1">Episode Number</label>
                 <input
                   type="number"
-                  className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                  className="w-full px-3 py-2 rounded bg-background border border-input"
                   value={episodeNumber}
                   onChange={(e) => setEpisodeNumber(Number(e.target.value))}
                 />
@@ -129,7 +121,7 @@ export default function EpisodeEditorPage() {
                 <label className="block text-sm mb-1">Duration (sec)</label>
                 <input
                   type="number"
-                  className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                  className="w-full px-3 py-2 rounded bg-background border border-input"
                   value={duration ?? ""}
                   onChange={(e) =>
                     setDuration(Number(e.target.value) || undefined)
@@ -140,7 +132,7 @@ export default function EpisodeEditorPage() {
             <div>
               <label className="block text-sm mb-1">Overview</label>
               <textarea
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 rows={4}
                 value={overview}
                 onChange={(e) => setOverview(e.target.value)}
@@ -156,10 +148,10 @@ export default function EpisodeEditorPage() {
               <label htmlFor="published">Published</label>
             </div>
 
-            <div className="border-t border-gray-800 pt-4">
+            <div className="border-t border-border pt-4">
               <h2 className="text-lg font-semibold mb-2">Video Upload</h2>
               <VideoUploader
-                storagePathBuilder={buildVideoPath}
+                prefix="episodes"
                 initialUrl={videoUrl}
                 onUploaded={(u) => setVideoUrl(u)}
                 onError={(e) => setError(e.message)}
@@ -172,13 +164,13 @@ export default function EpisodeEditorPage() {
               </h2>
               <div className="flex items-center gap-2 mb-2">
                 <input
-                  className="w-24 px-2 py-1 rounded bg-gray-900 border border-gray-800"
+                  className="w-24 px-2 py-1 rounded bg-background border border-input"
                   value={subtitleLang}
                   onChange={(e) => setSubtitleLang(e.target.value)}
                   placeholder="en"
                 />
                 <SubtitleUploader
-                  storagePathBuilder={buildSubPath}
+                  
                   initialUrl={subtitleUrl}
                   onUploaded={(u) => setSubtitleUrl(u)}
                   onError={(e) => setError(e.message)}
@@ -200,7 +192,7 @@ export default function EpisodeEditorPage() {
                 {saving ? "Saving..." : "Save"}
               </button>
               <button
-                className="px-4 py-2 rounded-md bg-gray-800 hover:bg-gray-700"
+                className="px-4 py-2 rounded-md bg-muted hover:bg-muted"
                 onClick={() => router.push(`/tv/${showId}`)}
               >
                 Cancel

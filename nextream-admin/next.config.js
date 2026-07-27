@@ -6,7 +6,9 @@ const nextConfig = {
       "image.tmdb.org",
       "images.unsplash.com",
       "nextream.onrender.com",
+      // Keep until the Firebase backfill is done, then drop.
       "firebasestorage.googleapis.com",
+      "storage.nextream.app",
     ],
     remotePatterns: [
       {

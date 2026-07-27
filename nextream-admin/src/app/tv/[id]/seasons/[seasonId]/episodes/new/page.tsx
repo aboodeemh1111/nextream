@@ -28,12 +28,6 @@ export default function NewEpisodePage() {
   const [poster, setPoster] = useState("");
   const [backdrop, setBackdrop] = useState("");
 
-  const buildVideoPath = (file: File) =>
-    `episodes/${showId}/seasons/${seasonId}/temp/${Date.now()}-${file.name}`;
-  const buildSubPath = (file: File) =>
-    `episodes/${showId}/seasons/${seasonId}/temp/sub-${Date.now()}-${
-      file.name
-    }`;
 
   const create = async () => {
     try {
@@ -65,8 +59,8 @@ export default function NewEpisodePage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
-        <div className="max-w-3xl mx-auto bg-gray-950 border border-gray-800 rounded p-4 space-y-4">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
+        <div className="max-w-3xl mx-auto bg-card border border-border rounded p-4 space-y-4">
           <h1 className="text-2xl font-bold">New Episode</h1>
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -76,7 +70,7 @@ export default function NewEpisodePage() {
           <div>
             <label className="block text-sm mb-1">Title</label>
             <input
-              className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+              className="w-full px-3 py-2 rounded bg-background border border-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -86,7 +80,7 @@ export default function NewEpisodePage() {
               <label className="block text-sm mb-1">Episode Number</label>
               <input
                 type="number"
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 value={episodeNumber}
                 onChange={(e) => setEpisodeNumber(Number(e.target.value))}
               />
@@ -95,7 +89,7 @@ export default function NewEpisodePage() {
               <label className="block text-sm mb-1">Duration (sec)</label>
               <input
                 type="number"
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 value={duration ?? ""}
                 onChange={(e) =>
                   setDuration(Number(e.target.value) || undefined)
@@ -106,7 +100,7 @@ export default function NewEpisodePage() {
           <div>
             <label className="block text-sm mb-1">Overview</label>
             <textarea
-              className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+              className="w-full px-3 py-2 rounded bg-background border border-input"
               rows={4}
               value={overview}
               onChange={(e) => setOverview(e.target.value)}
@@ -122,10 +116,10 @@ export default function NewEpisodePage() {
             <label htmlFor="published">Published</label>
           </div>
 
-          <div className="border-t border-gray-800 pt-4">
+          <div className="border-t border-border pt-4">
             <h2 className="text-lg font-semibold mb-2">Video Upload</h2>
             <VideoUploader
-              storagePathBuilder={buildVideoPath}
+              prefix="episodes"
               initialUrl={videoUrl}
               onUploaded={(u) => setVideoUrl(u)}
               onError={(e) => setError(e.message)}
@@ -135,11 +129,7 @@ export default function NewEpisodePage() {
             <div>
               <h2 className="text-lg font-semibold mb-2">Season Poster</h2>
               <VideoUploader
-                storagePathBuilder={(f) =>
-                  `shows/${showId}/seasons/${seasonId}/poster-${Date.now()}-${
-                    f.name
-                  }`
-                }
+                prefix="shows"
                 initialUrl={poster}
                 onUploaded={setPoster}
                 onError={(e) => setError(e.message)}
@@ -148,11 +138,7 @@ export default function NewEpisodePage() {
             <div>
               <h2 className="text-lg font-semibold mb-2">Season Banner</h2>
               <VideoUploader
-                storagePathBuilder={(f) =>
-                  `shows/${showId}/seasons/${seasonId}/banner-${Date.now()}-${
-                    f.name
-                  }`
-                }
+                prefix="shows"
                 initialUrl={backdrop}
                 onUploaded={setBackdrop}
                 onError={(e) => setError(e.message)}
@@ -164,13 +150,13 @@ export default function NewEpisodePage() {
             <h2 className="text-lg font-semibold mb-2">Subtitles (optional)</h2>
             <div className="flex items-center gap-2 mb-2">
               <input
-                className="w-24 px-2 py-1 rounded bg-gray-900 border border-gray-800"
+                className="w-24 px-2 py-1 rounded bg-background border border-input"
                 value={subtitleLang}
                 onChange={(e) => setSubtitleLang(e.target.value)}
                 placeholder="en"
               />
               <SubtitleUploader
-                storagePathBuilder={buildSubPath}
+                
                 initialUrl={subtitleUrl}
                 onUploaded={(u) => setSubtitleUrl(u)}
                 onError={(e) => setError(e.message)}
@@ -192,7 +178,7 @@ export default function NewEpisodePage() {
               {saving ? "Creating..." : "Create"}
             </button>
             <button
-              className="px-4 py-2 rounded-md bg-gray-800 hover:bg-gray-700"
+              className="px-4 py-2 rounded-md bg-muted hover:bg-muted"
               onClick={() => router.push(`/tv/${showId}`)}
             >
               Cancel

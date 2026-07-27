@@ -110,10 +110,61 @@ function isAllowedMediaValue(value) {
   return allowedHosts().indexOf(url.hostname.toLowerCase()) !== -1;
 }
 
+// Turns one of our own signed URLs back into the key it points at.
+//
+// The read middleware signs keys into URLs, so an admin edit form loads
+// `video` as a signed URL and submits that same string back untouched when only
+// the title changed. Without this the API would store an expiring URL in Mongo.
+// Signing on read and normalising on write makes the round trip idempotent.
+function toStorageKeyIfSigned(value) {
+  if (typeof value !== "string" || !value.includes("://")) return value;
+
+  let url;
+  try {
+    url = new URL(value);
+  } catch (_) {
+    return value;
+  }
+
+  let bucketHost;
+  let bucket;
+  try {
+    const { config } = require("./config");
+    const cfg = config();
+    bucketHost = new URL(cfg.publicEndpoint).host;
+    bucket = cfg.bucket;
+  } catch (_) {
+    return value; // storage unconfigured — nothing to normalise against
+  }
+
+  const path = decodeURIComponent(url.pathname.replace(/^\//, ""));
+
+  // Path style: {host}/{bucket}/{key}
+  if (url.host === bucketHost && path.startsWith(`${bucket}/`)) {
+    const key = path.slice(bucket.length + 1);
+    return isStorageKey(key) ? key : value;
+  }
+  // Virtual-host style: {bucket}.{host}/{key}
+  if (url.host === `${bucket}.${bucketHost}`) {
+    return isStorageKey(path) ? path : value;
+  }
+  return value;
+}
+
+// Rewrites any signed bucket URL in the body back to its bare key, in place.
+function normalizeMediaFields(body, model) {
+  for (const entry of resolveMediaValues(body, fieldsFor(model))) {
+    const normalized = toStorageKeyIfSigned(entry.value);
+    if (normalized !== entry.value) entry.set(normalized);
+  }
+  return body;
+}
+
 // Returns an error message, or null when every media field is acceptable.
+// Normalises first, so a resubmitted signed URL validates as the key it is.
 function validateMediaFields(body, model) {
-  const specs = fieldsFor(model);
-  for (const entry of resolveMediaValues(body, specs)) {
+  normalizeMediaFields(body, model);
+  for (const entry of resolveMediaValues(body, fieldsFor(model))) {
     if (!isAllowedMediaValue(entry.value)) {
       return `"${entry.spec}" must be an uploaded storage key or a URL on an allowed media host`;
     }
@@ -141,6 +192,8 @@ module.exports = {
   fieldsFor,
   resolveMediaValues,
   isAllowedMediaValue,
+  toStorageKeyIfSigned,
+  normalizeMediaFields,
   validateMediaFields,
   collectStorageKeys,
   collectLegacyUrls,

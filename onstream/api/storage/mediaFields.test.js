@@ -1,6 +1,14 @@
 const test = require("node:test");
 const assert = require("node:assert");
 
+// Deterministic, throwaway config — no live service is contacted by this file.
+process.env.S3_ENDPOINT = "http://localhost:9000";
+process.env.S3_REGION = "us-east-1";
+process.env.S3_BUCKET = "nextream-media";
+process.env.S3_ACCESS_KEY_ID = "minioadmin";
+process.env.S3_SECRET_ACCESS_KEY = "minioadmin";
+process.env.S3_FORCE_PATH_STYLE = "true";
+
 const {
   MEDIA_MANIFEST,
   fieldsFor,
@@ -159,4 +167,49 @@ test("collectStorageKeys returns only bucket keys, never legacy URLs", () => {
     "videos/2026/07/uuid-b.mp4",
   ]);
   assert.deepStrictEqual(collectLegacyUrls(movie, "Movie"), [FIREBASE_URL]);
+});
+
+// --- Round-trip idempotency -------------------------------------------------
+
+test("a resubmitted signed URL normalises back to its key", () => {
+  const sign = require("./sign");
+  const key = "videos/2026/07/uuid-round-trip.mp4";
+
+  // What an admin edit form receives from the API and hands straight back.
+  const signed = sign.presignGet(key);
+  assert.ok(signed.includes("X-Amz-Signature="));
+
+  const body = { title: "Unchanged", video: signed };
+  assert.strictEqual(validateMediaFields(body, "Movie"), null);
+  assert.strictEqual(
+    body.video,
+    key,
+    "signed URL was not normalised back to a key"
+  );
+});
+
+test("normalisation reaches nested fields and leaves other hosts alone", () => {
+  const sign = require("./sign");
+  const { normalizeMediaFields } = require("./mediaFields");
+  const episode = {
+    stillPath: sign.presignGet("episodes/2026/07/uuid-still.jpg"),
+    videoSources: [
+      { label: "1080p", url: sign.presignGet("episodes/2026/07/uuid-a.mp4") },
+    ],
+    subtitles: [{ lang: "en", url: FIREBASE_URL }],
+    thumbnails: ["https://image.tmdb.org/t/p/w500/abc.jpg"],
+  };
+  normalizeMediaFields(episode, "Episode");
+
+  assert.strictEqual(episode.stillPath, "episodes/2026/07/uuid-still.jpg");
+  assert.strictEqual(episode.videoSources[0].url, "episodes/2026/07/uuid-a.mp4");
+  assert.strictEqual(episode.subtitles[0].url, FIREBASE_URL);
+  assert.strictEqual(episode.thumbnails[0], "https://image.tmdb.org/t/p/w500/abc.jpg");
+});
+
+test("a lookalike bucket URL is not treated as one of ours", () => {
+  const { toStorageKeyIfSigned } = require("./mediaFields");
+  const evil = "https://evil.example/nextream-media/videos/2026/07/uuid-a.mp4";
+  assert.strictEqual(toStorageKeyIfSigned(evil), evil);
+  assert.ok(!isAllowedMediaValue(evil));
 });

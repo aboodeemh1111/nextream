@@ -266,18 +266,18 @@ export default function NewTVShowPage() {
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm mb-1 text-gray-300">Title <span className="text-red-500">*</span></label>
+              <label className="block text-sm mb-1 text-muted-foreground">Title <span className="text-red-500">*</span></label>
               <input
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 focus:border-red-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-background border border-input focus:border-red-500 focus:outline-none"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Show title"
               />
             </div>
             <div>
-              <label className="block text-sm mb-1 text-gray-300">Overview</label>
+              <label className="block text-sm mb-1 text-muted-foreground">Overview</label>
               <textarea
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 focus:border-red-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-background border border-input focus:border-red-500 focus:outline-none"
                 rows={4}
                 value={overview}
                 onChange={(e) => setOverview(e.target.value)}
@@ -286,56 +286,50 @@ export default function NewTVShowPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm mb-1 text-gray-300">Poster</label>
+                <label className="block text-sm mb-1 text-muted-foreground">Poster</label>
                 <VideoUploader
-                  storagePathBuilder={(f) => `shows/${Date.now()}-${f.name}`}
+                  prefix="shows"
                   initialUrl={poster}
                   onUploaded={setPoster}
                   accept="image/*"
                 />
-                {poster && (
-                  <img src={poster} alt="Poster preview" className="mt-2 w-32 rounded border border-white/10" />
-                )}
               </div>
               <div>
-                <label className="block text-sm mb-1 text-gray-300">Banner / Backdrop</label>
+                <label className="block text-sm mb-1 text-muted-foreground">Banner / Backdrop</label>
                 <VideoUploader
-                  storagePathBuilder={(f) => `shows/${Date.now()}-banner-${f.name}`}
+                  prefix="shows"
                   initialUrl={backdrop}
                   onUploaded={setBackdrop}
                   accept="image/*"
                 />
-                {backdrop && (
-                  <img src={backdrop} alt="Backdrop preview" className="mt-2 w-full max-w-md rounded border border-white/10" />
-                )}
               </div>
             </div>
             <div>
-              <label className="block text-sm mb-1 text-gray-300">Trailer URL (optional)</label>
+              <label className="block text-sm mb-1 text-muted-foreground">Trailer URL (optional)</label>
               <input
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 focus:border-red-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-background border border-input focus:border-red-500 focus:outline-none"
                 value={trailerUrl}
                 onChange={(e) => setTrailerUrl(e.target.value)}
                 placeholder="https://..."
               />
             </div>
             <div>
-              <label className="block text-sm mb-1 text-gray-300">Genres (comma-separated)</label>
+              <label className="block text-sm mb-1 text-muted-foreground">Genres (comma-separated)</label>
               <input
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 focus:border-red-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-background border border-input focus:border-red-500 focus:outline-none"
                 value={genres}
                 onChange={(e) => setGenres(e.target.value)}
                 placeholder="e.g. drama, sci-fi"
               />
             </div>
-            <details className="bg-gray-800/30 rounded p-3">
-              <summary className="cursor-pointer text-sm text-gray-400 hover:text-gray-200">
+            <details className="bg-muted/30 rounded p-3">
+              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
                 Advanced (custom slug)
               </summary>
               <div className="mt-3">
-                <label className="block text-sm mb-1 text-gray-300">Slug (optional)</label>
+                <label className="block text-sm mb-1 text-muted-foreground">Slug (optional)</label>
                 <input
-                  className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 focus:border-red-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded bg-background border border-input focus:border-red-500 focus:outline-none"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="auto-generated from title if left empty"
@@ -350,7 +344,7 @@ export default function NewTVShowPage() {
                 onChange={(e) => setPublished(e.target.checked)}
                 className="w-4 h-4 accent-red-600"
               />
-              <label htmlFor="published" className="text-gray-300">Published</label>
+              <label htmlFor="published" className="text-muted-foreground">Published</label>
             </div>
           </div>
         );
@@ -359,7 +353,7 @@ export default function NewTVShowPage() {
         return (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-gray-400 text-sm">Add seasons to your TV show. You can skip this step and add seasons later.</p>
+              <p className="text-muted-foreground text-sm">Add seasons to your TV show. You can skip this step and add seasons later.</p>
               <button
                 type="button"
                 onClick={addSeason}
@@ -370,12 +364,12 @@ export default function NewTVShowPage() {
             </div>
 
             {seasons.length === 0 ? (
-              <div className="text-center py-12 bg-gray-800/30 rounded-lg border border-dashed border-gray-700">
-                <p className="text-gray-400 mb-3">No seasons added yet</p>
+              <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed border-border">
+                <p className="text-muted-foreground mb-3">No seasons added yet</p>
                 <button
                   type="button"
                   onClick={addSeason}
-                  className="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-white"
+                  className="px-4 py-2 rounded-md bg-muted hover:opacity-80 text-foreground"
                 >
                   Add your first season
                 </button>
@@ -383,9 +377,9 @@ export default function NewTVShowPage() {
             ) : (
               <div className="space-y-3">
                 {seasons.map((season, idx) => (
-                  <div key={idx} className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                  <div key={idx} className="bg-muted/50 rounded-lg border border-border p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-semibold text-white">Season {season.seasonNumber}</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Season {season.seasonNumber}</h3>
                       <button
                         type="button"
                         onClick={() => removeSeason(idx)}
@@ -396,18 +390,18 @@ export default function NewTVShowPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Season Number</label>
+                        <label className="block text-xs text-muted-foreground mb-1">Season Number</label>
                         <input
                           type="number"
-                          className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 focus:border-red-500 focus:outline-none"
+                          className="w-full px-3 py-2 rounded bg-background border border-input focus:border-red-500 focus:outline-none"
                           value={season.seasonNumber}
                           onChange={(e) => updateSeason(idx, 'seasonNumber', Number(e.target.value))}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Name (optional)</label>
+                        <label className="block text-xs text-muted-foreground mb-1">Name (optional)</label>
                         <input
-                          className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-700 focus:border-red-500 focus:outline-none"
+                          className="w-full px-3 py-2 rounded bg-background border border-input focus:border-red-500 focus:outline-none"
                           value={season.name}
                           onChange={(e) => updateSeason(idx, 'name', e.target.value)}
                           placeholder="e.g. Season 1: Origins"
@@ -416,18 +410,18 @@ export default function NewTVShowPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Season Poster</label>
+                        <label className="block text-xs text-muted-foreground mb-1">Season Poster</label>
                         <VideoUploader
-                          storagePathBuilder={(f) => `shows/seasons/${Date.now()}-${f.name}`}
+                          prefix="shows"
                           initialUrl={season.poster}
                           onUploaded={(url) => updateSeason(idx, 'poster', url)}
                           accept="image/*"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Season Backdrop</label>
+                        <label className="block text-xs text-muted-foreground mb-1">Season Backdrop</label>
                         <VideoUploader
-                          storagePathBuilder={(f) => `shows/seasons/${Date.now()}-backdrop-${f.name}`}
+                          prefix="shows"
                           initialUrl={season.backdrop}
                           onUploaded={(url) => updateSeason(idx, 'backdrop', url)}
                           accept="image/*"
@@ -441,7 +435,7 @@ export default function NewTVShowPage() {
                         onChange={(e) => updateSeason(idx, 'published', e.target.checked)}
                         className="w-4 h-4 accent-red-600"
                       />
-                      <span className="text-sm text-gray-300">Published</span>
+                      <span className="text-sm text-muted-foreground">Published</span>
                     </div>
                   </div>
                 ))}
@@ -453,38 +447,38 @@ export default function NewTVShowPage() {
       case STEPS.EPISODES:
         return (
           <div className="space-y-4">
-            <p className="text-gray-400 text-sm">Add episodes to each season. You can skip this step and add episodes later.</p>
+            <p className="text-muted-foreground text-sm">Add episodes to each season. You can skip this step and add episodes later.</p>
 
             {seasons.length === 0 ? (
-              <div className="text-center py-12 bg-gray-800/30 rounded-lg border border-dashed border-gray-700">
-                <p className="text-gray-400">No seasons to add episodes to.</p>
-                <p className="text-gray-500 text-sm mt-1">Go back and add seasons first, or skip this step.</p>
+              <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed border-border">
+                <p className="text-muted-foreground">No seasons to add episodes to.</p>
+                <p className="text-muted-foreground text-sm mt-1">Go back and add seasons first, or skip this step.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {seasons.map((season, sIdx) => (
-                  <div key={sIdx} className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden">
+                  <div key={sIdx} className="bg-muted/50 rounded-lg border border-border overflow-hidden">
                     <button
                       type="button"
                       onClick={() => toggleSeasonExpand(sIdx)}
-                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-700/50 transition"
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition"
                     >
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-foreground">
                         Season {season.seasonNumber}: {season.name || `Season ${season.seasonNumber}`}
-                        <span className="ml-2 text-gray-400 text-sm">
+                        <span className="ml-2 text-muted-foreground text-sm">
                           ({season.episodes.length} episode{season.episodes.length !== 1 ? 's' : ''})
                         </span>
                       </span>
-                      <span className="text-gray-400">{expandedSeasons.has(sIdx) ? '▼' : '▶'}</span>
+                      <span className="text-muted-foreground">{expandedSeasons.has(sIdx) ? '▼' : '▶'}</span>
                     </button>
 
                     {expandedSeasons.has(sIdx) && (
-                      <div className="px-4 pb-4 border-t border-gray-700">
+                      <div className="px-4 pb-4 border-t border-border">
                         <div className="mt-3 space-y-3">
                           {season.episodes.map((ep, eIdx) => (
-                            <div key={eIdx} className="bg-gray-900/50 rounded-lg border border-gray-600 p-3">
+                            <div key={eIdx} className="bg-background/50 rounded-lg border border-border p-3">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-200">Episode {ep.episodeNumber}</span>
+                                <span className="text-sm font-medium text-foreground">Episode {ep.episodeNumber}</span>
                                 <button
                                   type="button"
                                   onClick={() => removeEpisode(sIdx, eIdx)}
@@ -495,18 +489,18 @@ export default function NewTVShowPage() {
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 <div>
-                                  <label className="block text-xs text-gray-400 mb-1">Episode Number</label>
+                                  <label className="block text-xs text-muted-foreground mb-1">Episode Number</label>
                                   <input
                                     type="number"
-                                    className="w-full px-2 py-1.5 rounded bg-gray-800 border border-gray-600 focus:border-red-500 focus:outline-none text-sm"
+                                    className="w-full px-2 py-1.5 rounded bg-muted border border-input focus:border-red-500 focus:outline-none text-sm"
                                     value={ep.episodeNumber}
                                     onChange={(e) => updateEpisode(sIdx, eIdx, 'episodeNumber', Number(e.target.value))}
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-xs text-gray-400 mb-1">Title <span className="text-red-500">*</span></label>
+                                  <label className="block text-xs text-muted-foreground mb-1">Title <span className="text-red-500">*</span></label>
                                   <input
-                                    className="w-full px-2 py-1.5 rounded bg-gray-800 border border-gray-600 focus:border-red-500 focus:outline-none text-sm"
+                                    className="w-full px-2 py-1.5 rounded bg-muted border border-input focus:border-red-500 focus:outline-none text-sm"
                                     value={ep.title}
                                     onChange={(e) => updateEpisode(sIdx, eIdx, 'title', e.target.value)}
                                     placeholder="Episode title"
@@ -514,9 +508,9 @@ export default function NewTVShowPage() {
                                 </div>
                               </div>
                               <div className="mt-2">
-                                <label className="block text-xs text-gray-400 mb-1">Overview</label>
+                                <label className="block text-xs text-muted-foreground mb-1">Overview</label>
                                 <textarea
-                                  className="w-full px-2 py-1.5 rounded bg-gray-800 border border-gray-600 focus:border-red-500 focus:outline-none text-sm"
+                                  className="w-full px-2 py-1.5 rounded bg-muted border border-input focus:border-red-500 focus:outline-none text-sm"
                                   rows={2}
                                   value={ep.overview}
                                   onChange={(e) => updateEpisode(sIdx, eIdx, 'overview', e.target.value)}
@@ -525,19 +519,19 @@ export default function NewTVShowPage() {
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                                 <div>
-                                  <label className="block text-xs text-gray-400 mb-1">Video URL</label>
+                                  <label className="block text-xs text-muted-foreground mb-1">Video URL</label>
                                   <VideoUploader
-                                    storagePathBuilder={(f) => `episodes/${Date.now()}-${f.name}`}
+                                    prefix="episodes"
                                     initialUrl={ep.videoUrl}
                                     onUploaded={(url) => updateEpisode(sIdx, eIdx, 'videoUrl', url)}
                                     accept="video/*"
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-xs text-gray-400 mb-1">Duration (minutes)</label>
+                                  <label className="block text-xs text-muted-foreground mb-1">Duration (minutes)</label>
                                   <input
                                     type="number"
-                                    className="w-full px-2 py-1.5 rounded bg-gray-800 border border-gray-600 focus:border-red-500 focus:outline-none text-sm"
+                                    className="w-full px-2 py-1.5 rounded bg-muted border border-input focus:border-red-500 focus:outline-none text-sm"
                                     value={ep.duration || ""}
                                     onChange={(e) => updateEpisode(sIdx, eIdx, 'duration', Number(e.target.value))}
                                     placeholder="0"
@@ -551,7 +545,7 @@ export default function NewTVShowPage() {
                                   onChange={(e) => updateEpisode(sIdx, eIdx, 'published', e.target.checked)}
                                   className="w-3 h-3 accent-red-600"
                                 />
-                                <span className="text-xs text-gray-300">Published</span>
+                                <span className="text-xs text-muted-foreground">Published</span>
                               </div>
                             </div>
                           ))}
@@ -559,7 +553,7 @@ export default function NewTVShowPage() {
                           <button
                             type="button"
                             onClick={() => addEpisode(sIdx)}
-                            className="w-full py-2 rounded-md border border-dashed border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 transition"
+                            className="w-full py-2 rounded-md border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-border transition"
                           >
                             + Add Episode
                           </button>
@@ -577,55 +571,55 @@ export default function NewTVShowPage() {
         const totalEpisodes = seasons.reduce((sum, s) => sum + s.episodes.length, 0);
         return (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-lg border border-gray-700 p-6">
-              <h3 className="text-xl font-bold text-white mb-4">{title || "Untitled Show"}</h3>
+            <div className="bg-gradient-to-r from-muted/50 to-background/50 rounded-lg border border-border p-6">
+              <h3 className="text-xl font-bold text-foreground mb-4">{title || "Untitled Show"}</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="bg-muted/50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-red-500">{seasons.length}</div>
-                  <div className="text-xs text-gray-400">Seasons</div>
+                  <div className="text-xs text-muted-foreground">Seasons</div>
                 </div>
-                <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="bg-muted/50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-blue-500">{totalEpisodes}</div>
-                  <div className="text-xs text-gray-400">Episodes</div>
+                  <div className="text-xs text-muted-foreground">Episodes</div>
                 </div>
-                <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="bg-muted/50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-green-500">{genres.split(",").filter(g => g.trim()).length}</div>
-                  <div className="text-xs text-gray-400">Genres</div>
+                  <div className="text-xs text-muted-foreground">Genres</div>
                 </div>
-                <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="bg-muted/50 rounded-lg p-3">
                   <div className={`text-2xl font-bold ${published ? 'text-green-500' : 'text-yellow-500'}`}>
                     {published ? '✓' : '○'}
                   </div>
-                  <div className="text-xs text-gray-400">{published ? 'Published' : 'Draft'}</div>
+                  <div className="text-xs text-muted-foreground">{published ? 'Published' : 'Draft'}</div>
                 </div>
               </div>
             </div>
 
             {/* Show Details Summary */}
-            <div className="bg-gray-800/30 rounded-lg border border-gray-700 p-4">
-              <h4 className="text-sm font-semibold text-gray-300 mb-3">Show Details</h4>
+            <div className="bg-muted/30 rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-3">Show Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2 text-sm">
-                  <div><span className="text-gray-400">Title:</span> <span className="text-white">{title}</span></div>
-                  <div><span className="text-gray-400">Genres:</span> <span className="text-white">{genres || "None"}</span></div>
-                  <div><span className="text-gray-400">Trailer:</span> <span className="text-white">{trailerUrl || "None"}</span></div>
+                  <div><span className="text-muted-foreground">Title:</span> <span className="text-foreground">{title}</span></div>
+                  <div><span className="text-muted-foreground">Genres:</span> <span className="text-foreground">{genres || "None"}</span></div>
+                  <div><span className="text-muted-foreground">Trailer:</span> <span className="text-foreground">{trailerUrl || "None"}</span></div>
                 </div>
                 <div className="flex gap-3">
-                  {poster && <img src={poster} alt="Poster" className="w-20 h-28 object-cover rounded" />}
-                  {backdrop && <img src={backdrop} alt="Backdrop" className="w-32 h-20 object-cover rounded" />}
+                  {poster && <div className="text-xs text-muted-foreground">Poster uploaded</div>}
+                  {backdrop && <div className="text-xs text-muted-foreground">Backdrop uploaded</div>}
                 </div>
               </div>
             </div>
 
             {/* Seasons Summary */}
             {seasons.length > 0 && (
-              <div className="bg-gray-800/30 rounded-lg border border-gray-700 p-4">
-                <h4 className="text-sm font-semibold text-gray-300 mb-3">Seasons & Episodes</h4>
+              <div className="bg-muted/30 rounded-lg border border-border p-4">
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">Seasons & Episodes</h4>
                 <div className="space-y-2">
                   {seasons.map((season, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-700 last:border-0">
-                      <span className="text-white">Season {season.seasonNumber}: {season.name}</span>
-                      <span className="text-gray-400 text-sm">{season.episodes.length} episode(s)</span>
+                    <div key={idx} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                      <span className="text-foreground">Season {season.seasonNumber}: {season.name}</span>
+                      <span className="text-muted-foreground text-sm">{season.episodes.length} episode(s)</span>
                     </div>
                   ))}
                 </div>
@@ -648,12 +642,12 @@ export default function NewTVShowPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white">Create TV Show</h1>
-            <p className="text-gray-400 text-sm mt-1">Add a new TV show with seasons and episodes</p>
+            <h1 className="text-2xl font-bold text-foreground">Create TV Show</h1>
+            <p className="text-muted-foreground text-sm mt-1">Add a new TV show with seasons and episodes</p>
           </div>
 
           {/* Step Indicator */}
@@ -667,13 +661,13 @@ export default function NewTVShowPage() {
                         ? "bg-green-600 text-white"
                         : idx === currentStep
                           ? "bg-red-600 text-white ring-4 ring-red-600/30"
-                          : "bg-gray-700 text-gray-400"
+                          : "bg-muted text-muted-foreground"
                         }`}
                     >
                       {idx < currentStep ? "✓" : idx + 1}
                     </div>
                     <span
-                      className={`mt-2 text-xs ${idx === currentStep ? "text-white font-medium" : "text-gray-500"
+                      className={`mt-2 text-xs ${idx === currentStep ? "text-foreground font-medium" : "text-muted-foreground"
                         }`}
                     >
                       {label}
@@ -681,7 +675,7 @@ export default function NewTVShowPage() {
                   </div>
                   {idx < STEP_LABELS.length - 1 && (
                     <div
-                      className={`h-1 flex-1 mx-2 rounded ${idx < currentStep ? "bg-green-600" : "bg-gray-700"
+                      className={`h-1 flex-1 mx-2 rounded ${idx < currentStep ? "bg-green-600" : "bg-muted"
                         }`}
                     />
                   )}
@@ -699,7 +693,7 @@ export default function NewTVShowPage() {
           )}
 
           {/* Step Content */}
-          <div className="bg-gray-950 border border-gray-800 rounded-lg p-6 mb-6">
+          <div className="bg-card border border-border rounded-lg p-6 mb-6">
             {renderStepContent()}
           </div>
 
@@ -708,7 +702,7 @@ export default function NewTVShowPage() {
             <button
               type="button"
               onClick={() => currentStep === 0 ? history.back() : handleBack()}
-              className="px-4 py-2 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-300 disabled:opacity-50"
+              className="px-4 py-2 rounded-md bg-muted hover:bg-muted text-muted-foreground disabled:opacity-50"
               disabled={loading}
             >
               {currentStep === 0 ? "Cancel" : "← Back"}
