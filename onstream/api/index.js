@@ -1,9 +1,11 @@
+const loadEnv = require("./loadEnv");
+loadEnv();
+
 const express = require("express");
 const app = express();
 const compression = require("compression");
 const helmet = require("helmet");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
@@ -19,8 +21,6 @@ const alertsRoute = require("./routes/alerts");
 const auditLogsRoute = require("./routes/auditLogs");
 const notificationsRoute = require("./routes/notifications");
 const tvRoute = require("./routes/tv");
-
-dotenv.config();
 
 mongoose
   .connect(process.env.MONGO_URL, {
