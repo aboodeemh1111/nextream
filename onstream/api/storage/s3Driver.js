@@ -134,26 +134,76 @@ async function abortMultipart(key, uploadId) {
   );
 }
 
-// Streaming upload of unknown or very large size, used by the backfill.
-// lib-storage splits into multipart parts as bytes arrive, so a 2 GB movie is
-// never held in memory.
-async function uploadStream(key, body, options) {
-  const opts = options || {};
-  const { Upload } = require("@aws-sdk/lib-storage");
-  const upload = new Upload({
-    client: client(),
-    params: {
+const STREAM_PART_SIZE = 16 * 1024 * 1024;
+
+async function uploadPartBuffer(key, uploadId, partNumber, body) {
+  const out = await client().send(
+    new UploadPartCommand({
       Bucket: bucket(),
       Key: key,
+      UploadId: uploadId,
+      PartNumber: partNumber,
       Body: body,
-      ContentType: opts.contentType,
-      CacheControl: opts.cacheControl,
-    },
-    partSize: 16 * 1024 * 1024,
-    queueSize: 2,
+    })
+  );
+  return { PartNumber: partNumber, ETag: out.ETag };
+}
+
+// Streaming upload for the backfill: cuts the stream into multipart parts as
+// bytes arrive, so a 2 GB movie never lands in memory (at most ~2 parts are
+// held at once).
+//
+// @aws-sdk/lib-storage would normally do this, but in this monorepo npm hoists
+// it to the root node_modules while client-s3 stays under onstream/api, so the
+// two resolve different @smithy/core copies and every command fails with
+// "serializerMiddleware is not found". Doing it here reuses the one client and
+// removes the dependency entirely.
+async function uploadStream(key, body, options) {
+  const opts = options || {};
+  const { uploadId } = await createMultipart(key, opts.contentType, {
+    cacheControl: opts.cacheControl,
   });
-  if (opts.onProgress) upload.on("httpUploadProgress", opts.onProgress);
-  await upload.done();
+
+  try {
+    const parts = [];
+    let pending = [];
+    let pendingBytes = 0;
+    let partNumber = 1;
+
+    for await (const chunk of body) {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      pending.push(buf);
+      pendingBytes += buf.length;
+
+      while (pendingBytes >= STREAM_PART_SIZE) {
+        const joined = Buffer.concat(pending, pendingBytes);
+        const part = joined.subarray(0, STREAM_PART_SIZE);
+        const rest = joined.subarray(STREAM_PART_SIZE);
+        pending = rest.length ? [rest] : [];
+        pendingBytes = rest.length;
+        parts.push(await uploadPartBuffer(key, uploadId, partNumber++, part));
+        if (opts.onProgress) opts.onProgress({ loaded: parts.length * STREAM_PART_SIZE });
+      }
+    }
+
+    // The final part has no minimum size, and an empty object still needs one.
+    if (pendingBytes > 0 || parts.length === 0) {
+      parts.push(
+        await uploadPartBuffer(
+          key,
+          uploadId,
+          partNumber++,
+          Buffer.concat(pending, pendingBytes)
+        )
+      );
+    }
+
+    await completeMultipart(key, uploadId, parts);
+  } catch (err) {
+    // Never leave a dangling multipart upload behind on failure.
+    await abortMultipart(key, uploadId).catch(() => {});
+    throw err;
+  }
 }
 
 // Server-side put, used by the backfill script. Body may be a stream.
