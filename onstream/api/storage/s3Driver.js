@@ -62,8 +62,17 @@ function bucket() {
 
 // --- Uploads ----------------------------------------------------------------
 
-// The presigned URL pins Content-Type (and Cache-Control when given), so the
-// client must send byte-identical headers or the signature check fails.
+// Pins Content-Type into the signature so the client must send exactly the type
+// the server approved.
+//
+// STORAGE_MIGRATION.md §4.1 assumes this happens automatically. It does not:
+// by default getSignedUrl emits X-Amz-SignedHeaders=host only, leaving
+// Content-Type unsigned and the per-prefix type allowlist advisory — an
+// approved image/jpeg presign would happily accept text/html bytes. Naming it
+// in signableHeaders is what makes the allowlist real.
+//
+// Cache-Control is deliberately left unsigned: S3 and MinIO still store it when
+// sent, and signing it would break the upload over a cosmetic header.
 async function presignPut(key, contentType, ttl, options) {
   const opts = options || {};
   const command = new PutObjectCommand({
@@ -72,7 +81,10 @@ async function presignPut(key, contentType, ttl, options) {
     ContentType: contentType,
     CacheControl: opts.cacheControl,
   });
-  return getSignedUrl(signingClient(), command, { expiresIn: ttl || 900 });
+  return getSignedUrl(signingClient(), command, {
+    expiresIn: ttl || 900,
+    signableHeaders: new Set(["content-type"]),
+  });
 }
 
 async function createMultipart(key, contentType, options) {

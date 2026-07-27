@@ -9,7 +9,7 @@
     "seed": "node seed.js",
     "seed-content": "node seedContent.js",
     "setup-images": "node upload-images.js",
-    "test": "node --test \"storage/**/*.test.js\"",
+    "test": "node --test \"storage/**/*.test.js\" \"routes/**/*.test.js\" \"middleware/**/*.test.js\"",
     "storage:verify-cors": "node scripts/verifyCors.js",
     "storage:smoke": "node scripts/smokeTest.js",
     "reap-orphans": "node scripts/reapOrphans.js",
