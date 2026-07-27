@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     remotePatterns: [
       {
@@ -27,7 +30,6 @@ const nextConfig = {
         hostname: "storage.nextream.app",
       },
     ],
-    domains: ["localhost", "nextream.onrender.com", "storage.nextream.app"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ["image/webp"],
@@ -62,7 +64,21 @@ const nextConfig = {
       },
     ];
   },
-  // Add headers to handle CORS
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
+    ignoreBuildErrors: true,
+  },
+  experimental: {
+    // This is experimental but can be helpful for debugging
+    // or working around specific issues with the build.
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
+  serverExternalPackages: [],
   async headers() {
     return [
       {
@@ -82,30 +98,6 @@ const nextConfig = {
           },
         ],
       },
-    ];
-  },
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
-    ignoreBuildErrors: true,
-  },
-  experimental: {
-    // This is experimental but can be helpful for debugging
-    // or working around specific issues with the build.
-    serverActions: {
-      bodySizeLimit: "2mb",
-    },
-  },
-  serverExternalPackages: [],
-  async headers() {
-    return [
       {
         source: "/sw.js",
         headers: [

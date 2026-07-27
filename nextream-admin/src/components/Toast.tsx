@@ -15,10 +15,15 @@ export default function Toast({ message, type='info', onClose, durationMs=2500 }
     return () => clearTimeout(t);
   }, [onClose, durationMs]);
 
-  const color = type==='success' ? 'bg-green-600' : type==='error' ? 'bg-red-600' : 'bg-gray-700';
+  const color =
+    type === 'success'
+      ? 'bg-green-600 text-white'
+      : type === 'error'
+        ? 'bg-red-600 text-white'
+        : 'bg-muted text-foreground border border-border';
 
   return (
-    <div className={`fixed bottom-4 right-4 px-4 py-2 rounded text-white shadow-md ${color}`}>{message}</div>
+    <div className={`fixed bottom-4 right-4 px-4 py-2 rounded shadow-md ${color}`}>{message}</div>
   );
 }
 

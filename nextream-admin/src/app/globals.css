@@ -1,22 +1,55 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  --background: #f4f5f7;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --muted: #eef0f4;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --accent: #dc2626;
+  --accent-foreground: #ffffff;
+  --ring: #ef4444;
+  --input: #e5e7eb;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+}
+
+.dark {
   --background: #0b0b0f;
   --foreground: #e6e6e6;
+  --card: #111317;
+  --card-foreground: #e6e6e6;
+  --muted: #1a1d24;
+  --muted-foreground: #999fb3;
+  --border: #1f232b;
+  --accent: #dc2626;
+  --accent-foreground: #ffffff;
+  --ring: #ef4444;
+  --input: #1f232b;
+  --popover: #0f1115;
+  --popover-foreground: #e6e6e6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0b0b0f;
-    --foreground: #e6e6e6;
-  }
 }
 
 body {
@@ -25,62 +58,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Dark UI tokens */
 .card {
-  background-color: #111317;
-  border-color: #1f232b;
+  background-color: var(--card);
+  border-color: var(--border);
+  color: var(--card-foreground);
 }
+
 .muted {
-  color: #999fb3;
+  color: var(--muted-foreground);
 }
+
 .surface {
-  background-color: #0f1115;
-}
-
-/* Force dark theme overrides for common light utilities used in admin */
-/* Neutral backgrounds */
-.bg-white {
-  background-color: #0f1115 !important;
-}
-.bg-gray-50 {
-  background-color: #0b0b0f !important;
-}
-.bg-gray-100 {
-  background-color: #0e1014 !important;
-}
-
-/* Text colors */
-.text-gray-900 {
-  color: #e6e6e6 !important;
-}
-.text-gray-800 {
-  color: #d1d5db !important;
-}
-.text-gray-700 {
-  color: #cbd5e1 !important;
-}
-
-/* Borders and dividers */
-.border-gray-200 {
-  border-color: #1f232b !important;
-}
-.divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #1f232b !important;
-}
-
-/* Tables */
-thead.bg-gray-50 {
-  background-color: #0f1115 !important;
-}
-tbody.divide-gray-200 {
-  --tw-divide-opacity: 1;
-  border-color: #1f232b !important;
-}
-
-/* Hover states */
-.hover\:bg-gray-50:hover {
-  background-color: #101318 !important;
-}
-.hover\:bg-gray-100:hover {
-  background-color: #141821 !important;
+  background-color: var(--background);
 }

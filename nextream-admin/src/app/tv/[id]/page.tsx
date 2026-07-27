@@ -257,7 +257,7 @@ export default function TVShowDetailPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
@@ -267,7 +267,7 @@ export default function TVShowDetailPage() {
             {error}
           </div>
         ) : !show ? (
-          <div className="text-gray-300">Not found</div>
+          <div className="text-muted-foreground">Not found</div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -275,51 +275,51 @@ export default function TVShowDetailPage() {
               <div className="flex items-center gap-2">
                 <Link
                   href={`/tv/${id}/edit`}
-                  className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700"
+                  className="px-3 py-2 rounded bg-muted hover:bg-muted"
                 >
                   Edit Show
                 </Link>
                 <Link
                   href="/tv"
-                  className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700"
+                  className="px-3 py-2 rounded bg-muted hover:bg-muted"
                 >
                   Back
                 </Link>
               </div>
             </div>
             {show.overview && (
-              <p className="text-gray-300 max-w-3xl">{show.overview}</p>
+              <p className="text-muted-foreground max-w-3xl">{show.overview}</p>
             )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {(show as any)?.poster && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Poster</div>
+                  <div className="text-xs text-muted-foreground mb-1">Poster</div>
                   <img
                     src={(show as any).poster}
                     alt="Poster"
-                    className="w-full max-w-xs rounded border border-white/10"
+                    className="w-full max-w-xs rounded border border-border"
                   />
                 </div>
               )}
               {(show as any)?.backdrop && (
                 <div className="md:col-span-2">
-                  <div className="text-xs text-gray-400 mb-1">Banner</div>
+                  <div className="text-xs text-muted-foreground mb-1">Banner</div>
                   <img
                     src={(show as any).backdrop}
                     alt="Backdrop"
-                    className="w-full rounded border border-white/10"
+                    className="w-full rounded border border-border"
                   />
                 </div>
               )}
             </div>
 
-            <div className="bg-gray-950 border border-gray-800 rounded p-4">
+            <div className="bg-card border border-border rounded p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold">Seasons</h2>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
-                    className="w-24 px-2 py-1 rounded bg-gray-900 border border-gray-800"
+                    className="w-24 px-2 py-1 rounded bg-background border border-input"
                     value={newSeasonNumberInput}
                     placeholder={String(newSeasonNumber)}
                     onChange={(e) => setNewSeasonNumberInput(e.target.value)}
@@ -341,7 +341,7 @@ export default function TVShowDetailPage() {
                   return (
                     <div
                       key={s._id}
-                      className="p-3 bg-black/30 rounded border border-white/10"
+                      className="p-3 bg-black/30 rounded border border-border"
                     >
                       <div className="flex items-center justify-between">
                         <div className="font-medium">
@@ -349,27 +349,27 @@ export default function TVShowDetailPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-40"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted disabled:opacity-40"
                             disabled={idx === 0}
                             onClick={() => moveSeason(idx, idx - 1)}
                           >
                             ↑
                           </button>
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-40"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted disabled:opacity-40"
                             disabled={idx === order.length - 1}
                             onClick={() => moveSeason(idx, idx + 1)}
                           >
                             ↓
                           </button>
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                             onClick={() => loadEpisodes(s._id, s.seasonNumber)}
                           >
                             Load episodes
                           </button>
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                             onClick={() => openEditSeason(s)}
                           >
                             Edit
@@ -387,7 +387,7 @@ export default function TVShowDetailPage() {
                             New episode
                           </Link>
                           <button
-                            className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                            className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                             onClick={() => deleteSeason(s._id)}
                           >
                             Delete
@@ -395,7 +395,7 @@ export default function TVShowDetailPage() {
                         </div>
                       </div>
                       {episodes[s._id] && (
-                        <ul className="mt-2 divide-y divide-white/10">
+                        <ul className="mt-2 divide-y divide-border">
                           {episodes[s._id].map((e) => (
                             <li
                               key={e._id}
@@ -406,7 +406,7 @@ export default function TVShowDetailPage() {
                               </span>
                               <div className="flex items-center gap-3">
                                 <button
-                                  className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                                  className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                                   onClick={() => {
                                     const url = (e as any)?.videoSources?.[0]
                                       ?.url;
@@ -425,7 +425,7 @@ export default function TVShowDetailPage() {
                                   Play
                                 </button>
                                 <button
-                                  className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                                  className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted"
                                   onClick={() => toggleEpisodePublish(s._id, e)}
                                 >
                                   {e.published ? "Unpublish" : "Publish"}
@@ -454,7 +454,7 @@ export default function TVShowDetailPage() {
                             </li>
                           ))}
                           {episodes[s._id].length === 0 && (
-                            <li className="py-2 text-gray-400">No episodes</li>
+                            <li className="py-2 text-muted-foreground">No episodes</li>
                           )}
                         </ul>
                       )}
@@ -464,7 +464,7 @@ export default function TVShowDetailPage() {
               </div>
               <div className="mt-3 flex items-center justify-end gap-2">
                 <button
-                  className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-50"
+                  className="px-3 py-1 rounded bg-muted hover:bg-muted disabled:opacity-50"
                   disabled={reordering}
                   onClick={async () => {
                     try {
@@ -482,11 +482,11 @@ export default function TVShowDetailPage() {
 
             {preview && (
               <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                <div className="bg-gray-950 border border-gray-800 rounded w-[90vw] max-w-4xl p-4">
+                <div className="bg-card border border-border rounded w-[90vw] max-w-4xl p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm text-gray-300">{preview.title}</div>
+                    <div className="text-sm text-muted-foreground">{preview.title}</div>
                     <button
-                      className="text-gray-400 hover:text-white"
+                      className="text-muted-foreground hover:text-foreground"
                       onClick={() => setPreview(null)}
                     >
                       Close
@@ -503,13 +503,13 @@ export default function TVShowDetailPage() {
 
             {editingSeason && (
               <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                <div className="bg-gray-950 border border-gray-800 rounded w-[90vw] max-w-lg p-4">
+                <div className="bg-card border border-border rounded w-[90vw] max-w-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm text-gray-300">
+                    <div className="text-sm text-muted-foreground">
                       Edit Season {editingSeason.seasonNumber}
                     </div>
                     <button
-                      className="text-gray-400 hover:text-white"
+                      className="text-muted-foreground hover:text-foreground"
                       onClick={() => setEditingSeason(null)}
                     >
                       Close
@@ -517,9 +517,9 @@ export default function TVShowDetailPage() {
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <div className="text-xs text-gray-400 mb-1">Name</div>
+                      <div className="text-xs text-muted-foreground mb-1">Name</div>
                       <input
-                        className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                        className="w-full px-3 py-2 rounded bg-background border border-input"
                         value={editFields.name}
                         onChange={(e) =>
                           setEditFields((f) => ({ ...f, name: e.target.value }))
@@ -528,11 +528,11 @@ export default function TVShowDetailPage() {
                       />
                     </div>
                     <div>
-                      <div className="text-xs text-gray-400 mb-1">
+                      <div className="text-xs text-muted-foreground mb-1">
                         Poster URL
                       </div>
                       <input
-                        className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                        className="w-full px-3 py-2 rounded bg-background border border-input"
                         value={editFields.poster}
                         onChange={(e) =>
                           setEditFields((f) => ({
@@ -544,11 +544,11 @@ export default function TVShowDetailPage() {
                       />
                     </div>
                     <div>
-                      <div className="text-xs text-gray-400 mb-1">
+                      <div className="text-xs text-muted-foreground mb-1">
                         Banner URL
                       </div>
                       <input
-                        className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                        className="w-full px-3 py-2 rounded bg-background border border-input"
                         value={editFields.backdrop}
                         onChange={(e) =>
                           setEditFields((f) => ({
@@ -559,7 +559,7 @@ export default function TVShowDetailPage() {
                         placeholder="https://..."
                       />
                     </div>
-                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
                       <input
                         type="checkbox"
                         checked={editFields.published}
@@ -574,7 +574,7 @@ export default function TVShowDetailPage() {
                     </label>
                     <div className="flex items-center justify-end gap-2 pt-2">
                       <button
-                        className="px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700"
+                        className="px-3 py-1.5 rounded bg-muted hover:bg-muted"
                         onClick={() => setEditingSeason(null)}
                         disabled={savingSeason}
                       >

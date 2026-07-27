@@ -134,6 +134,28 @@ async function abortMultipart(key, uploadId) {
   );
 }
 
+// Streaming upload of unknown or very large size, used by the backfill.
+// lib-storage splits into multipart parts as bytes arrive, so a 2 GB movie is
+// never held in memory.
+async function uploadStream(key, body, options) {
+  const opts = options || {};
+  const { Upload } = require("@aws-sdk/lib-storage");
+  const upload = new Upload({
+    client: client(),
+    params: {
+      Bucket: bucket(),
+      Key: key,
+      Body: body,
+      ContentType: opts.contentType,
+      CacheControl: opts.cacheControl,
+    },
+    partSize: 16 * 1024 * 1024,
+    queueSize: 2,
+  });
+  if (opts.onProgress) upload.on("httpUploadProgress", opts.onProgress);
+  await upload.done();
+}
+
 // Server-side put, used by the backfill script. Body may be a stream.
 async function putObject(key, body, options) {
   const opts = options || {};
@@ -242,6 +264,7 @@ module.exports = {
   completeMultipart,
   abortMultipart,
   putObject,
+  uploadStream,
   getObjectStream,
   headObject,
   deleteObject,

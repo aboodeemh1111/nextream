@@ -13,7 +13,20 @@ const app = initializeApp({
 export async function initFcm(accessToken?: string) {
   try {
     if (!(await isSupported())) return null;
-    if (!('serviceWorker' in navigator)) return null;
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) return null;
+
+    // Browser already blocked notifications — getToken would throw messaging/permission-blocked
+    if (Notification.permission === 'denied') {
+      console.warn(
+        'Notifications are blocked for this site. Enable them in the browser address bar (lock/info icon) to receive push alerts.'
+      );
+      return null;
+    }
+
+    if (Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return null;
+    }
 
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     const messaging = getMessaging(app);

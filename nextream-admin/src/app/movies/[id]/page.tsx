@@ -149,7 +149,7 @@ export default function MovieDetailsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-card rounded-lg shadow-md overflow-hidden">
           {/* Hero Section */}
           <div className="relative h-64 md:h-96">
             <Image
@@ -198,14 +198,14 @@ export default function MovieDetailsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2">
                 <h2 className="text-xl font-semibold mb-4">Overview</h2>
-                <p className="text-gray-700 mb-6">{movie.desc}</p>
+                <p className="text-muted-foreground mb-6">{movie.desc}</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Media Preview Section */}
                   {movie.trailer && (
                     <div>
                       <h3 className="text-lg font-medium mb-2">Trailer</h3>
-                      <div className="aspect-video bg-gray-100 rounded-md overflow-hidden relative">
+                      <div className="aspect-video bg-background rounded-md overflow-hidden relative">
                         {movie.trailer.includes("youtube") ? (
                           <iframe
                             src={movie.trailer}
@@ -232,7 +232,7 @@ export default function MovieDetailsPage() {
                   {movie.video && (
                     <div>
                       <h3 className="text-lg font-medium mb-2">Video</h3>
-                      <div className="aspect-video bg-gray-100 rounded-md overflow-hidden relative">
+                      <div className="aspect-video bg-background rounded-md overflow-hidden relative">
                         <div className="flex items-center justify-center h-full">
                           <a
                             href={movie.video}
@@ -255,10 +255,10 @@ export default function MovieDetailsPage() {
                 <div className="space-y-4">
                   {movie.imgSm && (
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">
                         Thumbnail Image
                       </h3>
-                      <div className="relative h-40 bg-gray-100 rounded-md overflow-hidden">
+                      <div className="relative h-40 bg-background rounded-md overflow-hidden">
                         <Image
                           src={movie.imgSm}
                           alt={`${movie.title} thumbnail`}
@@ -271,10 +271,10 @@ export default function MovieDetailsPage() {
 
                   {movie.imgTitle && (
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">
                         Title Image
                       </h3>
-                      <div className="relative h-40 bg-gray-100 rounded-md overflow-hidden">
+                      <div className="relative h-40 bg-background rounded-md overflow-hidden">
                         <Image
                           src={movie.imgTitle}
                           alt={`${movie.title} title image`}
@@ -286,36 +286,36 @@ export default function MovieDetailsPage() {
                   )}
 
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">
                       Storage URLs
                     </h3>
                     <div className="space-y-2">
                       {movie.img && (
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           <span className="font-semibold">Main Image:</span>{" "}
                           {movie.img}
                         </div>
                       )}
                       {movie.imgTitle && (
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           <span className="font-semibold">Title Image:</span>{" "}
                           {movie.imgTitle}
                         </div>
                       )}
                       {movie.imgSm && (
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           <span className="font-semibold">Thumbnail:</span>{" "}
                           {movie.imgSm}
                         </div>
                       )}
                       {movie.trailer && (
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           <span className="font-semibold">Trailer:</span>{" "}
                           {movie.trailer}
                         </div>
                       )}
                       {movie.video && (
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           <span className="font-semibold">Video:</span>{" "}
                           {movie.video}
                         </div>

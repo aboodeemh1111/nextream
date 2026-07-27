@@ -10,6 +10,7 @@ import {
   FaInfoCircle
 } from 'react-icons/fa';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { chartTooltipStyle, useChartTheme } from '@/lib/chartTheme';
 
 interface UserEngagementMetricsProps {
   data: {
@@ -34,6 +35,9 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6B6B'
 
 const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, period }) => {
   const [showChartInfo, setShowChartInfo] = useState(false);
+  const chartTheme = useChartTheme();
+  const tickStyle = { fontSize: 12, fill: chartTheme.muted };
+  const tooltipStyle = chartTooltipStyle(chartTheme);
   
   // Format watch time (seconds to hours:minutes)
   const formatWatchTime = (seconds: number): string => {
@@ -74,31 +78,31 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
   
   return (
     <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-lg sm:text-xl font-bold text-gray-800">User Engagement Metrics</h2>
+      <h2 className="text-lg sm:text-xl font-bold text-foreground">User Engagement Metrics</h2>
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {/* Active Users Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Active Users</p>
-              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mt-1">{data.activeUsers.toLocaleString()}</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">Active Users</p>
+              <h2 className="text-xl sm:text-3xl font-bold text-foreground mt-1">{data.activeUsers.toLocaleString()}</h2>
             </div>
             <div className="bg-blue-100 p-2 sm:p-3 rounded-full">
               <FaUsers className="text-blue-600 text-lg sm:text-xl" />
             </div>
           </div>
           <div className="mt-3 sm:mt-4 flex items-center">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div className="w-full bg-muted rounded-full h-2.5">
               <div 
                 className="bg-blue-600 h-2.5 rounded-full" 
                 style={{ width: `${activeUserPercentage}%` }}
               ></div>
             </div>
-            <span className="ml-2 text-xs sm:text-sm text-gray-500">{activeUserPercentage.toFixed(1)}%</span>
+            <span className="ml-2 text-xs sm:text-sm text-muted-foreground">{activeUserPercentage.toFixed(1)}%</span>
           </div>
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-muted-foreground">
             {period === 'day' && 'Daily active users (last 24 hours)'}
             {period === 'week' && 'Weekly active users (last 7 days)'}
             {period === 'month' && 'Monthly active users (last 30 days)'}
@@ -108,51 +112,51 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
         </div>
         
         {/* Average Watch Time Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Avg. Watch Time</p>
-              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mt-1">{formatWatchTime(data.avgWatchTime)}</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">Avg. Watch Time</p>
+              <h2 className="text-xl sm:text-3xl font-bold text-foreground mt-1">{formatWatchTime(data.avgWatchTime)}</h2>
             </div>
             <div className="bg-green-100 p-2 sm:p-3 rounded-full">
               <FaClock className="text-green-600 text-lg sm:text-xl" />
             </div>
           </div>
-          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-500">
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
             Average time spent watching content per user
           </p>
         </div>
         
         {/* Completion Rate Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Completion Rate</p>
-              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mt-1">{data.completionRate.toFixed(1)}%</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">Completion Rate</p>
+              <h2 className="text-xl sm:text-3xl font-bold text-foreground mt-1">{data.completionRate.toFixed(1)}%</h2>
             </div>
             <div className="bg-purple-100 p-2 sm:p-3 rounded-full">
               <FaPercentage className="text-purple-600 text-lg sm:text-xl" />
             </div>
           </div>
           <div className="mt-3 sm:mt-4 flex items-center">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div className="w-full bg-muted rounded-full h-2.5">
               <div 
                 className="bg-purple-600 h-2.5 rounded-full" 
                 style={{ width: `${data.completionRate}%` }}
               ></div>
             </div>
           </div>
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-muted-foreground">
             Percentage of started videos that were watched to completion
           </p>
         </div>
         
         {/* Most Popular Genre Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Top Genre</p>
-              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mt-1 truncate">
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">Top Genre</p>
+              <h2 className="text-xl sm:text-3xl font-bold text-foreground mt-1 truncate">
                 {data.mostWatchedGenres.length > 0 ? data.mostWatchedGenres[0]._id || 'Unknown' : 'N/A'}
               </h2>
             </div>
@@ -160,7 +164,7 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
               <FaFilm className="text-red-600 text-lg sm:text-xl" />
             </div>
           </div>
-          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-500">
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
             Most popular genre among users
           </p>
         </div>
@@ -169,11 +173,11 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Watch Time Trends Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-800">Watch Time Trends</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">Watch Time Trends</h3>
             <button 
-              className="text-gray-400 hover:text-gray-600"
+              className="text-muted-foreground hover:text-foreground"
               onClick={() => setShowChartInfo(!showChartInfo)}
               aria-label="Show chart information"
             >
@@ -193,12 +197,12 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
                 data={formattedWatchTimeTrends}
                 margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" width={40} tick={{ fontSize: 12 }} />
-                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" width={40} tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ fontSize: '12px' }} />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.border} />
+                <XAxis dataKey="name" tick={tickStyle} stroke={chartTheme.border} />
+                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" width={40} tick={tickStyle} />
+                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" width={40} tick={tickStyle} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: '12px', color: chartTheme.foreground }} />
                 <Line yAxisId="left" type="monotone" dataKey="watchTime" name="Watch Time (hours)" stroke="#8884d8" activeDot={{ r: 8 }} />
                 <Line yAxisId="right" type="monotone" dataKey="count" name="Number of Views" stroke="#82ca9d" />
               </LineChart>
@@ -207,8 +211,8 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
         </div>
         
         {/* Genre Distribution Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Most Watched Genres</h3>
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">Most Watched Genres</h3>
           <div className="h-60 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -226,8 +230,8 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: '12px' }} />
-                <Legend wrapperStyle={{ fontSize: '12px', width: '100%' }} layout="horizontal" verticalAlign="bottom" align="center" />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: '12px', width: '100%', color: chartTheme.foreground }} layout="horizontal" verticalAlign="bottom" align="center" />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -235,13 +239,13 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
       </div>
       
       {/* User Engagement Insights */}
-      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">User Engagement Insights</h3>
+      <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
+        <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">User Engagement Insights</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-            <h4 className="font-medium text-gray-700 mb-2 text-sm sm:text-base">Key Findings</h4>
-            <ul className="space-y-2 text-xs sm:text-sm text-gray-600">
+          <div className="bg-background p-3 sm:p-4 rounded-lg">
+            <h4 className="font-medium text-muted-foreground mb-2 text-sm sm:text-base">Key Findings</h4>
+            <ul className="space-y-2 text-xs sm:text-sm text-muted-foreground">
               <li className="flex items-start">
                 <span className="text-blue-500 mr-2 mt-0.5">•</span>
                 <span>
@@ -279,9 +283,9 @@ const UserEngagementMetrics: React.FC<UserEngagementMetricsProps> = ({ data, per
             </ul>
           </div>
           
-          <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-            <h4 className="font-medium text-gray-700 mb-2 text-sm sm:text-base">Recommendations</h4>
-            <ul className="space-y-2 text-xs sm:text-sm text-gray-600">
+          <div className="bg-background p-3 sm:p-4 rounded-lg">
+            <h4 className="font-medium text-muted-foreground mb-2 text-sm sm:text-base">Recommendations</h4>
+            <ul className="space-y-2 text-xs sm:text-sm text-muted-foreground">
               <li className="flex items-start">
                 <span className="text-blue-500 mr-2 mt-0.5">•</span>
                 <span>

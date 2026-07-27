@@ -125,21 +125,21 @@ export default function AnalyticsPage() {
       <div className="px-2 sm:px-0">
         {/* Page Header */}
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Analytics</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">Insights into user engagement and content performance</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Analytics</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Insights into user engagement and content performance</p>
         </div>
         
         {/* Mobile Filters Button */}
         <div className="md:hidden mb-4">
           <button
             onClick={toggleMobileFilters}
-            className="w-full flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-gray-200"
+            className="w-full flex items-center justify-between bg-card p-3 rounded-lg shadow-sm border border-border"
           >
             <span className="flex items-center">
-              <FaFilter className="mr-2 text-gray-500" />
+              <FaFilter className="mr-2 text-muted-foreground" />
               <span className="font-medium">Filters & Options</span>
             </span>
-            <span className="text-gray-500">{showMobileFilters ? '▲' : '▼'}</span>
+            <span className="text-muted-foreground">{showMobileFilters ? '▲' : '▼'}</span>
           </button>
         </div>
         
@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
             <select
               value={activeTab}
               onChange={(e) => setActiveTab(e.target.value as any)}
-              className="w-full bg-white border border-gray-300 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full bg-card border border-input text-foreground py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             >
               <option value="dashboard">Dashboard Overview</option>
               <option value="user-engagement">User Engagement</option>
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value as any)}
-                className="w-full md:w-auto bg-white border border-gray-300 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full md:w-auto bg-card border border-input text-foreground py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
                 <option value="day">Last 24 Hours</option>
                 <option value="week">Last 7 Days</option>
@@ -189,14 +189,14 @@ export default function AnalyticsPage() {
         </div>
         
         {/* Tabs - Desktop View */}
-        <div className="hidden md:block mb-6 border-b border-gray-200">
+        <div className="hidden md:block mb-6 border-b border-border">
           <ul className="flex flex-wrap -mb-px text-sm font-medium text-center">
             <li className="mr-2">
               <button
                 className={`inline-block p-4 rounded-t-lg border-b-2 ${
                   activeTab === 'dashboard'
                     ? 'text-red-600 border-red-600'
-                    : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+                    : 'border-transparent hover:text-foreground hover:border-border'
                 }`}
                 onClick={() => setActiveTab('dashboard')}
               >
@@ -208,7 +208,7 @@ export default function AnalyticsPage() {
                 className={`inline-block p-4 rounded-t-lg border-b-2 ${
                   activeTab === 'user-engagement'
                     ? 'text-red-600 border-red-600'
-                    : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+                    : 'border-transparent hover:text-foreground hover:border-border'
                 }`}
                 onClick={() => setActiveTab('user-engagement')}
               >
@@ -220,7 +220,7 @@ export default function AnalyticsPage() {
                 className={`inline-block p-4 rounded-t-lg border-b-2 ${
                   activeTab === 'content-performance'
                     ? 'text-red-600 border-red-600'
-                    : 'border-transparent hover:text-gray-600 hover:border-gray-300'
+                    : 'border-transparent hover:text-foreground hover:border-border'
                 }`}
                 onClick={() => setActiveTab('content-performance')}
               >

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Get the pathname of the request
   const path = request.nextUrl.pathname;
 
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Configure the middleware to run on specific paths
+// Configure the proxy to run on specific paths
 export const config = {
   matcher: [
     '/',
@@ -37,4 +37,4 @@ export const config = {
     '/analytics/:path*',
     '/settings/:path*',
   ],
-}; 
+};

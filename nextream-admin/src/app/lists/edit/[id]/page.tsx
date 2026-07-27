@@ -152,7 +152,7 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="flex justify-center items-center min-h-screen bg-background">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-600"></div>
         </div>
       </AdminLayout>
@@ -162,7 +162,7 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
   if (!list) {
     return (
       <AdminLayout>
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-background p-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm">
               <p className="font-medium">List not found</p>
@@ -179,14 +179,14 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <Link href="/lists" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+              <Link href="/lists" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4">
                 <FaArrowLeft className="mr-2" /> Back to Lists
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">Edit List</h1>
+              <h1 className="text-3xl font-bold text-foreground">Edit List</h1>
             </div>
           </div>
 
@@ -204,29 +204,29 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="bg-card rounded-lg shadow-sm p-6 mb-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   List Title
                 </label>
                 <input
                   type="text"
                   value={list.title}
                   onChange={(e) => setList({ ...list, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Content Type
                 </label>
                 <select
                   value={list.type}
                   onChange={(e) => setList({ ...list, type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="movie">Movies Only</option>
                   <option value="series">Series Only</option>
@@ -235,14 +235,14 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Genre
                 </label>
                 <input
                   type="text"
                   value={list.genre}
                   onChange={(e) => setList({ ...list, genre: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -257,13 +257,13 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
             </form>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Movies in List</h2>
+          <div className="bg-card rounded-lg shadow-sm p-6 mb-8">
+            <h2 className="text-xl font-bold text-foreground mb-6">Movies in List</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {list.content.map((movie) => (
                 <div
                   key={movie._id}
-                  className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
+                  className="bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
                 >
                   <div className="relative h-48 w-full">
                     <Image
@@ -275,8 +275,8 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-1">{movie.title}</h3>
-                    <p className="text-sm text-gray-600 mb-4">{movie.genre}</p>
+                    <h3 className="font-semibold text-foreground mb-1">{movie.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">{movie.genre}</p>
                     <button
                       onClick={() => handleRemoveMovie(movie._id)}
                       className="w-full inline-flex items-center justify-center px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
@@ -289,15 +289,15 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Available Movies</h2>
+          <div className="bg-card rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-bold text-foreground mb-6">Available Movies</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {availableMovies
                 .filter((movie) => !list.content.find((m) => m._id === movie._id))
                 .map((movie) => (
                   <div
                     key={movie._id}
-                    className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
+                    className="bg-card border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
                   >
                     <div className="relative h-48 w-full">
                       <Image
@@ -309,8 +309,8 @@ export default function EditListPage({ params }: { params: Promise<{ id: string 
                       />
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">{movie.title}</h3>
-                      <p className="text-sm text-gray-600 mb-4">{movie.genre}</p>
+                      <h3 className="font-semibold text-foreground mb-1">{movie.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-4">{movie.genre}</p>
                       <button
                         onClick={() => handleAddMovie(movie._id)}
                         className="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"

@@ -130,12 +130,12 @@ export default function UsersPage() {
       <div>
         {/* Page Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Users</h1>
-          <p className="text-gray-600 mt-1">Manage your platform users</p>
+          <h1 className="text-2xl font-bold text-foreground">Users</h1>
+          <p className="text-muted-foreground mt-1">Manage your platform users</p>
         </div>
         
         {/* Filters and Actions */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 mb-6">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Search */}
             <div className="relative flex-grow max-w-md">
@@ -144,9 +144,9 @@ export default function UsersPage() {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
-              <FaSearch className="absolute left-3 top-3 text-gray-400" />
+              <FaSearch className="absolute left-3 top-3 text-muted-foreground" />
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3">
@@ -155,13 +155,13 @@ export default function UsersPage() {
                 <select
                   value={filterRole}
                   onChange={(e) => setFilterRole(e.target.value as 'all' | 'admin' | 'user')}
-                  className="appearance-none pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                  className="appearance-none pl-10 pr-8 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-card"
                 >
                   <option value="all">All Roles</option>
                   <option value="admin">Admins</option>
                   <option value="user">Regular Users</option>
                 </select>
-                <FaFilter className="absolute left-3 top-3 text-gray-400" />
+                <FaFilter className="absolute left-3 top-3 text-muted-foreground" />
               </div>
               
               {/* Add User Button */}
@@ -177,7 +177,7 @@ export default function UsersPage() {
         
         {/* Users List */}
         {loading ? (
-          <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="flex justify-center items-center h-64 bg-card rounded-lg shadow-sm border border-border">
             <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-red-600"></div>
           </div>
         ) : error ? (
@@ -195,12 +195,12 @@ export default function UsersPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
             {filteredUsers.length === 0 ? (
               <div className="p-8 text-center">
-                <FaUser className="mx-auto text-gray-300 text-5xl mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No users found</h3>
-                <p className="text-gray-500 mb-4">Try adjusting your search or filter criteria</p>
+                <FaUser className="mx-auto text-muted-foreground text-5xl mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No users found</h3>
+                <p className="text-muted-foreground mb-4">Try adjusting your search or filter criteria</p>
                 <button 
                   onClick={() => {
                     setSearchTerm('');
@@ -215,47 +215,47 @@ export default function UsersPage() {
               <>
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-background">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           User
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Email
                         </th>
                         <th 
                           scope="col" 
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer"
                           onClick={() => toggleSort('username')}
                         >
                           <div className="flex items-center">
                             Role
                             {sortBy === 'username' && (
-                              <FaSort className="ml-1 text-gray-400" />
+                              <FaSort className="ml-1 text-muted-foreground" />
                             )}
                           </div>
                         </th>
                         <th 
                           scope="col" 
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer"
                           onClick={() => toggleSort('date')}
                         >
                           <div className="flex items-center">
                             Joined
                             {sortBy === 'date' && (
-                              <FaSort className="ml-1 text-gray-400" />
+                              <FaSort className="ml-1 text-muted-foreground" />
                             )}
                           </div>
                         </th>
-                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-card divide-y divide-border">
                       {filteredUsers.map((user) => (
-                        <tr key={user._id} className="hover:bg-gray-50">
+                        <tr key={user._id} className="hover:bg-muted">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <div className="h-10 w-10 flex-shrink-0">
@@ -268,27 +268,27 @@ export default function UsersPage() {
                                     height={40}
                                   />
                                 ) : (
-                                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                    <FaUser className="text-gray-500" />
+                                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                    <FaUser className="text-muted-foreground" />
                                   </div>
                                 )}
                               </div>
                               <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">
+                                <div className="text-sm font-medium text-foreground">
                                   {user.username}
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">{user.email}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isAdmin ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                               {user.isAdmin ? 'Admin' : 'User'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                             {new Date(user.createdAt).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -313,7 +313,7 @@ export default function UsersPage() {
                 
                 {/* Mobile Card View */}
                 <div className="md:hidden">
-                  <ul className="divide-y divide-gray-200">
+                  <ul className="divide-y divide-border">
                     {filteredUsers.map((user) => (
                       <li key={user._id} className="p-4">
                         <div className="flex items-center justify-between">
@@ -328,36 +328,36 @@ export default function UsersPage() {
                                   height={40}
                                 />
                               ) : (
-                                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                  <FaUser className="text-gray-500" />
+                                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                  <FaUser className="text-muted-foreground" />
                                 </div>
                               )}
                             </div>
                             <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                              <div className="text-xs text-gray-500">{user.email}</div>
+                              <div className="text-sm font-medium text-foreground">{user.username}</div>
+                              <div className="text-xs text-muted-foreground">{user.email}</div>
                             </div>
                           </div>
                           
                           <div className="relative">
                             <button 
                               onClick={() => toggleUserActions(user._id)}
-                              className="p-2 text-gray-500 rounded-full hover:bg-gray-100"
+                              className="p-2 text-muted-foreground rounded-full hover:bg-muted"
                             >
                               <FaEllipsisH />
                             </button>
                             
                             {selectedUser === user._id && (
-                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                              <div className="absolute right-0 mt-2 w-48 bg-card rounded-md shadow-lg py-1 z-10 border border-border">
                                 <Link
                                   href={`/users/${user._id}`}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  className="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted"
                                 >
                                   <FaEdit className="inline mr-2" /> Edit
                                 </Link>
                                 <button
                                   onClick={() => handleDelete(user._id)}
-                                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-muted"
                                 >
                                   <FaTrash className="inline mr-2" /> Delete
                                 </button>
@@ -370,7 +370,7 @@ export default function UsersPage() {
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isAdmin ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                             {user.isAdmin ? 'Admin' : 'User'}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             Joined {new Date(user.createdAt).toLocaleDateString()}
                           </span>
                         </div>

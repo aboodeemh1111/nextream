@@ -6,6 +6,7 @@ import api from '@/services/api';
 import { FaStar, FaThumbsUp, FaComment, FaChartBar } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import RatingStars from '../RatingStars';
+import { chartTooltipStyle, useChartTheme } from '@/lib/chartTheme';
 
 interface ReviewStatsProps {
   className?: string;
@@ -37,6 +38,9 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const chartTheme = useChartTheme();
+  const tickStyle = { fill: chartTheme.muted };
+  const tooltipStyle = chartTooltipStyle(chartTheme);
 
   useEffect(() => {
     fetchStats();
@@ -95,8 +99,8 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
 
   if (!stats) {
     return (
-      <div className={`bg-gray-50 p-6 text-center rounded ${className}`}>
-        <p className="text-gray-500">No review statistics available.</p>
+      <div className={`bg-background p-6 text-center rounded ${className}`}>
+        <p className="text-muted-foreground">No review statistics available.</p>
       </div>
     );
   }
@@ -105,11 +109,11 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
     <div className={`space-y-8 ${className}`}>
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-card rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Total Reviews</p>
-              <h2 className="text-3xl font-bold text-gray-800 mt-1">
+              <p className="text-muted-foreground text-sm font-medium">Total Reviews</p>
+              <h2 className="text-3xl font-bold text-foreground mt-1">
                 {stats.totalReviews.toLocaleString()}
               </h2>
             </div>
@@ -119,12 +123,12 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-card rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Average Rating</p>
+              <p className="text-muted-foreground text-sm font-medium">Average Rating</p>
               <div className="flex items-center mt-1">
-                <h2 className="text-3xl font-bold text-gray-800 mr-2">
+                <h2 className="text-3xl font-bold text-foreground mr-2">
                   {stats.averageRating.toFixed(1)}
                 </h2>
                 <RatingStars rating={stats.averageRating} size={20} />
@@ -136,11 +140,11 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-card rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Most Liked Movie</p>
-              <h2 className="text-xl font-bold text-gray-800 mt-1 truncate max-w-[200px]">
+              <p className="text-muted-foreground text-sm font-medium">Most Liked Movie</p>
+              <h2 className="text-xl font-bold text-foreground mt-1 truncate max-w-[200px]">
                 {stats.topRatedMovies[0]?.title || 'N/A'}
               </h2>
             </div>
@@ -152,19 +156,19 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
       </div>
       
       {/* Rating Distribution Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Rating Distribution</h3>
+      <div className="bg-card rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Rating Distribution</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={formatRatingDistribution()}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="rating" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.border} />
+              <XAxis dataKey="rating" tick={tickStyle} stroke={chartTheme.border} />
+              <YAxis tick={tickStyle} stroke={chartTheme.border} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Legend wrapperStyle={{ color: chartTheme.foreground }} />
               <Bar dataKey="count" name="Number of Reviews" fill="#8884d8" />
             </BarChart>
           </ResponsiveContainer>
@@ -172,40 +176,40 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
       </div>
       
       {/* Top Rated Movies */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Rated Movies</h3>
+      <div className="bg-card rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Top Rated Movies</h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-background">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Movie
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Rating
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Reviews
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {stats.topRatedMovies.slice(0, 5).map((movie) => (
-                <tr key={movie._id} className="hover:bg-gray-50">
+                <tr key={movie._id} className="hover:bg-muted">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-foreground">
                       {movie.title}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-900 mr-2">
+                      <span className="text-sm font-medium text-foreground mr-2">
                         {movie.averageRating.toFixed(1)}
                       </span>
                       <RatingStars rating={movie.averageRating} size={16} />
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {movie.reviewCount}
                   </td>
                 </tr>
@@ -216,37 +220,37 @@ const ReviewStats: React.FC<ReviewStatsProps> = ({ className = '' }) => {
       </div>
       
       {/* Most Reviewed Movies */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Most Reviewed Movies</h3>
+      <div className="bg-card rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Most Reviewed Movies</h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-background">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Movie
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Reviews
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Rating
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {stats.mostReviewedMovies.slice(0, 5).map((movie) => (
-                <tr key={movie._id} className="hover:bg-gray-50">
+                <tr key={movie._id} className="hover:bg-muted">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-foreground">
                       {movie.title}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {movie.reviewCount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-900 mr-2">
+                      <span className="text-sm font-medium text-foreground mr-2">
                         {movie.averageRating.toFixed(1)}
                       </span>
                       <RatingStars rating={movie.averageRating} size={16} />

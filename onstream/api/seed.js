@@ -5,35 +5,34 @@ const CryptoJS = require("crypto-js");
 
 dotenv.config();
 
-mongoose
-  .connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-  })
-  .then(() => console.log("DB Connection Successful for Seeding"))
-  .catch((err) => {
-    console.error(err);
-  });
-
-// Create admin user
+// Create or update admin user with known seed credentials
 const createAdminUser = async () => {
   try {
-    // Check if admin user already exists
-    const existingAdmin = await User.findOne({ email: "admin@example.com" });
+    const email = "admin@example.com";
+    const username = "admin";
+    const password = CryptoJS.AES.encrypt(
+      "password",
+      process.env.SECRET_KEY
+    ).toString();
+
+    const existingAdmin = await User.findOne({
+      $or: [{ email }, { username }],
+    });
+
     if (existingAdmin) {
-      console.log("Admin user already exists");
+      existingAdmin.username = username;
+      existingAdmin.email = email;
+      existingAdmin.password = password;
+      existingAdmin.isAdmin = true;
+      await existingAdmin.save();
+      console.log("Admin user updated successfully");
       return;
     }
 
-    // Create new admin user
     const adminUser = new User({
-      username: "admin",
-      email: "admin@example.com",
-      password: CryptoJS.AES.encrypt(
-        "password",
-        process.env.SECRET_KEY
-      ).toString(),
+      username,
+      email,
+      password,
       profilePic: "",
       isAdmin: true,
     });
@@ -76,13 +75,22 @@ const createTestUser = async () => {
 
 // Run seed functions
 const seedDatabase = async () => {
+  await mongoose.connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    dbName: "streamo",
+  });
+  console.log("DB Connection Successful for Seeding");
+
   await createAdminUser();
   await createTestUser();
-  
-  // Disconnect from database
-  mongoose.disconnect();
+
+  await mongoose.disconnect();
   console.log("Database seeding completed");
 };
 
-// Run the seed function
-seedDatabase(); 
+seedDatabase().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

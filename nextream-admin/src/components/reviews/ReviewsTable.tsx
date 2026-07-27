@@ -168,84 +168,84 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
 
   if (reviews.length === 0) {
     return (
-      <div className="bg-gray-50 p-6 text-center rounded">
-        <p className="text-gray-500">No reviews found.</p>
+      <div className="bg-background p-6 text-center rounded">
+        <p className="text-muted-foreground">No reviews found.</p>
       </div>
     );
   }
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-background">
           <tr>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
             >
               User
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
             >
               Movie
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
             >
               Rating
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
             >
               Date
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
             >
               Status
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
             >
               Likes
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider"
             >
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-card divide-y divide-border">
           {reviews.map((review) => (
-            <tr key={review._id} className="hover:bg-gray-50">
+            <tr key={review._id} className="hover:bg-muted">
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm font-medium text-foreground">
                   {review.username}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   ID: {review.userId.substring(0, 8)}...
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm font-medium text-foreground">
                   {review.title}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   ID: {review.movieId.substring(0, 8)}...
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <RatingStars rating={review.rating} size={16} />
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                 {formatDate(review.createdAt)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -259,7 +259,7 @@ const ReviewsTable: React.FC<ReviewsTableProps> = ({
                   </span>
                 )}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <FaThumbsUp className="text-blue-500 mr-1" />
                   {review.likes}

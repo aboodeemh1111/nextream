@@ -171,7 +171,7 @@ export default function ListsPage() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="flex justify-center items-center min-h-screen bg-background">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-600"></div>
         </div>
       </AdminLayout>
@@ -180,14 +180,14 @@ export default function ListsPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-foreground">
                 Content Lists
               </h1>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Manage your content lists and collections
               </p>
             </div>
@@ -202,8 +202,8 @@ export default function ListsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm mb-8">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-card rounded-lg shadow-sm mb-8">
+            <div className="p-6 border-b border-border">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
@@ -212,9 +212,9 @@ export default function ListsPage() {
                       placeholder="Search lists..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      className="w-full pl-10 pr-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
-                    <FaSearch className="absolute left-3 top-3 text-gray-400" />
+                    <FaSearch className="absolute left-3 top-3 text-muted-foreground" />
                   </div>
                 </div>
 
@@ -226,7 +226,7 @@ export default function ListsPage() {
                         e.target.value as "all" | "movie" | "series"
                       )
                     }
-                    className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="px-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="all">All Types</option>
                     <option value="movie">Movies</option>
@@ -236,7 +236,7 @@ export default function ListsPage() {
                   <select
                     value={genreFilter}
                     onChange={(e) => setGenreFilter(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="px-4 py-2 border border-input rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">All Genres</option>
                     {genres.map((genre) => (
@@ -264,52 +264,52 @@ export default function ListsPage() {
             )}
 
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-background">
                   <tr>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                     >
                       List Details
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                     >
                       Type
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                     >
                       Genre
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                     >
                       Content
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider"
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-card divide-y divide-border">
                   {filteredLists.length === 0 ? (
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-6 py-12 text-center text-gray-500"
+                        className="px-6 py-12 text-center text-muted-foreground"
                       >
                         <div className="flex flex-col items-center">
-                          <FaFilter className="w-8 h-8 mb-4 text-gray-400" />
+                          <FaFilter className="w-8 h-8 mb-4 text-muted-foreground" />
                           <p className="text-lg font-medium">No lists found</p>
-                          <p className="text-sm text-gray-500 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             Try adjusting your search or filters
                           </p>
                         </div>
@@ -317,14 +317,14 @@ export default function ListsPage() {
                     </tr>
                   ) : (
                     filteredLists.map((list) => (
-                      <tr key={list._id} className="hover:bg-gray-50">
+                      <tr key={list._id} className="hover:bg-muted">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-foreground">
                                 {list.title}
                               </div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-muted-foreground">
                                 Created{" "}
                                 {new Date(list.createdAt).toLocaleDateString()}
                               </div>
@@ -338,7 +338,7 @@ export default function ListsPage() {
                                 ? "bg-blue-100 text-blue-800"
                                 : list.type === "series"
                                 ? "bg-purple-100 text-purple-800"
-                                : "bg-gray-100 text-gray-800"
+                                : "bg-background text-foreground"
                             }`}
                           >
                             {list.type === "movie"
@@ -349,7 +349,7 @@ export default function ListsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-background text-foreground">
                             {list.genre || "All Genres"}
                           </span>
                         </td>
@@ -371,7 +371,7 @@ export default function ListsPage() {
                                 </div>
                               ))}
                             </div>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-muted-foreground">
                               {list.content.length} items
                             </span>
                           </div>
@@ -380,7 +380,7 @@ export default function ListsPage() {
                           <div className="flex justify-end space-x-2">
                             <Link
                               href={`/lists/${list._id}`}
-                              className="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md hover:bg-gray-100"
+                              className="text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted"
                             >
                               <FaEye className="w-4 h-4" />
                             </Link>

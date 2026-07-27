@@ -44,12 +44,12 @@ export default function TVShowsPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">TV Shows</h1>
           <div className="flex items-center gap-3">
             <input
-              className="px-3 py-2 rounded bg-gray-900 border border-gray-800"
+              className="px-3 py-2 rounded bg-background border border-input"
               placeholder="Search title..."
               value={q}
               onChange={(e) => {
@@ -75,14 +75,14 @@ export default function TVShowsPage() {
             {error}
           </div>
         ) : items.length === 0 ? (
-          <div className="text-gray-300">No TV shows found.</div>
+          <div className="text-muted-foreground">No TV shows found.</div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {items.map((s) => (
                 <div
                   key={s._id}
-                  className="bg-gray-950 border border-gray-800 rounded overflow-hidden"
+                  className="bg-card border border-border rounded overflow-hidden"
                 >
                   {(s as any)?.poster ? (
                     <img
@@ -91,15 +91,15 @@ export default function TVShowsPage() {
                       className="w-full h-40 object-cover"
                     />
                   ) : (
-                    <div className="w-full h-40 bg-gray-800 flex items-center justify-center text-gray-500">
+                    <div className="w-full h-40 bg-muted flex items-center justify-center text-muted-foreground">
                       No image
                     </div>
                   )}
                   <div className="p-3">
-                    <div className="text-white font-semibold line-clamp-1">
+                    <div className="text-foreground font-semibold line-clamp-1">
                       {s.title}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {s.published ? "Published" : "Draft"} •{" "}
                       {s.seasonsCount || 0} seasons • {s.episodesCount || 0}{" "}
                       episodes
@@ -107,7 +107,7 @@ export default function TVShowsPage() {
                     <div className="mt-3 flex items-center gap-2">
                       <Link
                         href={`/tv/${s._id}`}
-                        className="px-2 py-1 text-xs rounded bg-gray-800 hover:bg-gray-700"
+                        className="px-2 py-1 text-xs rounded bg-muted hover:bg-muted"
                       >
                         View
                       </Link>
@@ -119,17 +119,17 @@ export default function TVShowsPage() {
             {total > pageSize && (
               <div className="mt-4 flex items-center justify-center gap-2">
                 <button
-                  className="px-3 py-1 rounded bg-gray-800 disabled:opacity-50"
+                  className="px-3 py-1 rounded bg-muted disabled:opacity-50"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
                   Prev
                 </button>
-                <div className="text-sm text-gray-400">
+                <div className="text-sm text-muted-foreground">
                   Page {page} of {Math.ceil(total / pageSize)}
                 </div>
                 <button
-                  className="px-3 py-1 rounded bg-gray-800 disabled:opacity-50"
+                  className="px-3 py-1 rounded bg-muted disabled:opacity-50"
                   disabled={page >= Math.ceil(total / pageSize)}
                   onClick={() => setPage((p) => p + 1)}
                 >

@@ -14,12 +14,12 @@ export default function ReviewsPage() {
 
   if (!user || !user.isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="bg-gray-950 border border-gray-800 p-8 rounded-lg shadow-md">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="bg-card border border-border p-8 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold text-red-500 mb-4">
             Access Denied
           </h1>
-          <p className="text-gray-300">
+          <p className="text-muted-foreground">
             You do not have permission to access this page.
           </p>
         </div>
@@ -28,24 +28,24 @@ export default function ReviewsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <h1 className="text-2xl font-bold text-gray-100 mb-4 md:mb-0">
+          <h1 className="text-2xl font-bold text-foreground mb-4 md:mb-0">
             User Reviews Management
           </h1>
         </div>
 
         {/* Tabs */}
         <div className="mb-8">
-          <div className="border-b border-gray-800">
+          <div className="border-b border-border">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab("all")}
                 className={`${
                   activeTab === "all"
                     ? "border-red-500 text-red-400"
-                    : "border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-700"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
               >
                 <FaComment className="mr-2" />
@@ -56,7 +56,7 @@ export default function ReviewsPage() {
                 className={`${
                   activeTab === "pending"
                     ? "border-yellow-500 text-yellow-400"
-                    : "border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-700"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
               >
                 <FaTimes className="mr-2" />
@@ -67,7 +67,7 @@ export default function ReviewsPage() {
                 className={`${
                   activeTab === "approved"
                     ? "border-green-500 text-green-400"
-                    : "border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-700"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
               >
                 <FaCheck className="mr-2" />
@@ -78,7 +78,7 @@ export default function ReviewsPage() {
                 className={`${
                   activeTab === "stats"
                     ? "border-blue-500 text-blue-400"
-                    : "border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-700"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
               >
                 <FaChartBar className="mr-2" />
@@ -89,10 +89,10 @@ export default function ReviewsPage() {
         </div>
 
         {/* Content based on active tab */}
-        <div className="bg-gray-950 border border-gray-800 shadow rounded-lg">
+        <div className="bg-card border border-border shadow rounded-lg">
           {activeTab === "all" && (
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-100 mb-4">
+              <h2 className="text-lg font-medium text-foreground mb-4">
                 All Reviews
               </h2>
               <ReviewsTable
@@ -106,7 +106,7 @@ export default function ReviewsPage() {
 
           {activeTab === "pending" && (
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-100 mb-4">
+              <h2 className="text-lg font-medium text-foreground mb-4">
                 Pending Reviews
               </h2>
               <ReviewsTable
@@ -120,7 +120,7 @@ export default function ReviewsPage() {
 
           {activeTab === "approved" && (
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-100 mb-4">
+              <h2 className="text-lg font-medium text-foreground mb-4">
                 Approved Reviews
               </h2>
               <ReviewsTable
@@ -134,7 +134,7 @@ export default function ReviewsPage() {
 
           {activeTab === "stats" && (
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-100 mb-4">
+              <h2 className="text-lg font-medium text-foreground mb-4">
                 Review Statistics
               </h2>
               <ReviewStats />

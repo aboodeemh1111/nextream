@@ -22,6 +22,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/lib-storage": "3.700.0",
     "firebase-admin": "^12.7.0"
   }
 }

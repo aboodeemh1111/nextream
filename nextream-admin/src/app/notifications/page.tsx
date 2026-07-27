@@ -58,7 +58,7 @@ export default function NotificationsPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Notifications</h1>
           <Link
@@ -78,11 +78,11 @@ export default function NotificationsPage() {
             {error}
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-gray-950 border border-gray-800 rounded p-8 text-center text-gray-400">
+          <div className="bg-card border border-border rounded p-8 text-center text-muted-foreground">
             No notifications.
           </div>
         ) : (
-          <div className="bg-gray-950 border border-gray-800 rounded divide-y divide-gray-800">
+          <div className="bg-card border border-border rounded divide-y divide-border">
             {items.map((n) => (
               <div key={n._id} className="p-4 flex items-start justify-between">
                 <div>
@@ -95,9 +95,9 @@ export default function NotificationsPage() {
                     </h3>
                   </div>
                   {n.body && (
-                    <p className="text-sm text-gray-300 mt-1">{n.body}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{n.body}</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -105,7 +105,7 @@ export default function NotificationsPage() {
                   {!n.read && (
                     <button
                       onClick={() => markRead(n._id)}
-                      className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 text-sm"
+                      className="px-3 py-1 rounded bg-muted hover:bg-muted text-sm"
                     >
                       Mark read
                     </button>
@@ -113,7 +113,7 @@ export default function NotificationsPage() {
                   {n.deepLink && (
                     <Link
                       href={n.deepLink}
-                      className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 text-sm"
+                      className="px-3 py-1 rounded bg-muted hover:bg-muted text-sm"
                     >
                       Open
                     </Link>

@@ -1,19 +1,34 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   images: {
-    domains: [
-      "localhost",
-      "image.tmdb.org",
-      "images.unsplash.com",
-      "nextream.onrender.com",
-      // Keep until the Firebase backfill is done, then drop.
-      "firebasestorage.googleapis.com",
-      "storage.nextream.app",
-    ],
     remotePatterns: [
       {
+        protocol: "http",
+        hostname: "localhost",
+      },
+      {
         protocol: "https",
-        hostname: "**",
+        hostname: "image.tmdb.org",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "nextream.onrender.com",
+      },
+      // Keep until the Firebase backfill is done, then drop.
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+      },
+      {
+        protocol: "https",
+        hostname: "storage.nextream.app",
       },
     ],
   },
@@ -31,11 +46,6 @@ const nextConfig = {
             destination: "https://nextream.onrender.com/api/:path*",
           },
         ];
-  },
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
   },
   typescript: {
     // !! WARN !!

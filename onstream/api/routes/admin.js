@@ -114,4 +114,51 @@ router.get("/audit-preview", verify, async (req, res) => {
   }
 });
 
+// GET ALL USERS
+router.get("/users", verify, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+  try {
+    const users = await User.find().sort({ createdAt: -1 });
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+// GET ALL MOVIES
+router.get("/movies", verify, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+  try {
+    const movies = await Movie.find().sort({ createdAt: -1 });
+    res.status(200).json(movies);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+// GET ALL LISTS
+router.get("/lists", verify, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+  try {
+    const lists = await List.find().sort({ createdAt: -1 });
+    res.status(200).json(lists);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+}); 
+// GET ALL AUDIT LOGS
+router.get("/audit-logs", verify, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
+  try {
+    const auditLogs = await AuditLog.find().sort({ createdAt: -1 });
+    res.status(200).json(auditLogs);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+
+  console.log(auditLogs);
+  res.status(200).json(auditLogs);  //just a test
+
+
+});
 module.exports = router; 

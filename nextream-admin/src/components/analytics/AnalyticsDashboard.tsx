@@ -13,6 +13,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { chartTooltipStyle, useChartTheme } from '@/lib/chartTheme';
 
 interface AnalyticsDashboardProps {
   data: {
@@ -49,6 +50,9 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6B6B'
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
   const [activeUserMetric, setActiveUserMetric] = useState<'dau' | 'wau' | 'mau'>('mau');
   const [showChartInfo, setShowChartInfo] = useState(false);
+  const chartTheme = useChartTheme();
+  const tickStyle = { fontSize: 12, fill: chartTheme.muted };
+  const tooltipStyle = chartTooltipStyle(chartTheme);
   
   // Format numbers for display
   const formatNumber = (num: number): string => {
@@ -85,11 +89,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {/* Total Users Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Total Users</p>
-              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mt-1">{formatNumber(data.userStats.total)}</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">Total Users</p>
+              <h2 className="text-xl sm:text-3xl font-bold text-foreground mt-1">{formatNumber(data.userStats.total)}</h2>
             </div>
             <div className="bg-blue-100 p-2 sm:p-3 rounded-full">
               <FaUsers className="text-blue-600 text-lg sm:text-xl" />
@@ -97,19 +101,19 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
           </div>
           <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-2 sm:gap-4">
             <button 
-              className={`text-xs px-2 py-1 rounded ${activeUserMetric === 'dau' ? 'bg-blue-100 text-blue-800' : 'text-gray-500 hover:bg-gray-100'}`}
+              className={`text-xs px-2 py-1 rounded ${activeUserMetric === 'dau' ? 'bg-blue-100 text-blue-800' : 'text-muted-foreground hover:bg-muted'}`}
               onClick={() => setActiveUserMetric('dau')}
             >
               DAU: {formatNumber(data.userStats.dau)}
             </button>
             <button 
-              className={`text-xs px-2 py-1 rounded ${activeUserMetric === 'wau' ? 'bg-blue-100 text-blue-800' : 'text-gray-500 hover:bg-gray-100'}`}
+              className={`text-xs px-2 py-1 rounded ${activeUserMetric === 'wau' ? 'bg-blue-100 text-blue-800' : 'text-muted-foreground hover:bg-muted'}`}
               onClick={() => setActiveUserMetric('wau')}
             >
               WAU: {formatNumber(data.userStats.wau)}
             </button>
             <button 
-              className={`text-xs px-2 py-1 rounded ${activeUserMetric === 'mau' ? 'bg-blue-100 text-blue-800' : 'text-gray-500 hover:bg-gray-100'}`}
+              className={`text-xs px-2 py-1 rounded ${activeUserMetric === 'mau' ? 'bg-blue-100 text-blue-800' : 'text-muted-foreground hover:bg-muted'}`}
               onClick={() => setActiveUserMetric('mau')}
             >
               MAU: {formatNumber(data.userStats.mau)}
@@ -118,11 +122,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
         </div>
         
         {/* Total Movies Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Total Movies</p>
-              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mt-1">{formatNumber(data.contentStats.totalMovies)}</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">Total Movies</p>
+              <h2 className="text-xl sm:text-3xl font-bold text-foreground mt-1">{formatNumber(data.contentStats.totalMovies)}</h2>
             </div>
             <div className="bg-red-100 p-2 sm:p-3 rounded-full">
               <FaFilm className="text-red-600 text-lg sm:text-xl" />
@@ -136,11 +140,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
         </div>
         
         {/* Total Views Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">Total Views</p>
-              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mt-1">{formatNumber(data.contentStats.totalViews)}</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">Total Views</p>
+              <h2 className="text-xl sm:text-3xl font-bold text-foreground mt-1">{formatNumber(data.contentStats.totalViews)}</h2>
             </div>
             <div className="bg-purple-100 p-2 sm:p-3 rounded-full">
               <FaEye className="text-purple-600 text-lg sm:text-xl" />
@@ -154,11 +158,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
         </div>
         
         {/* User Growth Card */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-xs sm:text-sm font-medium">User Growth</p>
-              <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mt-1">
+              <p className="text-muted-foreground text-xs sm:text-sm font-medium">User Growth</p>
+              <h2 className="text-xl sm:text-3xl font-bold text-foreground mt-1">
                 {data.userGrowth.length > 1 ? (
                   <>
                     {data.userGrowth[data.userGrowth.length - 1].count > data.userGrowth[data.userGrowth.length - 2].count ? (
@@ -193,11 +197,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* User Growth Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-800">User Growth (Last 6 Months)</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-foreground">User Growth (Last 6 Months)</h3>
             <button 
-              className="text-gray-400 hover:text-gray-600"
+              className="text-muted-foreground hover:text-foreground"
               onClick={() => setShowChartInfo(!showChartInfo)}
               aria-label="Show chart information"
             >
@@ -217,11 +221,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
                 data={formattedUserGrowth}
                 margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis width={40} tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ fontSize: '12px' }} />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.border} />
+                <XAxis dataKey="name" tick={tickStyle} stroke={chartTheme.border} />
+                <YAxis width={40} tick={tickStyle} stroke={chartTheme.border} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: '12px', color: chartTheme.foreground }} />
                 <Line type="monotone" dataKey="users" stroke="#8884d8" activeDot={{ r: 8 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -229,8 +233,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
         </div>
         
         {/* Genre Distribution Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Genre Distribution</h3>
+        <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">Genre Distribution</h3>
           <div className="h-60 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -248,8 +252,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: '12px' }} />
-                <Legend wrapperStyle={{ fontSize: '12px', width: '100%' }} layout="horizontal" verticalAlign="bottom" align="center" />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: '12px', width: '100%', color: chartTheme.foreground }} layout="horizontal" verticalAlign="bottom" align="center" />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -257,15 +261,15 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
       </div>
       
       {/* Top Movies Section */}
-      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Top Performing Movies</h3>
+      <div className="bg-card rounded-lg shadow-sm p-4 sm:p-6 border border-border">
+        <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">Top Performing Movies</h3>
         
         {/* Mobile View - Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
           {data.topMovies.slice(0, 4).map((movie, index) => (
-            <div key={movie._id} className="bg-gray-50 rounded-lg p-3 flex flex-col">
+            <div key={movie._id} className="bg-background rounded-lg p-3 flex flex-col">
               <div className="flex items-center mb-2">
-                <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded overflow-hidden mr-3">
+                <div className="flex-shrink-0 h-10 w-10 bg-muted rounded overflow-hidden mr-3">
                   {movie.img ? (
                     <Image 
                       src={movie.img} 
@@ -275,14 +279,14 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
                       className="object-cover h-full w-full"
                     />
                   ) : (
-                    <div className="h-10 w-10 flex items-center justify-center bg-gray-300">
-                      <FaFilm className="text-gray-500" />
+                    <div className="h-10 w-10 flex items-center justify-center bg-muted">
+                      <FaFilm className="text-muted-foreground" />
                     </div>
                   )}
                 </div>
                 <div>
-                  <div className="font-medium text-sm text-gray-900 line-clamp-1">{movie.title}</div>
-                  <div className="text-xs text-gray-500">{movie.views.toLocaleString()} views</div>
+                  <div className="font-medium text-sm text-foreground line-clamp-1">{movie.title}</div>
+                  <div className="text-xs text-muted-foreground">{movie.views.toLocaleString()} views</div>
                 </div>
               </div>
               <div className="mt-auto pt-2 flex justify-between text-xs">
@@ -306,26 +310,26 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
         
         {/* Desktop View - Table */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-background">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Movie
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Views
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border">
               {data.topMovies.map((movie) => (
-                <tr key={movie._id} className="hover:bg-gray-50">
+                <tr key={movie._id} className="hover:bg-muted">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded overflow-hidden">
+                      <div className="flex-shrink-0 h-10 w-10 bg-muted rounded overflow-hidden">
                         {movie.img ? (
                           <Image 
                             src={movie.img} 
@@ -335,18 +339,18 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
                             className="object-cover h-full w-full"
                           />
                         ) : (
-                          <div className="h-10 w-10 flex items-center justify-center bg-gray-300">
-                            <FaFilm className="text-gray-500" />
+                          <div className="h-10 w-10 flex items-center justify-center bg-muted">
+                            <FaFilm className="text-muted-foreground" />
                           </div>
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{movie.title}</div>
+                        <div className="text-sm font-medium text-foreground">{movie.title}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{movie.views.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">{movie.views.toLocaleString()}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Link href={`/movies/${movie._id}`} className="text-indigo-600 hover:text-indigo-900 mr-4">

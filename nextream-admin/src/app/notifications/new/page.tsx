@@ -57,12 +57,12 @@ export default function ComposeNotificationPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-6">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Compose Notification</h1>
           <Link
             href="/notifications"
-            className="px-4 py-2 rounded-md bg-gray-800 hover:bg-gray-700"
+            className="px-4 py-2 rounded-md bg-muted hover:bg-muted"
           >
             Back
           </Link>
@@ -79,13 +79,13 @@ export default function ComposeNotificationPage() {
           </div>
         )}
 
-        <div className="bg-gray-950 border border-gray-800 rounded p-4 space-y-4 max-w-2xl">
+        <div className="bg-card border border-border rounded p-4 space-y-4 max-w-2xl">
           <div>
             <label className="block text-sm mb-1">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+              className="w-full px-3 py-2 rounded bg-background border border-input"
             />
           </div>
           <div>
@@ -93,7 +93,7 @@ export default function ComposeNotificationPage() {
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+              className="w-full px-3 py-2 rounded bg-background border border-input"
               rows={4}
             />
           </div>
@@ -104,7 +104,7 @@ export default function ComposeNotificationPage() {
                 value={deepLink}
                 onChange={(e) => setDeepLink(e.target.value)}
                 placeholder="/details/123"
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
               />
             </div>
             <div>
@@ -112,7 +112,7 @@ export default function ComposeNotificationPage() {
               <input
                 value={image}
                 onChange={(e) => setImage(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
               />
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function ComposeNotificationPage() {
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value as any)}
-              className="px-3 py-2 rounded bg-gray-900 border border-gray-800"
+              className="px-3 py-2 rounded bg-background border border-input"
             >
               <option value="topic">Send to Topic</option>
               <option value="users">Send to Users</option>
@@ -133,9 +133,9 @@ export default function ComposeNotificationPage() {
               <input
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Examples: new-releases, genre:action, series:abc123
               </p>
             </div>
@@ -147,7 +147,7 @@ export default function ComposeNotificationPage() {
               <textarea
                 value={userIds}
                 onChange={(e) => setUserIds(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
+                className="w-full px-3 py-2 rounded bg-background border border-input"
                 rows={3}
               />
             </div>

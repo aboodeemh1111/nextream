@@ -16,7 +16,7 @@ export default function EditMoviePage() {
           <h1 className="text-2xl font-bold flex items-center">
             <FaEdit className="mr-2 text-red-600" /> Edit Content
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Edit movie or series details and media files. Any changes will be saved to the database and Firebase storage.
           </p>
         </div>

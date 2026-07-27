@@ -3,19 +3,25 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { FaBell, FaUser, FaSearch, FaCog, FaSignOutAlt, FaQuestion, FaMoon, FaSun } from 'react-icons/fa';
+import { FaBell, FaUser, FaSearch, FaCog, FaSignOutAlt, FaQuestion, FaMoon, FaSun, FaDesktop } from 'react-icons/fa';
 
 const Header = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -32,9 +38,17 @@ const Header = () => {
     if (showDropdown) setShowDropdown(false);
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    // In a real app, you would implement dark mode functionality here
+  const cycleTheme = () => {
+    if (theme === 'light') setTheme('dark');
+    else if (theme === 'dark') setTheme('system');
+    else setTheme('light');
+  };
+
+  const ThemeIcon = () => {
+    if (!mounted) return <FaDesktop className="text-lg" />;
+    if (theme === 'light') return <FaSun className="text-lg" />;
+    if (theme === 'dark') return <FaMoon className="text-lg" />;
+    return <FaDesktop className="text-lg" />;
   };
 
   // Close dropdowns when clicking outside
@@ -60,7 +74,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-gray-950 border-b border-gray-800 py-3 px-4 md:px-6 flex items-center justify-between shadow-sm">
+    <header className="bg-card border-b border-border py-3 px-4 md:px-6 flex items-center justify-between shadow-sm">
       {/* Left section - Brand (visible on mobile) */}
       <div className="flex items-center md:hidden">
         <Image src="/logo.png" alt="Nextream" width={100} height={32} className="h-6 w-auto" />
@@ -72,33 +86,35 @@ const Header = () => {
           <input
             type="text"
             placeholder="Search..."
-            className="w-full bg-gray-900 border border-gray-800 text-gray-200 placeholder-gray-400 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-gray-950 transition-all"
+            className="w-full bg-background border border-border text-foreground placeholder:text-muted-foreground px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:bg-card transition-all"
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
           />
-          <FaSearch className="absolute right-4 top-3 text-gray-500" />
+          <FaSearch className="absolute right-4 top-3 text-muted-foreground" />
         </div>
       </div>
 
       {/* Right section - User actions */}
       <div className="flex items-center space-x-1 md:space-x-4">
         {/* Help button */}
-        <button className="p-2 text-gray-400 hover:text-gray-200 rounded-full hover:bg-gray-800 transition-colors hidden md:block">
+        <button className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors hidden md:block">
           <FaQuestion className="text-lg" />
         </button>
 
-        {/* Dark mode toggle */}
+        {/* Theme toggle: light → dark → system */}
         <button
-          className="p-2 text-gray-400 hover:text-gray-200 rounded-full hover:bg-gray-800 transition-colors hidden md:block"
-          onClick={toggleDarkMode}
+          className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
+          onClick={cycleTheme}
+          aria-label={`Theme: ${mounted ? theme ?? 'system' : 'system'}. Click to cycle.`}
+          title={mounted ? `Theme: ${theme}` : 'Theme'}
         >
-          {darkMode ? <FaSun className="text-lg" /> : <FaMoon className="text-lg" />}
+          <ThemeIcon />
         </button>
 
         {/* Notifications */}
         <div className="relative" ref={notificationRef}>
           <button
-            className="p-2 text-gray-400 hover:text-gray-200 rounded-full hover:bg-gray-800 transition-colors relative"
+            className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors relative"
             onClick={toggleNotifications}
             aria-label="Notifications"
           >
@@ -109,12 +125,12 @@ const Header = () => {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-gray-950 rounded-lg shadow-lg py-2 z-50 border border-gray-800 max-h-96 overflow-y-auto">
-              <div className="px-4 py-2 border-b border-gray-800">
-                <h3 className="font-semibold text-gray-200">Notifications</h3>
+            <div className="absolute right-0 mt-2 w-80 bg-popover text-popover-foreground rounded-lg shadow-lg py-2 z-50 border border-border max-h-96 overflow-y-auto">
+              <div className="px-4 py-2 border-b border-border">
+                <h3 className="font-semibold text-foreground">Notifications</h3>
               </div>
               {notifications.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                <div className="px-4 py-3 text-sm text-muted-foreground text-center">
                   No notifications
                 </div>
               ) : (
@@ -122,13 +138,13 @@ const Header = () => {
                   {notifications.map(notification => (
                     <div
                       key={notification.id}
-                      className={`px-4 py-3 hover:bg-gray-900 border-l-4 ${notification.read ? 'border-transparent' : 'border-red-500'}`}
+                      className={`px-4 py-3 hover:bg-muted border-l-4 ${notification.read ? 'border-transparent' : 'border-red-500'}`}
                     >
-                      <p className="text-sm font-medium text-gray-200">{notification.text}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                      <p className="text-sm font-medium text-foreground">{notification.text}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
                     </div>
                   ))}
-                  <div className="px-4 py-2 border-t border-gray-800 text-center">
+                  <div className="px-4 py-2 border-t border-border text-center">
                     <button className="text-sm text-red-500 hover:text-red-400 font-medium">
                       Mark all as read
                     </button>
@@ -142,10 +158,10 @@ const Header = () => {
         {/* User profile */}
         <div className="relative" ref={dropdownRef}>
           <div
-            className="flex items-center space-x-2 cursor-pointer p-1 rounded-full hover:bg-gray-800 transition-colors"
+            className="flex items-center space-x-2 cursor-pointer p-1 rounded-full hover:bg-muted transition-colors"
             onClick={toggleDropdown}
           >
-            <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
               {user?.profilePic ? (
                 <Image
                   src={user.profilePic}
@@ -155,35 +171,35 @@ const Header = () => {
                   className="object-cover"
                 />
               ) : (
-                <FaUser className="text-gray-400" />
+                <FaUser className="text-muted-foreground" />
               )}
             </div>
-            <span className="hidden md:inline-block text-sm font-medium text-gray-200">
+            <span className="hidden md:inline-block text-sm font-medium text-foreground">
               {user?.username || 'User'}
             </span>
           </div>
 
           {showDropdown && (
-            <div className="absolute right-0 mt-2 w-56 bg-gray-950 rounded-lg shadow-lg py-2 z-50 border border-gray-800">
-              <div className="px-4 py-3 border-b border-gray-800">
-                <p className="text-sm font-medium text-gray-200">{user?.username || 'User'}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email || 'user@example.com'}</p>
+            <div className="absolute right-0 mt-2 w-56 bg-popover text-popover-foreground rounded-lg shadow-lg py-2 z-50 border border-border">
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-sm font-medium text-foreground">{user?.username || 'User'}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email || 'user@example.com'}</p>
               </div>
 
-              <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-900">
-                <FaUser className="mr-3 text-gray-500" /> Profile
+              <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted">
+                <FaUser className="mr-3 text-muted-foreground" /> Profile
               </Link>
 
-              <Link href="/settings" className="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-900">
-                <FaCog className="mr-3 text-gray-500" /> Settings
+              <Link href="/settings" className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted">
+                <FaCog className="mr-3 text-muted-foreground" /> Settings
               </Link>
 
-              <div className="border-t border-gray-200 mt-1 pt-1">
+              <div className="border-t border-border mt-1 pt-1">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-900"
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted"
                 >
-                  <FaSignOutAlt className="mr-3 text-gray-500" /> Logout
+                  <FaSignOutAlt className="mr-3 text-muted-foreground" /> Logout
                 </button>
               </div>
             </div>
@@ -194,4 +210,4 @@ const Header = () => {
   );
 };
 
-export default Header; 
+export default Header;

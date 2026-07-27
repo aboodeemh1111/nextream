@@ -21,10 +21,10 @@ export default function Modal({ open, title, children, onClose, footer }: ModalP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-gray-950 border border-gray-800 rounded-lg w-[90vw] max-w-2xl p-4">
+      <div className="relative bg-card border border-border rounded-lg w-[90vw] max-w-2xl p-4 text-card-foreground">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-lg font-semibold text-gray-100">{title}</div>
-          <button className="text-gray-400 hover:text-white" onClick={onClose}>Close</button>
+          <div className="text-lg font-semibold text-foreground">{title}</div>
+          <button className="text-muted-foreground hover:text-foreground" onClick={onClose}>Close</button>
         </div>
         <div>{children}</div>
         {footer && (
@@ -34,5 +34,3 @@ export default function Modal({ open, title, children, onClose, footer }: ModalP
     </div>
   );
 }
-
-

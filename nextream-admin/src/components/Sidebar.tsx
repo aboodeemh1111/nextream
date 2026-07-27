@@ -126,7 +126,7 @@ const Sidebar = () => {
     <>
       {/* Mobile Toggle Button */}
       <button
-        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-800 text-white md:hidden focus:outline-none focus:ring-2 focus:ring-red-500"
+        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-card border border-border text-foreground md:hidden focus:outline-none focus:ring-2 focus:ring-ring"
         onClick={toggleMobileSidebar}
         aria-label="Toggle menu"
       >
@@ -136,7 +136,7 @@ const Sidebar = () => {
       {/* Sidebar Overlay for Mobile */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300"
           onClick={toggleMobileSidebar}
         ></div>
       )}
@@ -145,15 +145,15 @@ const Sidebar = () => {
       <aside
         id="mobile-sidebar"
         className={`
-          fixed top-0 left-0 h-full bg-gray-950 text-gray-100 z-40
-          transition-all duration-300 ease-in-out shadow-xl
+          fixed top-0 left-0 h-full bg-card text-foreground z-40
+          transition-all duration-300 ease-in-out shadow-xl border-r border-border
           ${isCollapsed ? "w-20" : "w-64"} 
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} 
           md:translate-x-0
         `}
       >
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <Link href="/" className="flex items-center">
             <span className="text-red-600 text-2xl font-bold">N</span>
             {!isCollapsed && (
@@ -163,7 +163,7 @@ const Sidebar = () => {
             )}
           </Link>
           <button
-            className="text-gray-400 hover:text-white hidden md:block focus:outline-none"
+            className="text-muted-foreground hover:text-foreground hidden md:block focus:outline-none"
             onClick={toggleSidebar}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -183,7 +183,7 @@ const Sidebar = () => {
                     ${
                       isActive(item.path)
                         ? "bg-red-600 text-white"
-                        : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }
                   `}
                 >
@@ -198,12 +198,12 @@ const Sidebar = () => {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="absolute bottom-0 w-full border-t border-gray-800 p-4">
+        <div className="absolute bottom-0 w-full border-t border-border p-4">
           <button
             onClick={handleLogout}
             className={`
-              flex items-center text-gray-300 hover:text-white transition-colors w-full
-              px-4 py-2 rounded-lg hover:bg-gray-800
+              flex items-center text-muted-foreground hover:text-foreground transition-colors w-full
+              px-4 py-2 rounded-lg hover:bg-muted
               ${isCollapsed ? "justify-center" : ""}
             `}
           >

@@ -27,7 +27,9 @@ function fieldsFor(model) {
   return entry ? entry.fields : [];
 }
 
-// Returns [{ spec, value, set(newValue) }] for every media value present.
+// Returns [{ spec, path, value, set(newValue) }] for every media value present.
+// `path` is the Mongo dotted path (e.g. "videoSources.0.url"), so the backfill
+// can $set exactly one field instead of rewriting the whole document.
 function resolveMediaValues(doc, specs) {
   const out = [];
   if (!doc || typeof doc !== "object") return out;
@@ -37,7 +39,7 @@ function resolveMediaValues(doc, specs) {
     if (arrayAt === -1) {
       const value = doc[spec];
       if (typeof value === "string" && value) {
-        out.push({ spec, value, set: (v) => { doc[spec] = v; } });
+        out.push({ spec, path: spec, value, set: (v) => { doc[spec] = v; } });
       }
       continue;
     }
@@ -52,6 +54,7 @@ function resolveMediaValues(doc, specs) {
         if (typeof item === "string" && item) {
           out.push({
             spec,
+            path: `${arrayField}.${index}`,
             value: item,
             set: (v) => { list[index] = v; },
           });
@@ -61,6 +64,7 @@ function resolveMediaValues(doc, specs) {
       if (item && typeof item === "object" && typeof item[subField] === "string" && item[subField]) {
         out.push({
           spec,
+          path: `${arrayField}.${index}.${subField}`,
           value: item[subField],
           set: (v) => { item[subField] = v; },
         });
