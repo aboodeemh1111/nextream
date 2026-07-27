@@ -1,6 +1,10 @@
 const router = require("express").Router();
 const verify = require("../verifyToken");
 const { validateMediaFields } = require("../storage/mediaFields");
+const {
+  reapDocumentMedia,
+  reapManyDocumentMedia,
+} = require("../storage/cleanup");
 const TVShow = require("../models/TVShow");
 const Season = require("../models/Season");
 const Episode = require("../models/Episode");
@@ -422,6 +426,8 @@ router.delete("/admin/episodes/:episodeId", verify, async (req, res) => {
         { _id: ep.showId },
         { $inc: { episodesCount: -1 } }
       );
+      // Only after the Mongo delete has succeeded.
+      await reapDocumentMedia(ep.toObject(), "Episode");
     }
     res.json({ ok: true });
   } catch (err) {
@@ -437,12 +443,18 @@ router.delete("/admin/seasons/:seasonId", verify, async (req, res) => {
     if (!req.user.isAdmin) return res.status(403).json("You are not allowed!");
     const season = await Season.findById(req.params.seasonId);
     if (!season) return res.status(404).json({ message: "Season not found" });
+    // Read the episodes before deleting them, otherwise their media is
+    // unreachable and orphaned in the bucket forever.
+    const episodeDocs = await Episode.find({ seasonId: season._id }).lean();
     const eps = await Episode.deleteMany({ seasonId: season._id });
     await TVShow.updateOne(
       { _id: season.showId },
       { $inc: { episodesCount: -(eps.deletedCount || 0), seasonsCount: -1 } }
     );
     await Season.deleteOne({ _id: season._id });
+    // Only after the Mongo deletes have succeeded; cascades to the episodes.
+    await reapDocumentMedia(season.toObject(), "Season");
+    await reapManyDocumentMedia(episodeDocs, "Episode");
     res.json({ ok: true });
   } catch (err) {
     res

@@ -5,6 +5,7 @@ const verify = require("../verifyToken");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { validateMediaFields } = require("../storage/mediaFields");
+const { reapDocumentMedia } = require("../storage/cleanup");
 
 // CREATE MOVIE
 router.post("/", verify, async (req, res) => {
@@ -73,6 +74,9 @@ router.delete("/:id", verify, async (req, res) => {
       return res.status(404).json("Movie not found");
     }
     await Movie.findByIdAndDelete(req.params.id);
+    // After the Mongo delete, never before: a failed delete would otherwise
+    // leave a live document pointing at a destroyed object.
+    await reapDocumentMedia(movie, "Movie");
     res.status(200).json("Movie has been deleted");
   } catch (err) {
     res.status(500).json(err);
