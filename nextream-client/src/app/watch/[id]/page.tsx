@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { FaPlay, FaPlus, FaMinus, FaHeart, FaRegHeart, FaClock, FaRegClock, FaArrowLeft, FaStar, FaCheck } from 'react-icons/fa';
@@ -8,6 +8,8 @@ import Navbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import RatingStars from '@/components/RatingStars';
+import { isPlayableVideo } from '@/lib/tv';
+import { fetchResume, useWatchTracker } from '@/lib/watchTracker';
 
 interface Movie {
   _id: string;
@@ -46,9 +48,10 @@ export default function Watch() {
   const [inWatchlist, setInWatchlist] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [watchTime, setWatchTime] = useState(0);
-  const [watchStartTime, setWatchStartTime] = useState<number | null>(null);
-  const [pausePoints, setPausePoints] = useState<number[]>([]);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  /** Where the last sitting stopped, applied once the metadata is known. */
+  const resumeRef = useRef(0);
+  const resumeAppliedRef = useRef(false);
   const [userRating, setUserRating] = useState<number>(0);
   const [userReview, setUserReview] = useState<UserReview | null>(null);
   const [isRating, setIsRating] = useState(false);
@@ -175,98 +178,63 @@ export default function Watch() {
     }
   };
 
+  const movieId = Array.isArray(id) ? id[0] : (id as string);
+  // Only a real <video> can be measured. An embed is still playable, but the
+  // parent page cannot see a single frame of what happens inside it, so those
+  // titles are honestly reported as untracked rather than with invented numbers.
+  const trackable = isPlayableVideo(movie?.video);
+
+  const tracker = useWatchTracker({
+    contentType: 'movie',
+    contentId: trackable && isPlaying ? movieId : null,
+    videoRef,
+    enabled: Boolean(user) && trackable && isPlaying,
+  });
+
+  // Ask where the last sitting stopped before the element exists, so the seek
+  // can happen on loadedmetadata rather than as a visible jump after playback
+  // has already started.
+  useEffect(() => {
+    if (!user || !trackable || !movieId) return;
+    let cancelled = false;
+    resumeAppliedRef.current = false;
+    fetchResume('movie', movieId).then((resume) => {
+      if (cancelled) return;
+      // A finished film restarts; resuming three seconds from the credits is
+      // never what the viewer wanted.
+      resumeRef.current = resume.completed ? 0 : resume.positionSec;
+      setProgress(resume.completed ? 0 : resume.percent);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, trackable, movieId]);
+
   const handlePlay = () => {
-    // Record that user started watching this movie
-    if (!isPlaying) {
-      // Set watch start time
-      setWatchStartTime(Date.now());
-      
-      // Add to currently watching list
-      axios.put(`/api/users/currently-watching/add/${id}`, {
-        progress: progress,
-        watchTime: watchTime
-      }, {
-        headers: {
-          token: `Bearer ${user?.accessToken}`,
-        },
-      }).catch(err => console.error('Error updating currently watching:', err));
-      
-      // Increment movie views
-      axios.put(`/api/movies/views/${id}`, {}, {
-        headers: {
-          token: `Bearer ${user?.accessToken}`,
-        },
-      }).then(res => {
-        console.log('Movie view recorded:', res.data);
-      }).catch(err => console.error('Error recording movie view:', err));
-    } else {
-      // Calculate watch time when pausing
-      if (watchStartTime) {
-        const newWatchTime = watchTime + (Date.now() - watchStartTime) / 1000;
-        setWatchTime(newWatchTime);
-        setWatchStartTime(null);
-        
-        // Record pause point
-        setPausePoints([...pausePoints, progress]);
-        
-        // Update currently watching with progress
-        axios.put(`/api/users/currently-watching/update/${id}`, {
-          progress: progress,
-          watchTime: newWatchTime,
-          pausePoints: [...pausePoints, progress]
-        }, {
-          headers: {
-            token: `Bearer ${user?.accessToken}`,
-          },
-        }).catch(err => console.error('Error updating watch progress:', err));
-      }
-    }
-    
-    setIsPlaying(!isPlaying);
+    // Opening and closing the player is all this does now. Watch time, view
+    // counting and the Continue Watching entry are all driven by the media
+    // element's own events, so a viewer who presses Play and immediately
+    // leaves no longer registers as having watched the film.
+    setIsPlaying((open) => !open);
   };
 
-  // Track video progress
-  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
-    // This is a simplified example - in a real implementation, you would need to
-    // communicate with the iframe to get the current time and duration
-    // For demonstration purposes, we'll simulate progress
-    
-    // Simulate progress increasing over time when playing
-    if (isPlaying && progress < 100) {
-      const newProgress = Math.min(progress + 0.5, 100);
-      setProgress(newProgress);
-      
-      // If completed, record in watch history
-      if (newProgress >= 100) {
-        handleCompletion();
-      }
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video || resumeAppliedRef.current) return;
+    resumeAppliedRef.current = true;
+    const target = resumeRef.current;
+    if (target > 0 && (!video.duration || target < video.duration - 5)) {
+      video.currentTime = target;
     }
+    video.play().catch(() => {
+      // Autoplay blocked; the viewer presses play on the native controls.
+    });
   };
-  
-  // Handle video completion
-  const handleCompletion = () => {
-    // Calculate final watch time
-    const finalWatchTime = watchStartTime 
-      ? watchTime + (Date.now() - watchStartTime) / 1000
-      : watchTime;
-    
-    // Add to watch history
-    axios.put(`/api/users/watch-history/add/${id}`, {
-      progress: 100,
-      watchTime: finalWatchTime,
-      completed: true
-    }, {
-      headers: {
-        token: `Bearer ${user?.accessToken}`,
-      },
-    }).then(() => {
-      // Remove from currently watching
-      return axios.put(`/api/users/currently-watching/remove/${id}`, {}, {
-        headers: {
-          token: `Bearer ${user?.accessToken}`,
-        },
-      });
-    }).catch(err => console.error('Error recording watch history:', err));
+
+  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (!video.duration || !Number.isFinite(video.duration)) return;
+    setProgress(Math.min(100, (video.currentTime / video.duration) * 100));
   };
 
   const handleBack = () => {
@@ -441,24 +409,44 @@ export default function Watch() {
         {isPlaying && movie.video && (
           <div className="container mx-auto px-4 py-8">
             <div className="aspect-video bg-black rounded overflow-hidden">
-              <iframe
-                src={movie.video}
-                title={`${movie.title} trailer`}
-                className="w-full h-full"
-                allowFullScreen
-                onTimeUpdate={handleTimeUpdate}
-              ></iframe>
+              {trackable ? (
+                <video
+                  ref={videoRef}
+                  src={movie.video}
+                  poster={movie.img}
+                  controls
+                  playsInline
+                  autoPlay
+                  className="w-full h-full bg-black object-contain"
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onTimeUpdate={handleTimeUpdate}
+                  onError={() => tracker.reportError('media element failed to load')}
+                />
+              ) : (
+                // An external embed: playable, but nothing inside it is
+                // observable, so no session is opened for it.
+                <iframe
+                  src={movie.video}
+                  title={movie.title}
+                  className="w-full h-full"
+                  allowFullScreen
+                ></iframe>
+              )}
             </div>
-            
+
             {/* Progress bar */}
             <div className="mt-4 bg-gray-700 rounded-full h-2.5 w-full">
-              <div 
-                className="bg-red-600 h-2.5 rounded-full" 
+              <div
+                className="bg-red-600 h-2.5 rounded-full transition-[width] duration-300"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
             <div className="mt-2 text-gray-400 text-sm">
-              {progress < 100 ? `${progress.toFixed(0)}% complete` : 'Completed'}
+              {trackable
+                ? progress >= 95
+                  ? 'Completed'
+                  : `${progress.toFixed(0)}% complete`
+                : 'Progress tracking is unavailable for embedded video.'}
             </div>
           </div>
         )}

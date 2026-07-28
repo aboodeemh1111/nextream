@@ -9,6 +9,8 @@ const {
 const TVShow = require("../models/TVShow");
 const Season = require("../models/Season");
 const Episode = require("../models/Episode");
+const TVProgress = require("../models/TVProgress");
+const User = require("../models/User");
 
 // Admin TV routes live in their own router, mounted at /api/tv/admin *before*
 // the public router. The previous layout interleaved them with public routes in
@@ -277,6 +279,11 @@ router.delete("/shows/:showId", async (req, res) => {
 
     await Episode.deleteMany({ showId });
     await Season.deleteMany({ showId });
+    // Viewer state that would otherwise orphan against a missing show.
+    const [progressResult] = await Promise.all([
+      TVProgress.deleteMany({ showId }),
+      User.updateMany({}, { $pull: { myShows: showId } }),
+    ]);
     await TVShow.deleteOne({ _id: showId });
 
     // Only after the Mongo deletes have succeeded.
@@ -289,6 +296,7 @@ router.delete("/shows/:showId", async (req, res) => {
       deleted: {
         seasons: seasonDocs.length,
         episodes: episodeDocs.length,
+        progress: progressResult.deletedCount ?? 0,
       },
     });
   } catch (err) {

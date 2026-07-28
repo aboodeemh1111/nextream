@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { FaArrowLeft, FaStar, FaCheck } from 'react-icons/fa';
 import Link from 'next/link';
 import RatingStars from '@/components/RatingStars';
+import { fetchResume, useWatchTracker } from '@/lib/watchTracker';
 
 interface Movie {
   _id: string;
@@ -46,6 +47,44 @@ function WatchContent() {
   const { user } = useAuth();
   const router = useRouter();
 
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  /** Where the last sitting stopped, applied once the metadata is known. */
+  const resumeRef = useRef(0);
+  const resumeAppliedRef = useRef(false);
+
+  // Every Play button in the app routes here, so this is the player that has
+  // to produce movie telemetry — /watch/[id] is only reached from a direct link.
+  const tracker = useWatchTracker({
+    contentType: 'movie',
+    contentId: videoId,
+    videoRef,
+    enabled: Boolean(user && videoId && movie?.video),
+  });
+
+  useEffect(() => {
+    if (!user || !videoId) return;
+    let cancelled = false;
+    resumeAppliedRef.current = false;
+    fetchResume('movie', videoId).then((resume) => {
+      if (cancelled) return;
+      // A finished film restarts; resuming in the credits is never the intent.
+      resumeRef.current = resume.completed ? 0 : resume.positionSec;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, videoId]);
+
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video || resumeAppliedRef.current) return;
+    resumeAppliedRef.current = true;
+    const target = resumeRef.current;
+    if (target > 0 && (!video.duration || target < video.duration - 5)) {
+      video.currentTime = target;
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       router.push('/login');
@@ -80,7 +119,9 @@ function WatchContent() {
       
       try {
         const res = await axios.get(
-          `/api/reviews/user/${user.id}/movie/${videoId}`,
+          // `user.id` is undefined on this shape — the request was going to
+          // /reviews/user/undefined and 404ing on every load.
+          `/api/reviews/user/${user._id}/movie/${videoId}`,
           {
             headers: {
               token: `Bearer ${user.accessToken}`,
@@ -247,10 +288,15 @@ function WatchContent() {
       <div className="flex-1 flex items-center justify-center">
         {movie.video ? (
           <video
+            ref={videoRef}
             className="w-full h-full object-contain"
             autoPlay
             controls
+            playsInline
             src={movie.video}
+            poster={movie.img}
+            onLoadedMetadata={handleLoadedMetadata}
+            onError={() => tracker.reportError('media element failed to load')}
           />
         ) : movie.trailer ? (
           <iframe

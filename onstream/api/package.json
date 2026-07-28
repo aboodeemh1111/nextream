@@ -12,6 +12,7 @@
     "test": "node --test \"storage/**/*.test.js\" \"routes/**/*.test.js\" \"middleware/**/*.test.js\" \"services/**/*.test.js\"",
     "storage:verify-cors": "node scripts/verifyCors.js",
     "storage:smoke": "node scripts/smokeTest.js",
+    "playback:smoke": "node scripts/playbackSmoke.js",
     "reap-orphans": "node scripts/reapOrphans.js",
     "tv:recount": "node scripts/recountTv.js",
     "migrate-storage": "node scripts/migrateFirebaseToBucket.js"

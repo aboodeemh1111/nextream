@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/context/AuthContext';
-import axios from 'axios';
 import api from '@/services/api';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -69,15 +68,13 @@ export default function UsersPage() {
     
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        // In a real application, you would call your API to delete the user
-        // await axios.delete(`/api/users/${userId}`, {
-        //   headers: {
-        //     token: `Bearer ${user.accessToken}`,
-        //   },
-        // });
+        await api.delete(`/users/${userId}`, {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
         
-        // Update local state
-        setUsers(users.filter(user => user._id !== userId));
+        setUsers(users.filter((u) => u._id !== userId));
       } catch (err) {
         console.error(err);
         alert('Failed to delete user');
@@ -257,7 +254,10 @@ export default function UsersPage() {
                       {filteredUsers.map((user) => (
                         <tr key={user._id} className="hover:bg-muted">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
+                            <Link
+                              href={`/users/${user._id}`}
+                              className="flex items-center group"
+                            >
                               <div className="h-10 w-10 flex-shrink-0">
                                 {user.profilePic ? (
                                   <Image
@@ -274,11 +274,11 @@ export default function UsersPage() {
                                 )}
                               </div>
                               <div className="ml-4">
-                                <div className="text-sm font-medium text-foreground">
+                                <div className="text-sm font-medium text-foreground group-hover:text-red-600">
                                   {user.username}
                                 </div>
                               </div>
-                            </div>
+                            </Link>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-muted-foreground">{user.email}</div>
@@ -293,7 +293,7 @@ export default function UsersPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <Link
-                              href={`/users/${user._id}`}
+                              href={`/users/edit/${user._id}`}
                               className="text-indigo-600 hover:text-indigo-900 mr-4"
                             >
                               <FaEdit className="inline mr-1" /> Edit
@@ -317,7 +317,10 @@ export default function UsersPage() {
                     {filteredUsers.map((user) => (
                       <li key={user._id} className="p-4">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center">
+                          <Link
+                            href={`/users/${user._id}`}
+                            className="flex items-center group"
+                          >
                             <div className="h-10 w-10 flex-shrink-0">
                               {user.profilePic ? (
                                 <Image
@@ -334,10 +337,10 @@ export default function UsersPage() {
                               )}
                             </div>
                             <div className="ml-3">
-                              <div className="text-sm font-medium text-foreground">{user.username}</div>
+                              <div className="text-sm font-medium text-foreground group-hover:text-red-600">{user.username}</div>
                               <div className="text-xs text-muted-foreground">{user.email}</div>
                             </div>
-                          </div>
+                          </Link>
                           
                           <div className="relative">
                             <button 
@@ -350,7 +353,7 @@ export default function UsersPage() {
                             {selectedUser === user._id && (
                               <div className="absolute right-0 mt-2 w-48 bg-card rounded-md shadow-lg py-1 z-10 border border-border">
                                 <Link
-                                  href={`/users/${user._id}`}
+                                  href={`/users/edit/${user._id}`}
                                   className="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted"
                                 >
                                   <FaEdit className="inline mr-2" /> Edit

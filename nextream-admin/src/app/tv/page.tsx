@@ -10,6 +10,7 @@ import {
   FaSearch,
   FaTable,
   FaThLarge,
+  FaTrashAlt,
   FaTv,
 } from "react-icons/fa";
 import AdminLayout from "@/components/AdminLayout";
@@ -26,6 +27,8 @@ import {
   Select,
   SkeletonCardGrid,
   SkeletonRows,
+  useConfirm,
+  useToast,
 } from "@/components/ui";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/cn";
@@ -56,6 +59,8 @@ export default function TVShowsPage() {
 
 function TVShowsView() {
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const { confirm, confirmDialog } = useConfirm();
   const [shows, setShows] = useState<TVShow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -67,6 +72,7 @@ function TVShowsView() {
   const [page, setPage] = useState(1);
   const [view, setView] = useState<ViewMode>("grid");
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const debouncedSearch = useDebouncedValue(search, 300);
 
@@ -120,6 +126,42 @@ function TVShowsView() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const removeShow = useCallback(
+    async (show: TVShow) => {
+      const ok = await confirm({
+        title: `Delete "${show.title}"?`,
+        description: (
+          <>
+            This deletes the show, {pluralize(show.seasonsCount ?? 0, "season")}{" "}
+            and {pluralize(show.episodesCount ?? 0, "episode")}, along with every
+            uploaded poster, backdrop, video, still and subtitle file. This cannot
+            be undone.
+          </>
+        ),
+        confirmLabel: "Delete permanently",
+        tone: "danger",
+        requireTyped: show.title,
+      });
+      if (!ok) return;
+
+      try {
+        setDeletingId(show._id);
+        const result = await tvApi.deleteShow(show._id);
+        setShows((prev) => prev.filter((row) => row._id !== show._id));
+        setTotal((prev) => Math.max(0, prev - 1));
+        toast.success(
+          "Show deleted",
+          `${result.deleted.seasons} season(s) and ${result.deleted.episodes} episode(s) removed.`
+        );
+      } catch (err: any) {
+        toast.error("Could not delete the show", apiMessage(err, "Please try again."));
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [confirm, toast]
+  );
 
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const filtered = debouncedSearch.trim() || status !== "all";
@@ -261,9 +303,17 @@ function TVShowsView() {
             }
           />
         ) : view === "grid" ? (
-          <ShowGrid shows={shows} />
+          <ShowGrid
+            shows={shows}
+            deletingId={deletingId}
+            onDelete={removeShow}
+          />
         ) : (
-          <ShowTable shows={shows} />
+          <ShowTable
+            shows={shows}
+            deletingId={deletingId}
+            onDelete={removeShow}
+          />
         )}
 
         {!loading && !error && pageCount > 1 && (
@@ -295,49 +345,84 @@ function TVShowsView() {
       </div>
 
       <CreateShowDialog open={creating} onClose={() => setCreating(false)} />
+      {confirmDialog}
     </AdminLayout>
   );
 }
 
-function ShowGrid({ shows }: { shows: TVShow[] }) {
+function ShowGrid({
+  shows,
+  deletingId,
+  onDelete,
+}: {
+  shows: TVShow[];
+  deletingId: string | null;
+  onDelete: (show: TVShow) => void;
+}) {
   return (
     <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {shows.map((show) => (
         <li key={show._id}>
-          <Link
-            href={`/tv/${show._id}`}
-            className={cn(
-              "group block rounded-card focus-visible:outline-2",
-              "focus-visible:outline-offset-2 focus-visible:outline-ring"
-            )}
-          >
-            <div className="relative">
-              <ShowPoster
-                src={show.poster}
-                title={show.title}
-                className="aspect-2/3 w-full transition-transform duration-200 group-hover:-translate-y-0.5"
-              />
-              <div className="absolute left-2 top-2">
-                <PublishBadge published={show.published} />
+          <div className="group relative">
+            <Link
+              href={`/tv/${show._id}`}
+              className={cn(
+                "block rounded-card focus-visible:outline-2",
+                "focus-visible:outline-offset-2 focus-visible:outline-ring"
+              )}
+            >
+              <div className="relative">
+                <ShowPoster
+                  src={show.poster}
+                  title={show.title}
+                  className="aspect-2/3 w-full transition-transform duration-200 group-hover:-translate-y-0.5"
+                />
+                <div className="absolute left-2 top-2">
+                  <PublishBadge published={show.published} />
+                </div>
               </div>
+              <div className="mt-2.5 space-y-1">
+                <h3 className="line-clamp-1 text-sm font-medium text-foreground group-hover:text-primary">
+                  {show.title}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {pluralize(show.seasonsCount ?? 0, "season")} ·{" "}
+                  {pluralize(show.episodesCount ?? 0, "episode")}
+                </p>
+              </div>
+            </Link>
+            <div className="absolute right-2 top-2 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+              <IconButton
+                label={`Delete ${show.title}`}
+                size="sm"
+                variant="danger"
+                loading={deletingId === show._id}
+                disabled={deletingId !== null}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete(show);
+                }}
+              >
+                <FaTrashAlt />
+              </IconButton>
             </div>
-            <div className="mt-2.5 space-y-1">
-              <h3 className="line-clamp-1 text-sm font-medium text-foreground group-hover:text-primary">
-                {show.title}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {pluralize(show.seasonsCount ?? 0, "season")} ·{" "}
-                {pluralize(show.episodesCount ?? 0, "episode")}
-              </p>
-            </div>
-          </Link>
+          </div>
         </li>
       ))}
     </ul>
   );
 }
 
-function ShowTable({ shows }: { shows: TVShow[] }) {
+function ShowTable({
+  shows,
+  deletingId,
+  onDelete,
+}: {
+  shows: TVShow[];
+  deletingId: string | null;
+  onDelete: (show: TVShow) => void;
+}) {
   return (
     <Card className="overflow-hidden">
       <div className="scroll-x">
@@ -419,17 +504,29 @@ function ShowTable({ shows }: { shows: TVShow[] }) {
                   {formatRelativeTime(show.updatedAt ?? show.createdAt)}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/tv/${show._id}`}
-                    className={cn(
-                      "inline-flex h-8 items-center gap-1.5 rounded-control px-3 text-xs font-medium",
-                      "border border-border bg-surface-2 text-foreground",
-                      "transition-colors hover:bg-muted hover:border-border-strong"
-                    )}
-                  >
-                    <FaLayerGroup aria-hidden />
-                    Open
-                  </Link>
+                  <div className="inline-flex items-center gap-2">
+                    <Link
+                      href={`/tv/${show._id}`}
+                      className={cn(
+                        "inline-flex h-8 items-center gap-1.5 rounded-control px-3 text-xs font-medium",
+                        "border border-border bg-surface-2 text-foreground",
+                        "transition-colors hover:bg-muted hover:border-border-strong"
+                      )}
+                    >
+                      <FaLayerGroup aria-hidden />
+                      Open
+                    </Link>
+                    <IconButton
+                      label={`Delete ${show.title}`}
+                      size="sm"
+                      variant="danger"
+                      loading={deletingId === show._id}
+                      disabled={deletingId !== null}
+                      onClick={() => onDelete(show)}
+                    >
+                      <FaTrashAlt />
+                    </IconButton>
+                  </div>
                 </td>
               </tr>
             ))}

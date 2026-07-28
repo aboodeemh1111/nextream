@@ -122,7 +122,10 @@ export const tvApi = {
 
   deleteShow: async (
     showId: string
-  ): Promise<{ ok: true; deleted: { seasons: number; episodes: number } }> => {
+  ): Promise<{
+    ok: true;
+    deleted: { seasons: number; episodes: number; progress?: number };
+  }> => {
     const res = await api.delete(`${BASE}/shows/${showId}`);
     return res.data;
   },

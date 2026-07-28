@@ -4,6 +4,7 @@ const Movie = require("../models/Movie");
 const CryptoJS = require("crypto-js");
 const verify = require("../verifyToken");
 const mongoose = require("mongoose");
+const { buildUserAnalytics } = require("../services/userAnalytics");
 //UPDATE
 
 router.put("/:id", verify, async (req, res) => {
@@ -50,11 +51,60 @@ router.delete("/:id", verify, async (req, res) => {
 
 router.get("/find/:id", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    const { password, ...info } = user._doc;
-    res.status(200).json(info);
+    const user = await User.findById(req.params.id)
+      .select("-password")
+      .populate("myList", "title img imgSm year genre isSeries duration")
+      .populate("myShows", "title poster img imgSm year")
+      .populate("favorites", "title img imgSm year genre isSeries duration")
+      .populate("watchlist", "title img imgSm year genre isSeries duration")
+      .populate({
+        path: "watchHistory.movie",
+        select: "title img imgSm year genre isSeries duration",
+      })
+      .populate({
+        path: "currentlyWatching.movie",
+        select: "title img imgSm year genre isSeries duration",
+      });
+
+    if (!user) {
+      return res.status(404).json("User not found");
+    }
+
+    res.status(200).json(user);
   } catch (err) {
     res.status(500).json(err);
+  }
+});
+
+// GET ONE USER'S ANALYTICS (admin, or the user themselves)
+//
+// Everything the admin profile page charts. Kept separate from /find/:id
+// because that endpoint populates the viewer's whole library and is already
+// the heaviest read in this router; the analytics aggregations should not be
+// paid for by callers that only wanted the lists.
+router.get("/:id/analytics", verify, async (req, res) => {
+  if (req.user.id !== req.params.id && !req.user.isAdmin) {
+    return res.status(403).json({
+      error: "FORBIDDEN",
+      message: "You can only view your own analytics.",
+    });
+  }
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(400).json({ error: "BAD_REQUEST", message: "Invalid user id" });
+  }
+
+  try {
+    const analytics = await buildUserAnalytics(req.params.id, {
+      days: req.query.days,
+      timezone: req.query.tz,
+    });
+    if (!analytics) {
+      return res.status(404).json({ error: "USER_NOT_FOUND", message: "User not found" });
+    }
+    res.status(200).json(analytics);
+  } catch (err) {
+    console.error("Error building user analytics:", err);
+    res.status(500).json({ error: "USER_ANALYTICS_FAILED", message: err.message });
   }
 });
 
@@ -82,22 +132,46 @@ router.get("/", verify, async (req, res) => {
   }
 });
 
-//GET USER STATS
-router.get("/stats", async (req, res) => {
-  const today = new Date();
-  const latYear = today.setFullYear(today.setFullYear() - 1);
+//GET USER STATS — signups per month over the last year
+router.get("/stats", verify, async (req, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ error: "FORBIDDEN", message: "Admin privileges required." });
+  }
+
+  const lastYear = new Date();
+  lastYear.setFullYear(lastYear.getFullYear() - 1);
 
   try {
+    // Grouped by year *and* month: grouping on month alone folds this July
+    // into last July, which is exactly the window this endpoint spans.
     const data = await User.aggregate([
-      {
-        $project: {
-          month: { $month: "$createdAt" },
-        },
-      },
+      { $match: { createdAt: { $gte: lastYear } } },
       {
         $group: {
-          _id: "$month",
+          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
           total: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+      {
+        $project: {
+          _id: 0,
+          month: "$_id.month",
+          year: "$_id.year",
+          date: {
+            $concat: [
+              { $toString: "$_id.year" },
+              "-",
+              {
+                $cond: [
+                  { $lt: ["$_id.month", 10] },
+                  { $concat: ["0", { $toString: "$_id.month" }] },
+                  { $toString: "$_id.month" },
+                ],
+              },
+            ],
+          },
+          total: 1,
         },
       },
     ]);
@@ -518,15 +592,10 @@ router.put("/currently-watching/update/:id", verify, async (req, res) => {
       }
     }
 
-    // Update genre preferences
-    if (movie.genre) {
-      if (!user.genrePreferences) {
-        user.genrePreferences = new Map();
-      }
-
-      const currentCount = user.genrePreferences.get(movie.genre) || 0;
-      user.genrePreferences.set(movie.genre, currentCount + 1);
-    }
+    // Genre preferences are deliberately not touched here. This endpoint fires
+    // on every pause, so counting here turned a play count into a "how often
+    // did they hit pause" count — one film could add twenty to a genre.
+    // The count is incremented once per title, where the entry is created.
 
     await user.save();
     res.status(200).json("Watch progress updated");
@@ -535,6 +604,27 @@ router.put("/currently-watching/update/:id", verify, async (req, res) => {
     res.status(500).json(err);
   }
 });
+
+// REMOVE FROM CURRENTLY WATCHING
+//
+// The web player has always called this on completion; it did not exist, so
+// finished titles stayed pinned to Continue Watching forever. Accepts both
+// verbs because the existing client sends PUT.
+const removeFromCurrentlyWatching = async (req, res) => {
+  try {
+    await User.updateOne(
+      { _id: req.user.id },
+      { $pull: { currentlyWatching: { movie: req.params.id } } }
+    );
+    res.status(200).json("Removed from currently watching");
+  } catch (err) {
+    console.error("Error removing from currently watching:", err);
+    res.status(500).json(err);
+  }
+};
+
+router.put("/currently-watching/remove/:id", verify, removeFromCurrentlyWatching);
+router.delete("/currently-watching/remove/:id", verify, removeFromCurrentlyWatching);
 
 // ADD TO CURRENTLY WATCHING
 router.put("/currently-watching/add/:id", verify, async (req, res) => {
@@ -559,9 +649,6 @@ router.put("/currently-watching/add/:id", verify, async (req, res) => {
         progress: req.body.progress || 0,
         watchTime: req.body.watchTime || 0,
       });
-
-      // Update last login date for analytics
-      user.lastLoginDate = new Date();
 
       // Update total watch time
       if (req.body.watchTime) {
@@ -614,10 +701,14 @@ router.put("/watch-history/add/:id", verify, async (req, res) => {
 
     if (existingEntry) {
       // Increment rewatch count
+      // `x || true` is always true — an explicit `completed: false` was being
+      // stored as completed, which is why nothing ever showed as abandoned.
+      const completed = req.body.completed !== false;
+
       existingEntry.rewatchCount = (existingEntry.rewatchCount || 0) + 1;
       existingEntry.watchedAt = new Date();
       existingEntry.progress = req.body.progress || 100;
-      existingEntry.completed = req.body.completed || true;
+      existingEntry.completed = completed;
       existingEntry.watchTime = req.body.watchTime || existingEntry.watchTime;
 
       if (req.body.dropOffPoint) {
@@ -629,26 +720,26 @@ router.put("/watch-history/add/:id", verify, async (req, res) => {
         movie: req.params.id,
         watchedAt: new Date(),
         progress: req.body.progress || 100,
-        completed: req.body.completed || true,
+        completed: req.body.completed !== false,
         watchTime: req.body.watchTime || 0,
         dropOffPoint: req.body.dropOffPoint,
         rewatchCount: 0,
       });
+
+      // Counted once, when the title first enters history — a rewatch is not
+      // a new preference signal, and this endpoint can be called repeatedly.
+      if (movie.genre) {
+        if (!user.genrePreferences) {
+          user.genrePreferences = new Map();
+        }
+        const currentCount = user.genrePreferences.get(movie.genre) || 0;
+        user.genrePreferences.set(movie.genre, currentCount + 1);
+      }
     }
 
     // Update total watch time
     if (req.body.watchTime) {
       user.totalWatchTime = (user.totalWatchTime || 0) + req.body.watchTime;
-    }
-
-    // Update genre preferences
-    if (movie.genre) {
-      if (!user.genrePreferences) {
-        user.genrePreferences = new Map();
-      }
-
-      const currentCount = user.genrePreferences.get(movie.genre) || 0;
-      user.genrePreferences.set(movie.genre, currentCount + 1);
     }
 
     await user.save();

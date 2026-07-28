@@ -38,9 +38,8 @@ import {
   tv,
 } from "@/lib/tv";
 import { cn } from "@/lib/cn";
+import { useWatchTracker } from "@/lib/watchTracker";
 
-/** How often playback position is written back while the episode is playing. */
-const PROGRESS_INTERVAL_MS = 10_000;
 /** Remaining seconds at which the next-episode card appears. */
 const UP_NEXT_AT_SEC = 15;
 /** Idle time before the chrome fades out. */
@@ -169,48 +168,17 @@ function EpisodePlayer() {
 
   // --- progress -------------------------------------------------------------
 
-  const saveProgress = useCallback(
-    (completed?: boolean) => {
-      const video = videoRef.current;
-      if (!video || !episode || !video.duration || !Number.isFinite(video.duration)) {
-        return;
-      }
-      tv
-        .saveProgress({
-          episodeId: episode._id,
-          positionSec: video.currentTime,
-          durationSec: video.duration,
-          completed,
-        })
-        .catch(() => {
-          // Progress is best-effort; a failed ping must never interrupt playback.
-        });
-    },
-    [episode]
-  );
-
-  useEffect(() => {
-    if (!playing) return;
-    const timer = setInterval(() => saveProgress(), PROGRESS_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [playing, saveProgress]);
-
-  // Closing the tab or backgrounding it are the two most common ways to stop
-  // watching, and neither fires `pause`.
-  useEffect(() => {
-    const flush = () => saveProgress();
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") flush();
-    };
-
-    window.addEventListener("pagehide", flush);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-      document.removeEventListener("visibilitychange", onVisibility);
-      flush();
-    };
-  }, [saveProgress]);
+  // The tracker owns the resume position as well as the telemetry: its
+  // heartbeat performs the same TVProgress upsert /tv/me/progress does, so
+  // pinging both would write the row twice and let two racing "first touch"
+  // checks each count a view for the show.
+  const tracker = useWatchTracker({
+    contentType: "episode",
+    contentId: episode?._id,
+    videoRef,
+    enabled: ready,
+    qualityLabel: activeSource?.label,
+  });
 
   // --- playback controls ----------------------------------------------------
 
@@ -358,9 +326,12 @@ function EpisodePlayer() {
 
   const goToNext = useCallback(() => {
     if (!data?.next) return;
-    saveProgress(true);
+    // Closes this episode's session before the route change: the client-side
+    // navigation swaps `contentId` without unmounting, so an unflushed final
+    // stretch would be attributed to the next episode instead.
+    tracker.flush({ completed: true, ended: true });
     router.push(`/watch/episode/${data.next._id}`);
-  }, [data?.next, router, saveProgress]);
+  }, [data?.next, router, tracker]);
 
   useEffect(() => {
     if (upNextIn === null) return;
@@ -521,10 +492,9 @@ function EpisodePlayer() {
           onDoubleClick={toggleFullscreen}
           onLoadedMetadata={onLoadedMetadata}
           onPlay={() => setPlaying(true)}
-          onPause={() => {
-            setPlaying(false);
-            saveProgress();
-          }}
+          // The tracker listens for pause/ended/error on the element itself,
+          // so these handlers only drive UI state.
+          onPause={() => setPlaying(false)}
           onWaiting={() => setWaiting(true)}
           onPlaying={() => setWaiting(false)}
           onTimeUpdate={(event) => {
@@ -545,11 +515,12 @@ function EpisodePlayer() {
             }
           }}
           onEnded={() => {
-            saveProgress(true);
             if (next && !upNextDismissed) goToNext();
           }}
           onError={(event) => {
-            setPlaybackError(describeMediaError(event.currentTarget.error?.code));
+            const message = describeMediaError(event.currentTarget.error?.code);
+            setPlaybackError(message);
+            tracker.reportError(message);
             setWaiting(false);
             setPlaying(false);
           }}
