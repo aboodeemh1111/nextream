@@ -5,6 +5,7 @@ import AdminLayout from "@/components/AdminLayout";
 import api from "@/services/api";
 import { useRouter } from "next/navigation";
 import VideoUploader from "@/components/VideoUploader";
+import { IMAGE_ACCEPT, VIDEO_ACCEPT } from "@/lib/mediaAccept";
 
 // Types
 interface SeasonData {
@@ -291,7 +292,7 @@ export default function NewTVShowPage() {
                   prefix="shows"
                   initialUrl={poster}
                   onUploaded={setPoster}
-                  accept="image/*"
+                  accept={IMAGE_ACCEPT}
                 />
               </div>
               <div>
@@ -300,7 +301,7 @@ export default function NewTVShowPage() {
                   prefix="shows"
                   initialUrl={backdrop}
                   onUploaded={setBackdrop}
-                  accept="image/*"
+                  accept={IMAGE_ACCEPT}
                 />
               </div>
             </div>
@@ -415,7 +416,7 @@ export default function NewTVShowPage() {
                           prefix="shows"
                           initialUrl={season.poster}
                           onUploaded={(url) => updateSeason(idx, 'poster', url)}
-                          accept="image/*"
+                          accept={IMAGE_ACCEPT}
                         />
                       </div>
                       <div>
@@ -424,7 +425,7 @@ export default function NewTVShowPage() {
                           prefix="shows"
                           initialUrl={season.backdrop}
                           onUploaded={(url) => updateSeason(idx, 'backdrop', url)}
-                          accept="image/*"
+                          accept={IMAGE_ACCEPT}
                         />
                       </div>
                     </div>
@@ -524,7 +525,7 @@ export default function NewTVShowPage() {
                                     prefix="episodes"
                                     initialUrl={ep.videoUrl}
                                     onUploaded={(url) => updateEpisode(sIdx, eIdx, 'videoUrl', url)}
-                                    accept="video/*"
+                                    accept={VIDEO_ACCEPT}
                                   />
                                 </div>
                                 <div>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import FileUpload from '@/components/FileUpload';
+import { IMAGE_ACCEPT, VIDEO_ACCEPT } from '@/lib/mediaAccept';
 
 export default function TestUploadPage() {
   const [imageUrl, setImageUrl] = useState<string>('');
@@ -37,7 +38,7 @@ export default function TestUploadPage() {
             <FileUpload
               label="Upload an image"
               onFileUpload={handleImageUpload}
-              accept="image/*"
+              accept={IMAGE_ACCEPT}
               prefix="images"
             />
 
@@ -57,7 +58,7 @@ export default function TestUploadPage() {
             <FileUpload
               label="Upload a video"
               onFileUpload={handleVideoUpload}
-              accept="video/*"
+              accept={VIDEO_ACCEPT}
               prefix="videos"
             />
 

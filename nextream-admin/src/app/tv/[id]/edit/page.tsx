@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "@/components/AdminLayout";
 import api from "@/services/api";
 import VideoUploader from "@/components/VideoUploader";
+import { IMAGE_ACCEPT } from "@/lib/mediaAccept";
 import Link from "next/link";
 import Toast from "@/components/Toast";
 
@@ -338,7 +339,7 @@ export default function EditShowPage() {
                   prefix="shows"
                   initialUrl={poster}
                   onUploaded={setPoster}
-                  accept="image/*"
+                  accept={IMAGE_ACCEPT}
                 />
               </div>
               <div>
@@ -347,7 +348,7 @@ export default function EditShowPage() {
                   prefix="shows"
                   initialUrl={backdrop}
                   onUploaded={setBackdrop}
-                  accept="image/*"
+                  accept={IMAGE_ACCEPT}
                 />
               </div>
             </div>

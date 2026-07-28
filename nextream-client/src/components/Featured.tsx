@@ -120,9 +120,12 @@ const Featured = ({ type }: { type?: string }) => {
       setIsPlayingTrailer(true);
       if (videoRef.current) {
         videoRef.current.currentTime = 0;
-        videoRef.current
-          .play()
-          .catch((err) => console.error("Video play error:", err));
+        videoRef.current.play().catch((err) => {
+          if (err?.name !== "AbortError" && err?.name !== "NotSupportedError") {
+            console.warn("Video play error:", err?.name || err);
+          }
+          setIsPlayingTrailer(false);
+        });
       }
     }
   };
@@ -213,6 +216,12 @@ const Featured = ({ type }: { type?: string }) => {
             muted={isMuted}
             loop
             onLoadedData={handleVideoLoad}
+            onError={() => {
+              setIsVideoLoaded(false);
+              setIsPlayingTrailer(false);
+            }}
+            playsInline
+            preload="metadata"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
         </div>

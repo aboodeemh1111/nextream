@@ -22,7 +22,24 @@ const STORAGE_KEY_RE = new RegExp(
 const FIREBASE_URL_PREFIX = "https://firebasestorage.googleapis.com/";
 
 const VIDEO_EXT = ["mp4", "mov", "mkv", "webm", "m4v", "avi", "ts", "m3u8"];
-const IMAGE_EXT = ["jpg", "jpeg", "png", "webp", "gif", "avif", "bmp", "svg"];
+const IMAGE_EXT = [
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+  "gif",
+  "avif",
+  "bmp",
+  "svg",
+  "tif",
+  "tiff",
+  "ico",
+  "heic",
+  "heif",
+  "jfif",
+  "pjpeg",
+  "pjp",
+];
 const SUBTITLE_EXT = ["vtt", "srt", "ass", "ssa"];
 
 // Fallback when the extension is missing or unrecognised.

@@ -138,6 +138,10 @@ test("content type must match the prefix", async () => {
 
   const accepted = [
     ["images", "image/jpeg"],
+    ["images", "image/webp"],
+    ["images", "image/avif"],
+    ["images", "image/gif"],
+    ["images", "image/svg+xml"],
     ["videos", "video/mp4"],
     ["subs", "text/vtt"],
     ["shows", "image/png"],

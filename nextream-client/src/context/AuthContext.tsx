@@ -73,8 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       router.push('/');
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Something went wrong');
+      const data = err.response?.data;
+      const message =
+        (typeof data === 'string' && data) ||
+        data?.message ||
+        err.message ||
+        'Something went wrong';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -93,8 +98,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       router.push('/login');
     } catch (err: any) {
-      console.error('Registration error:', err.response?.data || err);
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      const data = err.response?.data;
+      const message =
+        (typeof data === 'string' && data) ||
+        data?.message ||
+        'Registration failed. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }

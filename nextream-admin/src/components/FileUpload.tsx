@@ -4,6 +4,7 @@ import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { FaUpload, FaSpinner, FaCheck, FaTimes } from 'react-icons/fa';
 import useUpload from '@/hooks/useUpload';
 import type { UploadPrefix } from '@/lib/uploadClient';
+import { IMAGE_ACCEPT, VIDEO_ACCEPT, isImageAccept } from '@/lib/mediaAccept';
 
 interface FileUploadProps {
   /** Receives the storage *key* to submit, plus a short-lived preview URL. */
@@ -19,7 +20,7 @@ interface FileUploadProps {
 const FileUpload = ({
   onFileUpload,
   label,
-  accept = 'video/*,image/*',
+  accept = `${IMAGE_ACCEPT},${VIDEO_ACCEPT}`,
   prefix = 'videos',
   existingUrl = ''
 }: FileUploadProps) => {
@@ -65,7 +66,7 @@ const FileUpload = ({
   // The field holds a key now, so previews come from the signed URL the API
   // returns rather than from the stored value.
   const fileUrl = previewUrl || savedUrl;
-  const isImageField = accept.includes('image/');
+  const isImageField = isImageAccept(accept);
 
   return (
     <div className="mb-6">

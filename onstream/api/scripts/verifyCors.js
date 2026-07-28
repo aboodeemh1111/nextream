@@ -18,7 +18,7 @@ require("../loadEnv")();
 
 const { config } = require("../storage/config");
 
-const ORIGIN = process.env.CORS_TEST_ORIGIN || "http://localhost:3001";
+const ORIGIN = process.env.CORS_TEST_ORIGIN || "http://localhost:3000";
 const BAD_ORIGIN = "https://not-your-admin-app.example";
 
 let failures = 0;

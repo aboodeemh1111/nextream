@@ -11,6 +11,7 @@ services:
       # restriction is server-level instead. MinIO already sends
       # Access-Control-Expose-Headers including Etag, which is what multipart
       # uploads need. Verify with: npm run storage:verify-cors
-      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3001,https://nextream-admin.vercel.app"
+      # Admin may run on 3000 (next default) or 3001 (README). Include both.
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://localhost:3001,https://nextream-admin.vercel.app"
     ports: ["9000:9000", "9001:9001"]
     volumes: ["./.minio-data:/data"]

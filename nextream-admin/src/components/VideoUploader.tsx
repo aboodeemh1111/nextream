@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import useUpload from "@/hooks/useUpload";
 import type { UploadPrefix } from "@/lib/uploadClient";
+import { IMAGE_ACCEPT, VIDEO_ACCEPT, isImageAccept } from "@/lib/mediaAccept";
+
+const IMAGE_PREFIXES: UploadPrefix[] = ["images", "shows", "avatars"];
 
 type Props = {
   /**
@@ -25,9 +28,11 @@ export default function VideoUploader({
   initialUrl,
   onUploaded,
   onError,
-  accept = "video/*",
+  accept,
   maxSizeMb = 2048,
 }: Props) {
+  const resolvedAccept =
+    accept ?? (IMAGE_PREFIXES.includes(prefix) ? IMAGE_ACCEPT : VIDEO_ACCEPT);
   const [dragOver, setDragOver] = useState(false);
   const [existingUrl, setExistingUrl] = useState(initialUrl || "");
 
@@ -69,7 +74,7 @@ export default function VideoUploader({
   // The forms used to preview from the uploaded URL. They now hold a key, so
   // the preview comes from the signed URL /complete hands back instead.
   const displayUrl = previewUrl || existingUrl;
-  const isImageField = accept.startsWith("image/");
+  const isImageField = isImageAccept(resolvedAccept);
 
   return (
     <div>
@@ -80,7 +85,7 @@ export default function VideoUploader({
         className={`border-2 border-dashed rounded p-4 text-center ${dragOver ? 'border-red-500 bg-red-500/10' : 'border-border'}`}
       >
         <div className="text-sm text-muted-foreground">Drag & drop a file here, or click to choose</div>
-        <input type="file" accept={accept} onChange={onInputChange} className="mt-2" />
+        <input type="file" accept={resolvedAccept} onChange={onInputChange} className="mt-2" />
       </div>
 
       {status !== 'idle' && (

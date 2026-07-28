@@ -29,7 +29,7 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
       console.log('User not found');
-      return res.status(401).json("Wrong password or username!");
+      return res.status(401).json({ message: "Wrong password or username!" });
     }
 
     console.log('User found:', { id: user._id, isAdmin: user.isAdmin });
@@ -39,7 +39,7 @@ router.post("/login", async (req, res) => {
 
     if (originalPassword !== req.body.password) {
       console.log('Password mismatch');
-      return res.status(401).json("Wrong password or username!");
+      return res.status(401).json({ message: "Wrong password or username!" });
     }
 
     const accessToken = jwt.sign(

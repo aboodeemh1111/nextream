@@ -4,10 +4,17 @@ const nextConfig = {
     root: __dirname,
   },
   images: {
+    // Admin previews legacy Firebase + MinIO URLs; the optimizer returns 402
+    // when Firebase billing is disabled, so serve them unoptimized.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "http",
         hostname: "localhost",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
       },
       {
         protocol: "https",

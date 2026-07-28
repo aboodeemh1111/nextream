@@ -1,2 +1,5 @@
+# Dependencies
+node_modules/
+
 # Local MinIO dev bucket data (docker-compose.dev.yml)
 .minio-data/

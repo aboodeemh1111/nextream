@@ -117,6 +117,24 @@ const MovieCard = ({
     setIsInWatchlist(inWatchlist);
   }, [inMyList, inFavorites, inWatchlist]);
 
+  const safePlay = (video: HTMLVideoElement) => {
+    try {
+      video.currentTime = 0;
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.then === "function") {
+        playPromise.catch((err) => {
+          if (err?.name !== "AbortError" && err?.name !== "NotSupportedError") {
+            console.warn("Video play error:", err?.name || err);
+          }
+        });
+      }
+    } catch (err: any) {
+      if (err?.name !== "AbortError" && err?.name !== "NotSupportedError") {
+        console.warn("Video play error:", err?.name || err);
+      }
+    }
+  };
+
   useEffect(() => {
     // Handle hover effects
     if (isHovered && videoRef.current && movie.trailer) {
@@ -128,21 +146,7 @@ const MovieCard = ({
           movie.trailer &&
           document.body.contains(videoRef.current)
         ) {
-          try {
-            videoRef.current.currentTime = 0;
-            const playPromise = videoRef.current.play();
-            if (playPromise && typeof playPromise.then === "function") {
-              playPromise.catch((err) => {
-                if (err?.name !== "AbortError") {
-                  console.error("Video play error:", err);
-                }
-              });
-            }
-          } catch (err: any) {
-            if (err?.name !== "AbortError") {
-              console.error("Video play error:", err);
-            }
-          }
+          safePlay(videoRef.current);
         }
       }, 800);
 
@@ -164,13 +168,12 @@ const MovieCard = ({
     };
   }, [isHovered, movie.trailer]);
 
-  // Cleanup on component unmount
+  // Cleanup on unmount — pause only. Clearing src + load() throws NotSupportedError.
   useEffect(() => {
     return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = "";
-        videoRef.current.load();
+      const video = videoRef.current;
+      if (video) {
+        video.pause();
       }
     };
   }, []);
@@ -186,21 +189,7 @@ const MovieCard = ({
         movie.trailer &&
         document.body.contains(videoRef.current)
       ) {
-        try {
-          videoRef.current.currentTime = 0;
-          const playPromise = videoRef.current.play();
-          if (playPromise && typeof playPromise.then === "function") {
-            playPromise.catch((err) => {
-              if (err?.name !== "AbortError") {
-                console.error("Video play error:", err);
-              }
-            });
-          }
-        } catch (err: any) {
-          if (err?.name !== "AbortError") {
-            console.error("Video play error:", err);
-          }
-        }
+        safePlay(videoRef.current);
       }
     }, 800);
   };
@@ -420,7 +409,9 @@ const MovieCard = ({
               muted={isMuted}
               loop
               onLoadedData={handleVideoLoad}
+              onError={() => setIsVideoLoaded(false)}
               playsInline
+              preload="metadata"
             />
           </div>
         )}

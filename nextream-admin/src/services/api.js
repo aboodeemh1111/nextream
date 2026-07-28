@@ -3,54 +3,51 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-// Create an axios instance with default config. Use Next.js rewrite proxy to avoid CORS.
+// Next.js rewrite proxy (/api -> API server) avoids browser CORS in dev.
 const api = axios.create({
   baseURL: "/api",
-  timeout: 10000,
+  // Uploads only hit this client for short JSON calls (presign/complete).
+  // The file bytes go straight to the bucket via XHR, so this timeout is fine.
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Add a request interceptor to add the auth token to every request
+function readAdminToken() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const storedUser = localStorage.getItem("admin");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      if (parsed?.accessToken) return parsed.accessToken;
+    }
+  } catch {
+    // fall through to cookie
+  }
+
+  return Cookies.get("admin") || null;
+}
+
 api.interceptors.request.use(
   (config) => {
-    let token = null;
-    if (typeof window !== "undefined") {
-      try {
-        const storedUser = localStorage.getItem("admin");
-        if (storedUser) {
-          const parsed = JSON.parse(storedUser);
-          token = parsed?.accessToken || null;
-        }
-      } catch {}
-      if (!token) {
-        token = Cookies.get("admin") || null;
-      }
-    }
-
+    const token = readAdminToken();
     if (token) {
-      config.headers["token"] = `Bearer ${token}`;
+      config.headers.token = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Add a response interceptor to handle errors
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Handle 401 errors (unauthorized)
-    if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("auth-token");
-        localStorage.removeItem("user");
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("admin");
+      Cookies.remove("admin");
+      if (!window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";
       }
     }

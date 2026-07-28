@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import { resolveContentType } from "@/lib/mediaAccept";
 
 // Transport only — no React. The browser PUTs bytes straight at the bucket
 // using a URL the API signed; the API never sees the file itself.
@@ -128,7 +129,7 @@ class Upload {
     const { key, uploadId } = this.multipart;
     this.multipart = null;
     try {
-      await api.post("/api/uploads/multipart/abort", { key, uploadId });
+      await api.post("/uploads/multipart/abort", { key, uploadId });
     } catch {
       // The bucket lifecycle rule reaps incomplete uploads as a backstop.
     }
@@ -152,8 +153,10 @@ class Upload {
 
   private async run(): Promise<UploadResult> {
     const { file, prefix } = this.options;
-    const contentType =
-      this.options.contentType || file.type || "application/octet-stream";
+    // Prefer an explicit override, then File.type, then extension — browsers
+    // frequently omit type for webp/heic/jfif, which would otherwise become
+    // application/octet-stream and get rejected by the images/ prefix policy.
+    const contentType = resolveContentType(file, this.options.contentType);
 
     try {
       const result =
@@ -175,7 +178,7 @@ class Upload {
     this.throwIfCancelled();
 
     const presign = await api
-      .post("/api/uploads/presign", {
+      .post("/uploads/presign", {
         prefix,
         filename: file.name,
         contentType,
@@ -219,7 +222,7 @@ class Upload {
     this.throwIfCancelled();
 
     const created = await api
-      .post("/api/uploads/multipart/create", {
+      .post("/uploads/multipart/create", {
         prefix,
         filename: file.name,
         contentType,
@@ -257,7 +260,7 @@ class Upload {
 
     this.throwIfCancelled();
     const completed = await api
-      .post("/api/uploads/multipart/complete", { key, uploadId, parts })
+      .post("/uploads/multipart/complete", { key, uploadId, parts })
       .catch((err) => {
         throw new Error(apiErrorMessage(err, "Could not finish the upload"));
       });
@@ -276,7 +279,7 @@ class Upload {
 
     for (let attempt = 0; attempt <= PART_RETRIES; attempt++) {
       try {
-        const partRes = await api.post("/api/uploads/multipart/part", {
+        const partRes = await api.post("/uploads/multipart/part", {
           key,
           uploadId,
           partNumber,
@@ -330,7 +333,7 @@ class Upload {
    * anywhere near Mongo, and hands back a short-lived URL for the form preview.
    */
   private async confirm(key: string): Promise<UploadResult> {
-    const res = await api.post("/api/uploads/complete", { key }).catch((err) => {
+    const res = await api.post("/uploads/complete", { key }).catch((err) => {
       throw new Error(apiErrorMessage(err, "Could not confirm the upload"));
     });
     const data = res.data as { key: string; size: number; previewUrl: string };
@@ -350,5 +353,5 @@ export function startUpload(options: UploadOptions): UploadController {
 
 /** Deletes an already-uploaded blob, e.g. when the admin replaces a file. */
 export async function deleteUpload(key: string): Promise<void> {
-  await api.delete(`/api/uploads/${key}`);
+  await api.delete(`/uploads/${key}`);
 }

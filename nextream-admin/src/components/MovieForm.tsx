@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import api from "@/services/api";
 import FileUpload from "./FileUpload";
+import { IMAGE_ACCEPT, VIDEO_ACCEPT } from "@/lib/mediaAccept";
 import { FaSave, FaTimes, FaSpinner } from "react-icons/fa";
 
 interface MovieFormProps {
@@ -321,7 +322,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <FileUpload
             label="Main Image (Poster) *"
             onFileUpload={(url) => handleFileUpload("img", url)}
-            accept="image/*"
+            accept={IMAGE_ACCEPT}
             prefix="images"
             existingUrl={movieData.img}
           />
@@ -329,7 +330,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <FileUpload
             label="Title Image"
             onFileUpload={(url) => handleFileUpload("imgTitle", url)}
-            accept="image/*"
+            accept={IMAGE_ACCEPT}
             prefix="images"
             existingUrl={movieData.imgTitle}
           />
@@ -337,7 +338,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <FileUpload
             label="Thumbnail Image"
             onFileUpload={(url) => handleFileUpload("imgSm", url)}
-            accept="image/*"
+            accept={IMAGE_ACCEPT}
             prefix="images"
             existingUrl={movieData.imgSm}
           />
@@ -345,7 +346,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <FileUpload
             label="Trailer"
             onFileUpload={(url) => handleFileUpload("trailer", url)}
-            accept="video/*"
+            accept={VIDEO_ACCEPT}
             prefix="trailers"
             existingUrl={movieData.trailer}
           />
@@ -353,7 +354,7 @@ const MovieForm = ({ movieId, isEdit = false }: MovieFormProps) => {
           <FileUpload
             label="Video"
             onFileUpload={(url) => handleFileUpload("video", url)}
-            accept="video/*"
+            accept={VIDEO_ACCEPT}
             prefix="videos"
             existingUrl={movieData.video}
           />

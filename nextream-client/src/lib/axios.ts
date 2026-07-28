@@ -37,14 +37,6 @@ api.interceptors.request.use(
       config.headers.token = `Bearer ${token}`;
     }
     
-    // Log the request for debugging
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
-      url: config.url,
-      method: config.method,
-      baseURL: config.baseURL,
-      headers: config.headers
-    });
-    
     return config;
   },
   (error) => {
@@ -55,20 +47,25 @@ api.interceptors.request.use(
 // Add a response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', {
-      status: response.status,
-      url: response.config.url,
-      data: response.data
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API Response:', {
+        status: response.status,
+        url: response.config.url,
+      });
+    }
     return response;
   },
   (error) => {
-    console.error('API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    });
+    // Avoid console.error here — Next.js treats it as a Console Error overlay.
+    // Callers (AuthContext, pages) surface actionable messages to the UI.
+    if (process.env.NODE_ENV === 'development') {
+      const status = error.response?.status;
+      const data = error.response?.data;
+      console.warn(
+        `API ${status ?? 'error'}: ${error.config?.method?.toUpperCase() ?? ''} ${error.config?.url ?? ''} —`,
+        typeof data === 'string' ? data : data?.message || error.message
+      );
+    }
     return Promise.reject(error);
   }
 );

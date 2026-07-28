@@ -49,13 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Cookies.remove('admin');
           setLoading(false);
         } else {
-          // Set default axios auth header
+          // Keep localStorage in sync with the cookie so every axios client
+          // (including uploads) reads the same JWT.
+          localStorage.setItem('admin', JSON.stringify(parsedUser));
           axios.defaults.headers.common['token'] = `Bearer ${storedToken}`;
           console.log('Setting auth token:', `Bearer ${storedToken.substring(0, 15)}...`);
-          // Initialize FCM for admin
           initFcm(storedToken).catch(() => {});
           
-          // Verify token is valid by making a test request
           api.get('/users/profile', {
             headers: {
               token: `Bearer ${storedToken}`
@@ -114,8 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(res.data);
       router.push('/');
     } catch (err: any) {
-      console.error('Login error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Invalid credentials');
+      const data = err.response?.data;
+      const message =
+        (typeof data === 'string' && data) ||
+        data?.message ||
+        'Invalid credentials';
+      setError(message);
       localStorage.removeItem('admin');
       Cookies.remove('admin');
       delete axios.defaults.headers.common['token'];
