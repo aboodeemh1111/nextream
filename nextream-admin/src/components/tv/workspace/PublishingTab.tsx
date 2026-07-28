@@ -34,12 +34,13 @@ interface Check {
 }
 
 export function PublishingTab({ workspace }: { workspace: ShowWorkspace }) {
-  const { show, seasons, patchShow, recount } = workspace;
+  const { show, seasons, patchShow, updateSeason, recount } = workspace;
   const router = useRouter();
   const toast = useToast();
   const { confirm, confirmDialog } = useConfirm();
   const [deleting, setDeleting] = useState(false);
   const [recounting, setRecounting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   const clientBase =
     process.env.NEXT_PUBLIC_CLIENT_BASE_URL || "http://localhost:3000";
@@ -143,7 +144,34 @@ export function PublishingTab({ workspace }: { workspace: ShowWorkspace }) {
           <CardBody className="space-y-4">
             <Switch
               checked={Boolean(show.published)}
-              onChange={(published) => void patchShow({ published })}
+              disabled={publishing}
+              onChange={(published) => {
+                void (async () => {
+                  try {
+                    setPublishing(true);
+                    // Viewers only see episodes on published seasons. If the show
+                    // goes live with draft seasons that already have published
+                    // episodes, the client page looks empty — publish those
+                    // seasons with the show so Play / Episodes have content.
+                    if (published) {
+                      const readySeasons = seasons.filter(
+                        (season) =>
+                          !season.published &&
+                          (season.publishedEpisodesCount ?? 0) > 0
+                      );
+                      for (const season of readySeasons) {
+                        const ok = await updateSeason(season._id, {
+                          published: true,
+                        });
+                        if (!ok) return;
+                      }
+                    }
+                    await patchShow({ published });
+                  } finally {
+                    setPublishing(false);
+                  }
+                })();
+              }}
               label={show.published ? "Published" : "Draft"}
               description={
                 show.published

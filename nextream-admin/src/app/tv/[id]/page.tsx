@@ -103,7 +103,7 @@ export default function ShowWorkspacePage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-5">
+      <div className="w-full min-w-0 space-y-5">
         <Link
           href="/tv"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -112,7 +112,7 @@ export default function ShowWorkspacePage() {
           All shows
         </Link>
 
-        <Card className="p-4">
+        <Card className="w-full min-w-0 p-4">
           {loading || !show ? (
             <div className="flex items-center gap-4">
               <Skeleton className="h-24 w-16 rounded-control" />
@@ -163,7 +163,7 @@ export default function ShowWorkspacePage() {
             </div>
           </Card>
         ) : (
-          <div className="animate-in">
+          <div className="w-full min-w-0 animate-in">
             {tab === "details" && <DetailsTab workspace={workspace} />}
             {tab === "seasons" && <SeasonsTab workspace={workspace} />}
             {tab === "media" && <MediaTab workspace={workspace} />}

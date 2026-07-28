@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FaComment, FaCheck, FaTimes, FaChartBar } from "react-icons/fa";
+import AdminLayout from "@/components/AdminLayout";
 import ReviewsTable from "@/components/reviews/ReviewsTable";
 import ReviewStats from "@/components/reviews/ReviewStats";
 import { useAuth } from "@/context/AuthContext";
@@ -14,22 +15,24 @@ export default function ReviewsPage() {
 
   if (!user || !user.isAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="bg-card border border-border p-8 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-red-500 mb-4">
-            Access Denied
-          </h1>
-          <p className="text-muted-foreground">
-            You do not have permission to access this page.
-          </p>
+      <AdminLayout>
+        <div className="flex items-center justify-center py-16">
+          <div className="bg-card border border-border p-8 rounded-lg shadow-md">
+            <h1 className="text-2xl font-bold text-red-500 mb-4">
+              Access Denied
+            </h1>
+            <p className="text-muted-foreground">
+              You do not have permission to access this page.
+            </p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AdminLayout>
+      <div className="px-2 sm:px-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <h1 className="text-2xl font-bold text-foreground mb-4 md:mb-0">
             User Reviews Management
@@ -142,6 +145,6 @@ export default function ReviewsPage() {
           )}
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

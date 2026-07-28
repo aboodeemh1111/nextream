@@ -36,11 +36,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     <div className="flex flex-col md:flex-row min-h-screen bg-background text-foreground">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col w-full md:ml-64 transition-all duration-300 ease-in-out">
+      <div className="flex min-w-0 w-full flex-1 flex-col transition-all duration-300 ease-in-out">
         <Header />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6">
-          <div className="max-w-7xl mx-auto">{children}</div>
+          <div className="mx-auto w-full min-w-0 max-w-7xl">{children}</div>
         </main>
 
         <footer className="bg-card border-t border-border py-4 px-6 text-center text-muted-foreground text-sm">

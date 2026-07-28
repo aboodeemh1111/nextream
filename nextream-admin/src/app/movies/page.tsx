@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { useAuth } from "@/context/AuthContext";
-import axios from "axios";
 import api from "@/services/api";
 import Link from "next/link";
 import Image from "next/image";
@@ -67,15 +66,12 @@ export default function MoviesPage() {
 
     if (window.confirm("Are you sure you want to delete this movie?")) {
       try {
-        // In a real application, you would call your API to delete the movie
-        // await axios.delete(`http://localhost:8800/api/movies/${movieId}`, {
-        //   headers: {
-        //     token: `Bearer ${user.accessToken}`,
-        //   },
-        // });
-
-        // Update local state
-        setMovies(movies.filter((movie) => movie._id !== movieId));
+        await api.delete(`/movies/${movieId}`, {
+          headers: {
+            token: `Bearer ${user.accessToken}`,
+          },
+        });
+        setMovies((prev) => prev.filter((movie) => movie._id !== movieId));
       } catch (err) {
         console.error(err);
         alert("Failed to delete movie");

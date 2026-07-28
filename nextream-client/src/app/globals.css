@@ -24,3 +24,92 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ---------------------------------------------------------------------------
+   Nextream surface tokens
+   ---------------------------------------------------------------------------
+   The app used ad-hoc bg-gray-900 / bg-black / bg-gray-700 per page, so nothing
+   shared an elevation scale and "one shade darker" meant a different colour on
+   every screen. These name the levels once; Tailwind v4 turns each --color-*
+   entry into utilities (bg-nx-surface, text-nx-muted, border-nx-line, ...).
+--------------------------------------------------------------------------- */
+@theme {
+  --color-nx-black: #050507;
+  --color-nx-bg: #0a0a0e;
+  --color-nx-surface: #121218;
+  --color-nx-elevated: #1b1b23;
+  --color-nx-line: #ffffff1f;
+  --color-nx-ink: #f4f4f6;
+  --color-nx-muted: #a1a1ad;
+  --color-nx-dim: #6f6f7d;
+  --color-nx-accent: #e50914;
+  --color-nx-accent-soft: #ff2b38;
+  --color-nx-cyan: #22d3ee;
+  --color-nx-violet: #c026d3;
+
+  --animate-nx-shimmer: nx-shimmer 1.6s linear infinite;
+  --animate-nx-rise: nx-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes nx-shimmer {
+  0% {
+    background-position: -140% 0;
+  }
+  100% {
+    background-position: 140% 0;
+  }
+}
+
+@keyframes nx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* @utility, not @layer utilities: only the former can carry a variant prefix.
+   These are written as `focus-visible:nx-focus` at the call sites, and a plain
+   @layer class silently emits nothing under a variant. */
+
+/* Carousels scroll natively (keyboard, trackpad and touch all work for free);
+   the bar itself is chrome we don't want over the artwork. */
+@utility nx-scroll-x {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Skeleton fill. Sized well past 100% so the highlight can travel. */
+@utility nx-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-nx-surface) 0%,
+    var(--color-nx-elevated) 50%,
+    var(--color-nx-surface) 100%
+  );
+  background-size: 220% 100%;
+  animation: var(--animate-nx-shimmer);
+}
+
+/* Long titles over artwork need a scrim, not a heavier font. */
+@utility nx-text-shadow {
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.65);
+}
+
+@utility nx-focus {
+  outline: 2px solid var(--color-nx-cyan);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-skeleton {
+    animation: none;
+  }
+}

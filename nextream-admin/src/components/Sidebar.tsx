@@ -117,6 +117,8 @@ const Sidebar = () => {
     setIsMobileOpen(false);
   }, [pathname]);
 
+  const sidebarWidth = isCollapsed ? "w-20" : "w-64";
+
   return (
     <>
       {/* Mobile Toggle Button */}
@@ -136,13 +138,19 @@ const Sidebar = () => {
         ></div>
       )}
 
+      {/* Reserves horizontal space so main content tracks the fixed sidebar. */}
+      <div
+        aria-hidden
+        className={`hidden shrink-0 transition-all duration-300 ease-in-out md:block ${sidebarWidth}`}
+      />
+
       {/* Sidebar */}
       <aside
         id="mobile-sidebar"
         className={`
           fixed top-0 left-0 h-full bg-card text-foreground z-40
           transition-all duration-300 ease-in-out shadow-xl border-r border-border
-          ${isCollapsed ? "w-20" : "w-64"} 
+          ${sidebarWidth}
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} 
           md:translate-x-0
         `}

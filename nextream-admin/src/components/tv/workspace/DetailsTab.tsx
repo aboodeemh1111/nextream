@@ -7,13 +7,14 @@ import {
   CardBody,
   CardHeader,
   Input,
+  MultiSelect,
   Select,
-  TagsInput,
   Textarea,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { slugify } from "@/lib/format";
 import type { TVShow } from "@/lib/tvApi";
+import { TV_GENRES, TV_TAGS } from "@/lib/tvTaxonomy";
 import type { ShowWorkspace } from "../useShowWorkspace";
 
 const AUTOSAVE_MS = 900;
@@ -181,20 +182,20 @@ export function DetailsTab({ workspace }: { workspace: ShowWorkspace }) {
       <Card className="h-fit">
         <CardHeader title="Classification" />
         <CardBody className="space-y-4">
-          <TagsInput
+          <MultiSelect
             label="Genres"
+            options={TV_GENRES}
             value={draft.genres}
             onChange={(genres) => update({ genres })}
-            placeholder="drama, sci-fi"
-            hint="Comma separated."
+            placeholder="Add genre…"
           />
 
-          <TagsInput
+          <MultiSelect
             label="Tags"
+            options={TV_TAGS}
             value={draft.tags}
             onChange={(tags) => update({ tags })}
-            placeholder="award-winning, family"
-            hint="Comma separated."
+            placeholder="Add tag…"
           />
 
           <Select

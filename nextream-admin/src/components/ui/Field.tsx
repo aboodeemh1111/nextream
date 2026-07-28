@@ -224,3 +224,107 @@ export function TagsInput({
     />
   );
 }
+
+/**
+ * Multi-value picker: add via native select, remove via chips.
+ * Values already selected (including legacy freeform ones) stay as chips;
+ * only `options` appear in the add dropdown.
+ */
+export function MultiSelect({
+  label,
+  hint,
+  error,
+  containerClassName,
+  labelSuffix,
+  id,
+  options,
+  value,
+  onChange,
+  placeholder = "Add…",
+  disabled,
+  required,
+}: BaseFieldProps & {
+  id?: string;
+  options: readonly string[];
+  value: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
+  const describedBy = `${inputId}-help`;
+  const selected = new Set(value);
+  const available = options.filter((opt) => !selected.has(opt));
+
+  const control = (
+    <div className="space-y-2">
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((item) => (
+            <span
+              key={item}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border border-border",
+                "bg-surface-2 px-2 py-0.5 text-xs font-medium text-foreground"
+              )}
+            >
+              {item}
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => onChange(value.filter((v) => v !== item))}
+                className={cn(
+                  "ml-0.5 inline-flex h-3.5 w-3.5 items-center justify-center",
+                  "rounded-full text-muted-foreground hover:bg-background hover:text-foreground",
+                  "disabled:opacity-60 disabled:cursor-not-allowed"
+                )}
+                aria-label={`Remove ${item}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <select
+        id={inputId}
+        disabled={disabled || available.length === 0}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={hint || error ? describedBy : undefined}
+        className={cn(CONTROL, "cursor-pointer pr-8", error && INVALID)}
+        value=""
+        onChange={(e) => {
+          const next = e.target.value;
+          if (!next || selected.has(next)) return;
+          onChange([...value, next]);
+        }}
+      >
+        <option value="">
+          {available.length === 0 ? "All options selected" : placeholder}
+        </option>
+        {available.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  if (!label && !hint && !error) return control;
+  return (
+    <Field
+      label={label}
+      hint={hint && <span id={describedBy}>{hint}</span>}
+      error={error && <span id={describedBy}>{error}</span>}
+      required={required}
+      htmlFor={inputId}
+      className={containerClassName}
+      labelSuffix={labelSuffix}
+    >
+      {control}
+    </Field>
+  );
+}

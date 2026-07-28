@@ -93,18 +93,20 @@ export function SeasonsTab({ workspace }: { workspace: ShowWorkspace }) {
   }, [uploads.items, updateEpisode]);
 
   const toggle = (season: Season) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(season._id)) {
+    const isOpen = expanded.has(season._id);
+    if (isOpen) {
+      setExpanded((prev) => {
+        const next = new Set(prev);
         next.delete(season._id);
-      } else {
-        next.add(season._id);
-        // Episodes load on expand. They used to sit behind a "Load episodes"
-        // button that hit a shadowed route and silently returned nothing.
-        void loadEpisodes(season._id);
-      }
-      return next;
-    });
+        return next;
+      });
+      return;
+    }
+
+    setExpanded((prev) => new Set(prev).add(season._id));
+    // Outside the setState updater — updaters run during render and must stay
+    // pure. Calling loadEpisodes in there setState'd the parent workspace mid-render.
+    void loadEpisodes(season._id);
   };
 
   const nextSeasonNumber = useMemo(
@@ -181,8 +183,8 @@ export function SeasonsTab({ workspace }: { workspace: ShowWorkspace }) {
   if (!show) return null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="w-full min-w-0 space-y-4">
+      <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {seasons.length === 0
             ? "No seasons yet."
@@ -216,13 +218,13 @@ export function SeasonsTab({ workspace }: { workspace: ShowWorkspace }) {
           }
         />
       ) : (
-        <ul className="space-y-3">
+        <ul className="w-full min-w-0 space-y-3">
           {seasons.map((season, index) => {
             const isOpen = expanded.has(season._id);
             const list = episodes[season._id];
 
             return (
-              <li key={season._id}>
+              <li key={season._id} className="w-full min-w-0">
                 <Card
                   draggable
                   onDragStart={() => setDragId(season._id)}
@@ -236,11 +238,11 @@ export function SeasonsTab({ workspace }: { workspace: ShowWorkspace }) {
                     move(from, index);
                   }}
                   className={cn(
-                    "overflow-hidden transition-opacity",
+                    "w-full min-w-0 overflow-hidden transition-opacity",
                     dragId === season._id && "opacity-50"
                   )}
                 >
-                  <div className="flex items-center gap-3 p-3">
+                  <div className="flex w-full min-w-0 flex-wrap items-center gap-2 p-3 sm:gap-3">
                     <span
                       className="cursor-grab text-subtle-foreground active:cursor-grabbing"
                       aria-hidden
@@ -252,7 +254,7 @@ export function SeasonsTab({ workspace }: { workspace: ShowWorkspace }) {
                       type="button"
                       onClick={() => toggle(season)}
                       aria-expanded={isOpen}
-                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      className="flex min-w-0 flex-1 basis-48 items-center gap-3 text-left"
                     >
                       <span className="text-subtle-foreground" aria-hidden>
                         {isOpen ? <FaChevronDown /> : <FaChevronRight />}
@@ -263,11 +265,11 @@ export function SeasonsTab({ workspace }: { workspace: ShowWorkspace }) {
                         rounded="rounded-control"
                         className="h-12 w-8 shrink-0"
                       />
-                      <span className="min-w-0">
+                      <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium text-foreground">
                           {season.name?.trim() || `Season ${season.seasonNumber}`}
                         </span>
-                        <span className="block text-xs text-muted-foreground">
+                        <span className="block truncate text-xs text-muted-foreground">
                           Season {season.seasonNumber} ·{" "}
                           {pluralize(season.episodesCount ?? 0, "episode")}
                           {season.publishedEpisodesCount != null &&
@@ -278,10 +280,10 @@ export function SeasonsTab({ workspace }: { workspace: ShowWorkspace }) {
                       </span>
                     </button>
 
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
                       <PublishBadge published={season.published} />
 
-                      <span className="hidden items-center sm:flex">
+                      <span className="hidden items-center md:flex">
                         <IconButton
                           label={`Move season ${season.seasonNumber} up`}
                           size="sm"
@@ -332,7 +334,7 @@ export function SeasonsTab({ workspace }: { workspace: ShowWorkspace }) {
                   </div>
 
                   {isOpen && (
-                    <div className="border-t border-border bg-surface-2/40 px-3 py-3">
+                    <div className="w-full min-w-0 border-t border-border bg-surface-2/40 px-2 py-3 sm:px-3">
                       {loadingEpisodes[season._id] && !list ? (
                         <SkeletonRows count={3} />
                       ) : !list || list.length === 0 ? (
@@ -451,7 +453,7 @@ function EpisodeList({
   };
 
   return (
-    <ul className="divide-y divide-border">
+    <ul className="w-full min-w-0 divide-y divide-border">
       {episodes.map((episode, index) => {
         const playable = (episode.videoSources ?? []).some((source) => source.url);
 
@@ -472,7 +474,7 @@ function EpisodeList({
               setDragId(null);
             }}
             className={cn(
-              "flex items-center gap-3 py-2.5 transition-opacity",
+              "flex w-full min-w-0 flex-wrap items-center gap-2 py-2.5 transition-opacity sm:gap-3",
               dragId === episode._id && "opacity-50"
             )}
           >
@@ -487,7 +489,7 @@ function EpisodeList({
               className="h-10 w-16 shrink-0"
             />
 
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-40">
               <p className="truncate text-sm font-medium text-foreground">
                 <span className="text-muted-foreground tabular-nums">
                   {episodeCode(season.seasonNumber, episode.episodeNumber)}
@@ -514,7 +516,7 @@ function EpisodeList({
               </p>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
               <Switch
                 checked={Boolean(episode.published)}
                 onChange={() => onTogglePublish(episode)}

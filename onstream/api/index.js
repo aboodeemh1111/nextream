@@ -22,6 +22,7 @@ const auditLogsRoute = require("./routes/auditLogs");
 const notificationsRoute = require("./routes/notifications");
 const tvRoute = require("./routes/tv");
 const tvAdminRoute = require("./routes/tvAdmin");
+const tvMeRoute = require("./routes/tvMe");
 const uploadsRoute = require("./routes/uploads");
 
 mongoose
@@ -114,9 +115,10 @@ app.use("/api/analytics", analyticsRoute);
 app.use("/api/reviews", reviewRoute);
 app.use("/api/comments", commentRoute);
 app.use("/api/notifications", notificationsRoute);
-// Admin first: the public TV router ends in a "/:showId" wildcard that would
-// otherwise swallow every /tv/admin path.
+// Admin and viewer-state first: the public TV router ends in a "/:showId"
+// wildcard that would otherwise swallow every /tv/admin and /tv/me path.
 app.use("/api/tv/admin", tvAdminRoute);
+app.use("/api/tv/me", tvMeRoute);
 app.use("/api/tv", tvRoute);
 app.use("/api/uploads", uploadsRoute);
 app.use("/api/admin/alerts", alertsRoute);
@@ -135,6 +137,7 @@ app.use("/admin/alerts", alertsRoute);
 app.use("/admin/audit-logs", auditLogsRoute);
 app.use("/notifications", notificationsRoute);
 app.use("/tv/admin", tvAdminRoute);
+app.use("/tv/me", tvMeRoute);
 app.use("/tv", tvRoute);
 app.use("/uploads", uploadsRoute);
 

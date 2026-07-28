@@ -44,7 +44,9 @@ const nextConfig = {
       ? [
           {
             source: "/api/:path*",
-            destination: "http://localhost:8800/api/:path*",
+            // Use 127.0.0.1 — on Windows, localhost can resolve to ::1 and
+            // Next's rewrite proxy hangs until the client axios timeout.
+            destination: "http://127.0.0.1:8800/api/:path*",
           },
         ]
       : [

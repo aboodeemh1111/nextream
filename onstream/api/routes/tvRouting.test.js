@@ -4,6 +4,7 @@ const express = require("express");
 
 const tvRoute = require("./tv");
 const tvAdminRoute = require("./tvAdmin");
+const tvMeRoute = require("./tvMe");
 
 // Regression cover for a routing bug that silently disabled the whole admin TV
 // surface: the admin routes used to be registered in routes/tv.js *after* the
@@ -20,8 +21,9 @@ const tvAdminRoute = require("./tvAdmin");
 function buildApp() {
   const app = express();
   app.use(express.json());
-  // Same order as index.js — admin is mounted first, deliberately.
+  // Same order as index.js — admin and viewer-state are mounted first, deliberately.
   app.use("/api/tv/admin", tvAdminRoute);
+  app.use("/api/tv/me", tvMeRoute);
   app.use("/api/tv", tvRoute);
   return app;
 }
@@ -78,6 +80,32 @@ test("every admin TV route reaches the admin router, not a public wildcard", asy
   }
 });
 
+// Same hazard as /admin: every one of these sits under a path the public
+// router's "/:showId" wildcard would happily cast to an ObjectId.
+const ME_PATHS = [
+  ["GET", "/api/tv/me/my-list"],
+  ["POST", "/api/tv/me/my-list"],
+  ["DELETE", "/api/tv/me/my-list/507f1f77bcf86cd799439011"],
+  ["GET", "/api/tv/me/continue-watching"],
+  ["DELETE", "/api/tv/me/continue-watching/507f1f77bcf86cd799439011"],
+  ["POST", "/api/tv/me/progress"],
+  ["GET", "/api/tv/me/progress/507f1f77bcf86cd799439011"],
+  ["GET", "/api/tv/me/history"],
+];
+
+test("every viewer-state TV route reaches the /me router, not a public wildcard", async () => {
+  const app = buildApp();
+
+  for (const [method, path] of ME_PATHS) {
+    const res = await request(app, method, path);
+    assert.strictEqual(
+      res.status,
+      401,
+      `${method} ${path} should be answered by the /me router (401 from verifyToken), got ${res.status}: ${res.body}`
+    );
+  }
+});
+
 test("public TV routes still answer without a token", async () => {
   const app = buildApp();
 
@@ -90,6 +118,9 @@ test("public TV routes still answer without a token", async () => {
   assert.strictEqual(episode.status, 400);
 });
 
+// The public router is personalised via optionalAuth, which never rejects — so
+// a write registered here would run for anonymous callers. Viewer writes belong
+// in tvMe (verifyToken) and editorial writes in tvAdmin (verifyToken + isAdmin).
 test("the public router exposes no mutating routes", () => {
   const methods = tvRoute.stack
     .filter((layer) => layer.route)

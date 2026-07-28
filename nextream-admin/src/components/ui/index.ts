@@ -5,7 +5,7 @@ export { Card, CardHeader, CardBody, CardFooter } from "./Card";
 export { Badge, PublishBadge } from "./Badge";
 export type { BadgeTone } from "./Badge";
 
-export { Field, Input, Textarea, Select, TagsInput } from "./Field";
+export { Field, Input, Textarea, Select, TagsInput, MultiSelect } from "./Field";
 export { Switch } from "./Switch";
 
 export { Dialog, Sheet } from "./Dialog";
