@@ -8,53 +8,46 @@ import {
   FaVolumeMute,
   FaVolumeUp,
   FaRedo,
+  FaFilm,
+  FaTv,
 } from "react-icons/fa";
 import {
-  NextUp,
-  TVShow,
-  episodeCode,
+  HeroItem,
   isPlayableVideo,
-  matchScore,
+  maturityLabel,
+  mediaMeta,
   playLabel,
-  showBackdrop,
-  showMeta,
-} from "@/lib/tv";
+} from "@/lib/home";
 import { cn } from "@/lib/cn";
-import Art from "./Art";
-import { GUTTER, MatchScore, MetaLine, Pill } from "./Bits";
-import MyListButton from "./MyListButton";
+import Art from "@/components/series/Art";
+import { GUTTER, MatchScore, MetaLine, Pill, ProgressBar } from "@/components/series/Bits";
+import ListButton from "./ListButton";
 
-interface SeriesBillboardProps {
-  show: TVShow;
-  nextUp?: NextUp | null;
-  onListChange?: (showId: string, inMyList: boolean) => void;
-  /**
-   * The section heading and browse controls, seated at the top of the artwork.
-   * Taken as a child rather than positioned over the billboard by the page:
-   * absolute chrome and bottom-anchored copy have no idea how tall the other
-   * one is, and on a short window they land on top of each other. In one flex
-   * column they cannot.
-   */
-  header?: React.ReactNode;
+interface HomeBillboardProps {
+  hero: HeroItem;
+  onListChange?: (uid: string, inMyList: boolean) => void;
 }
 
 /** How long the artwork holds before the trailer takes over. */
 const TRAILER_DELAY_MS = 2500;
 
-export default function SeriesBillboard({
-  show,
-  nextUp,
-  onListChange,
-  header,
-}: SeriesBillboardProps) {
+/**
+ * The landing billboard.
+ *
+ * Carries the reason it was chosen — "Pick up where you left off", "Because you
+ * watch Horror" — rather than presenting one title as though it were editorial.
+ * A ranked page that cannot say why it ranked something is indistinguishable
+ * from a random one, and the viewer has no way to tell that it is working.
+ */
+export default function HomeBillboard({ hero, onListChange }: HomeBillboardProps) {
   const [playing, setPlaying] = useState(false);
   const [ready, setReady] = useState(false);
   const [muted, setMuted] = useState(true);
   const [ended, setEnded] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  const canPreview = isPlayableVideo(show.trailerUrl);
-  const match = matchScore(show.rating);
+  const canPreview = isPlayableVideo(hero.trailer);
+  const maturity = maturityLabel(hero);
 
   useEffect(() => {
     if (!canPreview) return;
@@ -63,7 +56,7 @@ export default function SeriesBillboard({
 
     const timer = setTimeout(() => setPlaying(true), TRAILER_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [canPreview, show._id]);
+  }, [canPreview, hero.uid]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -81,25 +74,17 @@ export default function SeriesBillboard({
     }
   };
 
-  // No nextUp means the show has no published episode yet. Linking "Play" to
-  // the detail page would promise playback the catalogue cannot deliver.
-  const watchHref = nextUp
-    ? nextUp.resumeSec > 0
-      ? `/watch/episode/${nextUp.episode._id}?t=${Math.floor(nextUp.resumeSec)}`
-      : `/watch/episode/${nextUp.episode._id}`
-    : null;
-
   return (
     // min-height, not height: the copy block grows with a long title, and a
-    // fixed height would push it up under the heading instead of growing.
-    <section className="relative flex min-h-[600px] w-full flex-col sm:min-h-[80vh]">
+    // fixed height would push it up under the navbar instead of growing.
+    <section className="relative flex min-h-[600px] w-full flex-col sm:min-h-[82vh]">
       <div className="absolute inset-0 overflow-hidden bg-nx-black">
         {/* The drift is on a wrapper, not on <Art>, so it survives the swap to
-            the generated placeholder when a show has no backdrop. */}
+            the generated placeholder when a title has no backdrop. */}
         <div className="absolute inset-0 animate-nx-kenburns">
           <Art
-            src={showBackdrop(show)}
-            alt={show.title}
+            src={hero.backdrop}
+            alt={hero.title}
             priority
             sizes="100vw"
             fallbackLabel={false}
@@ -113,7 +98,7 @@ export default function SeriesBillboard({
         {canPreview && (
           <video
             ref={videoRef}
-            src={show.trailerUrl}
+            src={hero.trailer}
             muted={muted}
             playsInline
             preload="none"
@@ -133,96 +118,105 @@ export default function SeriesBillboard({
           />
         )}
 
-        {/* Three scrims: the vertical fade seats the row below, the horizontal
-            one keeps the copy legible over a busy left edge, and the short top
-            one carries the navbar and the section heading that float over it. */}
+        {/* Three scrims: the vertical fade seats the first row, the horizontal
+            one keeps the copy legible over busy artwork, and the short top one
+            carries the navbar floating over it. */}
         <div className="absolute inset-0 bg-gradient-to-t from-nx-bg via-nx-bg/45 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-nx-bg/95 via-nx-bg/45 to-transparent" />
-        {/* Deep enough to carry the controls, which stack onto three lines on a
-            phone and would otherwise sit on bare artwork. */}
-        <div className="absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-black/80 via-black/40 to-transparent sm:h-64" />
+        <div className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-black/75 via-black/30 to-transparent" />
       </div>
-
-      {header}
 
       <div
         className={cn(
-          // Deep enough that the first row, which is pulled up over the fade,
-          // clears the call to action instead of butting against it.
+          // Deep enough that the first row, pulled up over the fade, clears the
+          // call to action instead of butting against it.
           "relative mt-auto flex flex-col pb-20 sm:pb-24 md:pb-36",
           GUTTER
         )}
       >
         <div className="max-w-xl animate-nx-rise">
-          {/* Genres, not a "Series" tag: the section heading two lines above
-              already says that, and the genre is what a viewer is scanning
-              the billboard for. */}
-          {show.genres && show.genres.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-1.5">
-              {show.genres.slice(0, 3).map((genre) => (
-                <Pill key={genre} tone="glass" className="px-2 py-1 tracking-[0.18em]">
-                  {genre}
-                </Pill>
-              ))}
-            </div>
-          )}
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <Pill tone="accent" className="gap-1">
+              {hero.kind === "show" ? (
+                <FaTv className="text-[8px]" aria-hidden />
+              ) : (
+                <FaFilm className="text-[8px]" aria-hidden />
+              )}
+              {hero.badge}
+            </Pill>
+            {hero.genreLabels.slice(0, 2).map((genre) => (
+              <Pill key={genre} tone="glass" className="px-2 py-1 tracking-[0.18em]">
+                {genre}
+              </Pill>
+            ))}
+          </div>
+
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-nx-cyan">
+            {hero.reason}
+          </p>
 
           <h1 className="nx-text-shadow text-3xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl">
-            {show.title}
+            {hero.title}
           </h1>
 
           <div className="mt-3.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-nx-ink/90">
-            {match && <MatchScore score={match} />}
+            {hero.match !== null && <MatchScore score={hero.match} />}
             <MetaLine
               parts={[
-                ...showMeta(show),
-                show.status === "ended" ? "Complete series" : "Ongoing",
+                ...mediaMeta(hero),
+                maturity,
+                hero.rating10 ? `★ ${hero.rating10.toFixed(1)}` : null,
               ]}
             />
           </div>
 
-          {show.overview && (
+          {hero.overview && (
             <p className="nx-text-shadow mt-3.5 line-clamp-3 max-w-lg text-sm leading-relaxed text-nx-ink/80 sm:text-base">
-              {show.overview}
+              {hero.overview}
             </p>
           )}
 
-          {nextUp && nextUp.reason !== "start" && (
-            <p className="mt-3.5 text-xs font-semibold text-nx-muted">
-              {nextUp.reason === "resume" ? "Resume" : "Next"}:{" "}
-              <span className="text-nx-ink">{episodeCode(nextUp.episode)}</span>{" "}
-              &middot; {nextUp.episode.title}
-            </p>
+          {hero.resume ? (
+            <div className="mt-4 max-w-xs">
+              <ProgressBar percent={hero.resume.percent} className="rounded-full" />
+              <p className="mt-1.5 text-xs font-semibold text-nx-muted">
+                {hero.resume.subtitle || `${hero.resume.percent}% watched`}
+              </p>
+            </div>
+          ) : (
+            hero.nextUp &&
+            hero.nextUp.reason !== "start" && (
+              <p className="mt-3.5 text-xs font-semibold text-nx-muted">
+                Next: <span className="text-nx-ink">{hero.nextUp.code}</span> &middot;{" "}
+                {hero.nextUp.title}
+              </p>
+            )
           )}
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            {watchHref ? (
+            {hero.watchHref ? (
               <Link
-                href={watchHref}
+                href={hero.watchHref}
                 className="nx-sheen inline-flex items-center gap-2.5 rounded-lg bg-white px-7 py-3 text-sm font-bold text-black shadow-lg shadow-black/40 transition hover:bg-white/85 focus:outline-none focus-visible:nx-focus"
               >
-                <FaPlay /> {playLabel(nextUp)}
+                <FaPlay /> {playLabel(hero, hero.resume?.percent)}
               </Link>
             ) : (
+              // Nothing published behind the title yet. A Play button that
+              // opens an empty player is worse than none.
               <span className="inline-flex items-center gap-2.5 rounded-lg bg-white/15 px-7 py-3 text-sm font-bold text-nx-muted">
                 <FaPlay /> Coming soon
               </span>
             )}
 
             <Link
-              href={`/series/${show._id}`}
+              href={hero.href}
               className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-nx-ink backdrop-blur transition hover:bg-white/20 focus:outline-none focus-visible:nx-focus"
             >
               <FaInfoCircle /> More Info
             </Link>
 
-            <MyListButton
-              showId={show._id}
-              inMyList={show.inMyList}
-              onChange={onListChange}
-              variant="full"
-              className="rounded-lg border-white/20 px-5 py-3"
-            />
+            <ListButton item={hero} onChange={onListChange} variant="full" />
           </div>
         </div>
       </div>

@@ -3,66 +3,51 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FaPlay, FaTimes, FaInfoCircle } from "react-icons/fa";
-import {
-  ContinueEntry,
-  episodeCode,
-  formatRuntime,
-  showBackdrop,
-  tv,
-} from "@/lib/tv";
+import { ContinueItem, removeFromContinue, timeLeftLabel } from "@/lib/home";
 import { cn } from "@/lib/cn";
-import Art from "./Art";
-import { ProgressBar, Spinner } from "./Bits";
+import Art from "@/components/series/Art";
+import { ProgressBar, Spinner } from "@/components/series/Bits";
 
-interface ContinueCardProps {
-  entry: ContinueEntry;
-  /** Lets the row drop the card once the viewer dismisses it. */
-  onRemoved?: (showId: string) => void;
+interface ContinueTileProps {
+  entry: ContinueItem;
+  /** Lets the row drop the tile once the viewer dismisses it. */
+  onRemoved?: (uid: string) => void;
 }
 
 /**
- * A Continue Watching tile.
+ * A Continue Watching tile, for a half-finished film or a series mid-episode.
  *
  * Landscape rather than poster-shaped on purpose: the useful information is the
- * episode still and how far in you are, and a 2:3 poster has room for neither.
+ * still and how far in you are, and a portrait poster has room for neither.
  *
  * The resume link is an overlay rather than a wrapper so the dismiss button and
  * the "about" link are siblings of it — an <a> and a <button> inside another
  * <a> is invalid markup, and assistive tech flattens the lot into one control.
  */
-export default function ContinueCard({ entry, onRemoved }: ContinueCardProps) {
+export default function ContinueTile({ entry, onRemoved }: ContinueTileProps) {
   const [removing, setRemoving] = useState(false);
-  const { show, episode, resumeSec, percent, reason } = entry;
+  const { item, percent, reason } = entry;
 
   const remove = async () => {
     if (removing) return;
 
     setRemoving(true);
     try {
-      await tv.removeFromContinue(show._id);
-      onRemoved?.(show._id);
+      await removeFromContinue(item);
+      onRemoved?.(item.uid);
     } catch {
       setRemoving(false);
     }
   };
 
-  // "next" means the last episode finished, so there is nothing to resume into.
-  const watchHref =
-    reason === "resume" && resumeSec > 0
-      ? `/watch/episode/${episode._id}?t=${Math.floor(resumeSec)}`
-      : `/watch/episode/${episode._id}`;
-
-  const timeLeft =
-    episode.duration && reason === "resume"
-      ? `${Math.max(1, Math.round(episode.duration - resumeSec / 60))}m left`
-      : formatRuntime(episode.duration);
+  const timeLeft = timeLeftLabel(entry);
 
   return (
     <article className="group/tile relative overflow-hidden rounded-xl bg-nx-surface shadow-lg shadow-black/40 ring-1 ring-white/10 transition duration-300 hover:shadow-2xl hover:shadow-black/70 hover:ring-white/25">
       <div className="relative aspect-video w-full overflow-hidden">
         <Art
-          src={episode.stillPath || showBackdrop(show)}
-          alt={`${show.title} — ${episode.title}`}
+          src={entry.still}
+          alt={entry.subtitle ? `${item.title} — ${entry.subtitle}` : item.title}
           fallbackLabel={false}
           sizes="(max-width: 640px) 76vw, (max-width: 1024px) 38vw, 24vw"
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover/tile:scale-105"
@@ -87,26 +72,33 @@ export default function ContinueCard({ entry, onRemoved }: ContinueCardProps) {
       </div>
 
       <div className="p-3">
-        <p className="line-clamp-1 text-sm font-bold text-nx-ink">{show.title}</p>
-        <p className="mt-1 line-clamp-1 text-xs text-nx-muted">
-          <span className="font-semibold text-nx-ink/80">{episodeCode(episode)}</span>
-          {" · "}
-          {episode.title}
-        </p>
+        <p className="line-clamp-1 text-sm font-bold text-nx-ink">{item.title}</p>
+        {entry.subtitle && (
+          <p className="mt-1 line-clamp-1 text-xs text-nx-muted">
+            {entry.episodeCode ? (
+              <>
+                <span className="font-semibold text-nx-ink/80">{entry.episodeCode}</span>
+                {entry.subtitle.slice(entry.episodeCode.length)}
+              </>
+            ) : (
+              entry.subtitle
+            )}
+          </p>
+        )}
         {timeLeft && <p className="mt-1 text-[11px] text-nx-dim">{timeLeft}</p>}
       </div>
 
       <Link
-        href={watchHref}
-        aria-label={`Resume ${show.title}, ${episodeCode(episode)}`}
+        href={entry.watchHref}
+        aria-label={`Resume ${item.title}`}
         className="absolute inset-0 z-10 rounded-xl focus:outline-none focus-visible:nx-focus"
       />
 
       <div className="absolute right-2 top-2 z-20 flex gap-1.5 opacity-0 transition focus-within:opacity-100 group-hover/tile:opacity-100">
         <Link
-          href={`/series/${show._id}`}
-          title={`About ${show.title}`}
-          aria-label={`About ${show.title}`}
+          href={item.href}
+          title={`About ${item.title}`}
+          aria-label={`About ${item.title}`}
           className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/75 text-[11px] text-white ring-1 ring-white/15 backdrop-blur-sm transition hover:bg-black focus:outline-none focus-visible:nx-focus"
         >
           <FaInfoCircle />
@@ -115,7 +107,7 @@ export default function ContinueCard({ entry, onRemoved }: ContinueCardProps) {
           type="button"
           onClick={remove}
           title="Remove from Continue Watching"
-          aria-label={`Remove ${show.title} from Continue Watching`}
+          aria-label={`Remove ${item.title} from Continue Watching`}
           className={cn(
             "inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/75 text-[11px] text-white ring-1 ring-white/15 backdrop-blur-sm transition hover:bg-black focus:outline-none focus-visible:nx-focus",
             removing && "cursor-wait"

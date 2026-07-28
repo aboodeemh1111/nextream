@@ -245,7 +245,7 @@ function SeriesBrowser() {
       <main className="min-h-screen bg-nx-bg">
         <Navbar />
         <BillboardSkeleton />
-        <div className="-mt-16 relative space-y-2 pb-16">
+        <div className="relative -mt-10 space-y-3 pb-16 sm:-mt-16 md:-mt-24 md:space-y-6">
           <RowSkeleton />
           <RowSkeleton />
         </div>
@@ -253,38 +253,54 @@ function SeriesBrowser() {
     );
   }
 
-  const showBillboard = !browsing;
+  // The billboard is the surface the section heading sits on. Without one —
+  // browsing, or an empty catalogue — the controls become a bar pinned under
+  // the navbar instead, which is also where they are most useful, because a
+  // filtered grid is long and the viewer keeps reaching back for them.
+  const heroVisible = !browsing && (hubLoading || Boolean(hub?.hero));
+
+  const toolbar = (
+    <SeriesFilterBar
+      genres={genres}
+      filters={filters}
+      onChange={setFilters}
+      resultCount={browsing ? browse?.total ?? null : null}
+      variant={heroVisible ? "overlay" : "bar"}
+    />
+  );
 
   return (
     <main className="min-h-screen bg-nx-bg text-nx-ink">
       <Navbar />
 
-      {showBillboard ? (
+      {heroVisible ? (
         hubLoading ? (
-          <BillboardSkeleton />
-        ) : hub?.hero ? (
-          <SeriesBillboard
-            show={hub.hero.show}
-            nextUp={hub.hero.nextUp}
-            onListChange={handleListChange}
-          />
-        ) : null
-      ) : null}
-
-      <SeriesFilterBar
-        genres={genres}
-        filters={filters}
-        onChange={setFilters}
-        resultCount={browsing ? browse?.total ?? null : null}
-      />
+          <BillboardSkeleton header={toolbar} />
+        ) : (
+          hub?.hero && (
+            <SeriesBillboard
+              show={hub.hero.show}
+              nextUp={hub.hero.nextUp}
+              onListChange={handleListChange}
+              header={toolbar}
+            />
+          )
+        )
+      ) : (
+        <>
+          {/* The navbar is fixed, so the pinned bar needs its height back. */}
+          <div className="h-14" aria-hidden />
+          {toolbar}
+        </>
+      )}
 
       {error ? (
-        <div className="flex flex-col items-center justify-center px-4 py-24 text-center">
-          <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-nx-surface text-nx-accent">
+        <div className="flex flex-col items-center justify-center px-4 py-28 text-center">
+          <span className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full bg-nx-surface text-lg text-nx-accent ring-1 ring-white/10">
             <FaExclamationTriangle />
           </span>
-          <p className="text-lg font-semibold">{error}</p>
-          <p className="mt-1 text-sm text-nx-muted">
+          <p className="text-lg font-bold">{error}</p>
+          <p className="mt-1.5 text-sm text-nx-muted">
             The catalogue service may be waking up. Give it another go.
           </p>
           <button
@@ -293,7 +309,7 @@ function SeriesBrowser() {
               setError(null);
               setReloadToken((token) => token + 1);
             }}
-            className="mt-6 rounded-md bg-nx-ink px-5 py-2 text-sm font-semibold text-nx-black transition hover:bg-white"
+            className="mt-6 rounded-lg bg-nx-ink px-6 py-2.5 text-sm font-bold text-nx-black transition hover:bg-white focus:outline-none focus-visible:nx-focus"
           >
             Try again
           </button>
@@ -308,7 +324,7 @@ function SeriesBrowser() {
           onListChange={handleListChange}
         />
       ) : hubLoading ? (
-        <div className="space-y-2 py-6">
+        <div className="relative -mt-10 space-y-3 pb-24 sm:-mt-16 md:-mt-24 md:space-y-6">
           <RowSkeleton />
           <RowSkeleton />
           <RowSkeleton />
@@ -316,7 +332,7 @@ function SeriesBrowser() {
       ) : hub?.rows?.length ? (
         // Rows ride up over the billboard's fade, the way every streaming
         // landing page seats its first row.
-        <div className="relative z-10 -mt-10 space-y-2 pb-20 sm:-mt-16">
+        <div className="relative z-10 -mt-10 space-y-3 pb-24 sm:-mt-16 md:-mt-24 md:space-y-6">
           {hub.rows.map((row) => (
             <SeriesRow
               key={row.key}
@@ -327,12 +343,12 @@ function SeriesBrowser() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center px-4 py-24 text-center">
-          <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-nx-surface text-nx-dim">
+        <div className="flex flex-col items-center justify-center px-4 py-28 text-center">
+          <span className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full bg-nx-surface text-lg text-nx-dim ring-1 ring-white/10">
             <FaTv />
           </span>
-          <p className="text-lg font-semibold">No series published yet</p>
-          <p className="mt-1 max-w-sm text-sm text-nx-muted">
+          <p className="text-lg font-bold">No series published yet</p>
+          <p className="mt-1.5 max-w-sm text-sm text-nx-muted">
             Shows appear here as soon as they are published in the admin panel.
           </p>
         </div>

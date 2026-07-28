@@ -3,16 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { ContinueEntry, HubRow, TVShow } from "@/lib/tv";
+import { ContinueItem, HomeRowData, MediaItem } from "@/lib/home";
 import { cn } from "@/lib/cn";
-import SeriesCard from "./SeriesCard";
-import ContinueCard from "./ContinueCard";
-import { GUTTER, ScrollDots } from "./Bits";
+import { GUTTER, ScrollDots } from "@/components/series/Bits";
+import MediaCard from "./MediaCard";
+import ContinueTile from "./ContinueTile";
 
-interface SeriesRowProps {
-  row: HubRow;
-  onListChange?: (showId: string, inMyList: boolean) => void;
-  onContinueRemoved?: (showId: string) => void;
+interface HomeRowProps {
+  row: HomeRowData;
+  onListChange?: (uid: string, inMyList: boolean) => void;
+  onContinueRemoved?: (uid: string) => void;
 }
 
 /** Tile widths per row style. Poster rows fit more per screen than 16:9 ones. */
@@ -31,11 +31,7 @@ const WIDTHS = {
  * cards at all, and the page count went stale whenever the breakpoint changed.
  * Native scrolling gets all of that for free; the arrows just call scrollBy.
  */
-export default function SeriesRow({
-  row,
-  onListChange,
-  onContinueRemoved,
-}: SeriesRowProps) {
+export default function HomeRow({ row, onListChange, onContinueRemoved }: HomeRowProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
   const [pages, setPages] = useState({ count: 1, active: 0 });
@@ -81,35 +77,47 @@ export default function SeriesRow({
 
   if (!row.items.length) return null;
 
-  const variant = row.kind === "continue" ? "continue" : row.ranked ? "ranked" : "poster";
-  const exploreHref = row.genre ? `/series?genre=${encodeURIComponent(row.genre)}` : null;
+  const ranked = row.kind === "media" && row.ranked;
+  const variant = row.kind === "continue" ? "continue" : ranked ? "ranked" : "poster";
+  // Only My List has a page that shows the same thing this row is a slice of.
+  // A genre row spans both collections and there is nowhere that browses both,
+  // so it gets no link rather than one that drops half its titles.
+  const exploreHref = row.key === "myList" ? "/mylist" : null;
 
   return (
     <section className="group/row relative" aria-labelledby={`row-${row.key}`}>
-      <div className={cn("flex items-center justify-between gap-4 pb-1", GUTTER)}>
-        <div className="flex min-w-0 items-baseline gap-3">
-          <h2
-            id={`row-${row.key}`}
-            className="truncate text-[15px] font-bold tracking-tight text-nx-ink sm:text-lg md:text-xl"
-          >
-            {row.title}
-          </h2>
-
-          {exploreHref && (
-            <Link
-              href={exploreHref}
-              className="group/explore hidden shrink-0 -translate-x-1 items-center gap-1 text-xs font-semibold text-nx-cyan opacity-0 transition-all duration-300 hover:text-nx-ink focus:outline-none focus-visible:translate-x-0 focus-visible:opacity-100 group-hover/row:translate-x-0 group-hover/row:opacity-100 md:inline-flex"
+      <div className={cn("flex items-end justify-between gap-4 pb-1", GUTTER)}>
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-baseline gap-3">
+            <h2
+              id={`row-${row.key}`}
+              className="truncate text-[15px] font-bold tracking-tight text-nx-ink sm:text-lg md:text-xl"
             >
-              Explore all
-              <FaChevronRight className="text-[9px] transition-transform duration-300 group-hover/explore:translate-x-0.5" />
-            </Link>
+              {row.title}
+            </h2>
+
+            {exploreHref && (
+              <Link
+                href={exploreHref}
+                className="group/explore hidden shrink-0 -translate-x-1 items-center gap-1 text-xs font-semibold text-nx-cyan opacity-0 transition-all duration-300 hover:text-nx-ink focus:outline-none focus-visible:translate-x-0 focus-visible:opacity-100 group-hover/row:translate-x-0 group-hover/row:opacity-100 md:inline-flex"
+              >
+                Explore all
+                <FaChevronRight className="text-[9px] transition-transform duration-300 group-hover/explore:translate-x-0.5" />
+              </Link>
+            )}
+          </div>
+
+          {/* Why this row exists. The whole point of ranking per viewer is lost
+              if the page cannot say what it ranked on. */}
+          {row.kind === "media" && row.subtitle && (
+            <p className="mt-0.5 truncate text-[11px] text-nx-dim sm:text-xs">{row.subtitle}</p>
           )}
         </div>
 
         <ScrollDots
           count={pages.count}
           active={pages.active}
-          className="hidden opacity-0 transition-opacity duration-300 group-hover/row:opacity-100 md:flex"
+          className="hidden shrink-0 pb-1 opacity-0 transition-opacity duration-300 group-hover/row:opacity-100 md:flex"
         />
       </div>
 
@@ -152,28 +160,25 @@ export default function SeriesRow({
             GUTTER
           )}
         >
-          {row.items.map((item, index) => (
-            <div
-              key={row.kind === "continue"
-                ? (item as ContinueEntry).show._id
-                : (item as TVShow)._id}
-              className={cn("shrink-0 snap-start", WIDTHS[variant])}
-            >
-              {row.kind === "continue" ? (
-                <ContinueCard
-                  entry={item as ContinueEntry}
-                  onRemoved={onContinueRemoved}
-                />
-              ) : (
-                <SeriesCard
-                  show={item as TVShow}
-                  rank={row.ranked ? index + 1 : undefined}
-                  onListChange={onListChange}
-                  priority={index < 4}
-                />
-              )}
-            </div>
-          ))}
+          {row.kind === "continue"
+            ? (row.items as ContinueItem[]).map((entry) => (
+                <div
+                  key={entry.item.uid}
+                  className={cn("shrink-0 snap-start", WIDTHS.continue)}
+                >
+                  <ContinueTile entry={entry} onRemoved={onContinueRemoved} />
+                </div>
+              ))
+            : (row.items as MediaItem[]).map((item, index) => (
+                <div key={item.uid} className={cn("shrink-0 snap-start", WIDTHS[variant])}>
+                  <MediaCard
+                    item={item}
+                    rank={ranked ? index + 1 : undefined}
+                    onListChange={onListChange}
+                    priority={index < 4}
+                  />
+                </div>
+              ))}
         </div>
       </div>
     </section>

@@ -197,6 +197,7 @@ export default function ShowPageView() {
             alt={show.title}
             priority
             sizes="100vw"
+            fallbackLabel={false}
             className="absolute inset-0 h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-nx-bg via-nx-bg/55 to-nx-bg/20" />

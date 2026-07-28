@@ -23,6 +23,7 @@ const notificationsRoute = require("./routes/notifications");
 const tvRoute = require("./routes/tv");
 const tvAdminRoute = require("./routes/tvAdmin");
 const tvMeRoute = require("./routes/tvMe");
+const homeRoute = require("./routes/home");
 const playbackRoute = require("./routes/playback");
 const uploadsRoute = require("./routes/uploads");
 
@@ -121,6 +122,7 @@ app.use("/api/notifications", notificationsRoute);
 app.use("/api/tv/admin", tvAdminRoute);
 app.use("/api/tv/me", tvMeRoute);
 app.use("/api/tv", tvRoute);
+app.use("/api/home", homeRoute);
 app.use("/api/playback", playbackRoute);
 app.use("/api/uploads", uploadsRoute);
 app.use("/api/admin/alerts", alertsRoute);
@@ -141,6 +143,7 @@ app.use("/notifications", notificationsRoute);
 app.use("/tv/admin", tvAdminRoute);
 app.use("/tv/me", tvMeRoute);
 app.use("/tv", tvRoute);
+app.use("/home", homeRoute);
 app.use("/playback", playbackRoute);
 app.use("/uploads", uploadsRoute);
 

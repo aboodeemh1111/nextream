@@ -3,9 +3,10 @@
 import { useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
 import { TVShow } from "@/lib/tv";
+import { cn } from "@/lib/cn";
 import SeriesCard from "./SeriesCard";
 import { GridSkeleton } from "./Skeletons";
-import { Spinner } from "./Bits";
+import { GUTTER, Spinner } from "./Bits";
 
 interface SeriesGridProps {
   shows: TVShow[];
@@ -58,7 +59,7 @@ export default function SeriesGrid({
 
   if (loading) {
     return (
-      <div className="px-4 py-8 md:px-12">
+      <div className={cn("py-8", GUTTER)}>
         <GridSkeleton />
       </div>
     );
@@ -66,12 +67,12 @@ export default function SeriesGrid({
 
   if (!shows.length) {
     return (
-      <div className="flex flex-col items-center justify-center px-4 py-24 text-center">
-        <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-nx-surface text-nx-dim">
+      <div className="flex flex-col items-center justify-center px-4 py-28 text-center">
+        <span className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full bg-nx-surface text-lg text-nx-dim ring-1 ring-white/10">
           <FaSearch />
         </span>
-        <p className="text-lg font-semibold text-nx-ink">No series match those filters</p>
-        <p className="mt-1 max-w-sm text-sm text-nx-muted">
+        <p className="text-lg font-bold text-nx-ink">No series match those filters</p>
+        <p className="mt-1.5 max-w-sm text-sm text-nx-muted">
           {emptyHint || "Try a different genre, or clear the filters to see everything."}
         </p>
       </div>
@@ -79,8 +80,8 @@ export default function SeriesGrid({
   }
 
   return (
-    <div className="px-4 py-8 md:px-12">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+    <div className={cn("py-8", GUTTER)}>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
         {shows.map((show, index) => (
           <SeriesCard
             key={show._id}
@@ -94,13 +95,13 @@ export default function SeriesGrid({
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
 
       {loadingMore && (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-10">
           <Spinner className="h-6 w-6" />
         </div>
       )}
 
       {!hasMore && shows.length > 12 && (
-        <p className="py-10 text-center text-sm text-nx-dim">
+        <p className="py-12 text-center text-sm text-nx-dim">
           That&apos;s every series in the catalogue.
         </p>
       )}

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { GUTTER } from "./Bits";
 
 /**
  * Loading placeholders shaped like the content they stand in for.
@@ -8,35 +9,44 @@ import { cn } from "@/lib/cn";
  * layout, which keeps the scroll position stable when data lands.
  */
 
-export function BillboardSkeleton() {
+export function BillboardSkeleton({ header }: { header?: React.ReactNode }) {
   return (
-    <div className="relative h-[62vh] min-h-[420px] w-full overflow-hidden sm:h-[72vh]">
+    <div className="relative flex min-h-[600px] w-full flex-col overflow-hidden sm:min-h-[80vh]">
       <div className="nx-skeleton absolute inset-0" />
-      <div className="absolute inset-0 bg-gradient-to-t from-nx-bg via-nx-bg/40 to-transparent" />
-      <div className="relative flex h-full flex-col justify-end gap-4 px-4 pb-12 md:px-12 md:pb-20">
-        <div className="nx-skeleton h-10 w-2/3 max-w-md rounded" />
+      <div className="absolute inset-0 bg-gradient-to-t from-nx-bg via-nx-bg/45 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-black/75 to-transparent" />
+
+      {header}
+
+      <div
+        className={cn(
+          "relative mt-auto flex flex-col gap-4 pb-20 sm:pb-24 md:pb-36",
+          GUTTER
+        )}
+      >
+        <div className="nx-skeleton h-12 w-2/3 max-w-md rounded-lg" />
         <div className="nx-skeleton h-4 w-1/2 max-w-sm rounded" />
         <div className="nx-skeleton h-4 w-full max-w-lg rounded" />
-        <div className="flex gap-3">
-          <div className="nx-skeleton h-11 w-32 rounded-md" />
-          <div className="nx-skeleton h-11 w-32 rounded-md" />
+        <div className="mt-2 flex gap-3">
+          <div className="nx-skeleton h-12 w-36 rounded-lg" />
+          <div className="nx-skeleton h-12 w-32 rounded-lg" />
         </div>
       </div>
     </div>
   );
 }
 
-export function RowSkeleton({ tiles = 6 }: { tiles?: number }) {
+export function RowSkeleton({ tiles = 7 }: { tiles?: number }) {
   return (
-    <section className="mb-2">
-      <div className="mb-1 px-4 md:px-12">
-        <div className="nx-skeleton h-6 w-48 rounded" />
+    <section>
+      <div className={cn("pb-1", GUTTER)}>
+        <div className="nx-skeleton h-6 w-44 rounded" />
       </div>
-      <div className="flex gap-2 overflow-hidden px-4 py-6 md:gap-3 md:px-12">
+      <div className={cn("flex gap-2.5 overflow-hidden py-5 md:gap-3", GUTTER)}>
         {Array.from({ length: tiles }).map((_, index) => (
           <div
             key={index}
-            className="nx-skeleton aspect-[2/3] w-[41vw] shrink-0 rounded-lg sm:w-[28vw] md:w-[21vw] lg:w-[16vw] xl:w-[13vw]"
+            className="nx-skeleton aspect-[4/5] w-[40vw] shrink-0 rounded-xl sm:w-[27vw] md:w-[20vw] lg:w-[15.5vw] xl:w-[13vw] 2xl:w-[11.5vw]"
           />
         ))}
       </div>
@@ -44,11 +54,11 @@ export function RowSkeleton({ tiles = 6 }: { tiles?: number }) {
   );
 }
 
-export function GridSkeleton({ tiles = 18 }: { tiles?: number }) {
+export function GridSkeleton({ tiles = 21 }: { tiles?: number }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
       {Array.from({ length: tiles }).map((_, index) => (
-        <div key={index} className="nx-skeleton aspect-[2/3] w-full rounded-lg" />
+        <div key={index} className="nx-skeleton aspect-[4/5] w-full rounded-xl" />
       ))}
     </div>
   );

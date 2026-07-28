@@ -131,6 +131,7 @@ export default function HeroBackdrop({
           alt={title}
           priority
           sizes="100vw"
+          fallbackLabel={false}
           className="absolute inset-0 h-full w-full origin-center animate-nx-kenburns object-cover"
         />
       </div>

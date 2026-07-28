@@ -2,71 +2,63 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FaPlay, FaChevronDown } from "react-icons/fa";
+import { FaPlay, FaChevronDown, FaFilm, FaTv } from "react-icons/fa";
 import {
-  TVShow,
+  MediaItem,
   isPlayableVideo,
-  matchScore,
-  showPoster,
-  showMeta,
-} from "@/lib/tv";
+  maturityLabel,
+  mediaMeta,
+} from "@/lib/home";
 import { cn } from "@/lib/cn";
-import Art from "./Art";
-import { MatchScore, MetaLine, Pill, RankNumeral } from "./Bits";
-import MyListButton from "./MyListButton";
+import Art from "@/components/series/Art";
+import { MatchScore, MetaLine, Pill, RankNumeral } from "@/components/series/Bits";
+import ListButton from "./ListButton";
 
-interface SeriesCardProps {
-  show: TVShow;
+interface MediaCardProps {
+  item: MediaItem;
   /** 1-based position; renders the Top 10 numeral alongside the poster. */
   rank?: number;
-  onListChange?: (showId: string, inMyList: boolean) => void;
+  onListChange?: (uid: string, inMyList: boolean) => void;
   priority?: boolean;
   className?: string;
 }
 
-/** An episode added in the last two weeks earns the badge. */
-const NEW_EPISODE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
-
-function hasNewEpisode(show: TVShow) {
-  const stamp = show.latestEpisode?.createdAt || show.latestEpisode?.airDate;
-  if (!stamp) return false;
-  const date = new Date(stamp).getTime();
-  return Number.isFinite(date) && Date.now() - date < NEW_EPISODE_WINDOW_MS;
-}
-
 /**
- * Poster card for a show.
+ * One card for both collections.
+ *
+ * The home page previously had two card components that could never appear in
+ * the same row, which is exactly the constraint that kept shows off the landing
+ * page. This one takes the normalised `MediaItem`, so a row can hold a film and
+ * a series side by side and only the badge and the link differ.
  *
  * The detail overlay is drawn *inside* the card rather than as a floating panel
- * that grows past its bounds. A row is a native horizontal scroller, and CSS
+ * that grows past its bounds: a row is a native horizontal scroller, and CSS
  * forces overflow-y to `auto` once overflow-x is, so anything escaping the card
- * box gets clipped or adds a stray scrollbar. Containing it keeps the preview
- * working identically in a row, a grid and a "More Like This" strip.
+ * box gets clipped or adds a stray scrollbar.
  *
- * The whole tile is one link, laid over the artwork rather than wrapped around
- * it: My List is a real <button> and Play is a real <a>, and neither can be
- * nested inside an anchor without producing invalid markup that screen readers
- * announce as a single unlabelled control.
+ * The whole tile is one link laid over the artwork rather than wrapped around
+ * it — My List is a real <button> and Play is a real <a>, and neither can be
+ * nested inside an anchor without producing markup screen readers announce as
+ * a single unlabelled control.
  */
-export default function SeriesCard({
-  show,
+export default function MediaCard({
+  item,
   rank,
   onListChange,
   priority = false,
   className,
-}: SeriesCardProps) {
+}: MediaCardProps) {
   const [active, setActive] = useState(false);
   const [previewReady, setPreviewReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const canPreview = isPlayableVideo(show.trailerUrl);
-  const match = matchScore(show.rating);
-  const href = `/series/${show._id}`;
+  const canPreview = isPlayableVideo(item.trailer);
   const ranked = rank !== undefined;
+  const maturity = maturityLabel(item);
 
   // Hover previews are a desktop affordance; on touch the first tap should open
-  // the show, not arm a preview the viewer never asked for.
+  // the title, not arm a preview nobody asked for.
   const open = () => {
     if (window.matchMedia("(hover: none)").matches) return;
     timerRef.current = setTimeout(() => setActive(true), 400);
@@ -85,9 +77,12 @@ export default function SeriesCard({
     close();
   };
 
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    []
+  );
 
   useEffect(() => {
     const video = videoRef.current;
@@ -118,12 +113,9 @@ export default function SeriesCard({
       {ranked && (
         <>
           {/* Numeral sits behind the poster and is overlapped by it, the way
-              every Top 10 rail draws it. Absolute so it takes its height from
-              the poster rather than forcing one of its own, but bounded to the
-              bottom-left corner rather than the whole tile: sized against the
-              full tile it grew as tall as the poster and pinned itself to the
-              tile's left edge, which on a wide breakpoint left it stranded
-              between two cards instead of tucked under its own. */}
+              every Top 10 rail draws it. Bounded to the bottom-left corner
+              rather than the whole tile so a wide breakpoint cannot strand it
+              between two cards. */}
           <div
             className="pointer-events-none absolute bottom-0 left-0 h-[48%] w-[40%] select-none"
             aria-hidden
@@ -136,17 +128,14 @@ export default function SeriesCard({
 
       <div
         className={cn(
-          // 4:5 rather than a 2:3 poster: the movie side of the app is
-          // landscape throughout, and a full-height poster next to it made the
-          // series rows read as a different product.
           "relative aspect-[4/5] overflow-hidden rounded-xl bg-nx-surface shadow-lg shadow-black/40 ring-1 ring-white/10 transition-all duration-300 ease-out",
           active && "scale-[1.05] shadow-2xl shadow-black/70 ring-white/30",
           ranked ? "min-w-0 flex-1" : "w-full"
         )}
       >
         <Art
-          src={showPoster(show)}
-          alt={show.title}
+          src={item.poster}
+          alt={item.title}
           priority={priority}
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 24vw, 16vw"
           className="absolute inset-0 h-full w-full object-cover"
@@ -155,7 +144,7 @@ export default function SeriesCard({
         {canPreview && (
           <video
             ref={videoRef}
-            src={show.trailerUrl}
+            src={item.trailer}
             muted
             loop
             playsInline
@@ -170,7 +159,7 @@ export default function SeriesCard({
         )}
 
         {/* Resting scrim: enough separation for the badges without dimming the
-            art, and it deepens as the panel comes up. */}
+            art, and it clears as the panel comes up. */}
         <div
           className={cn(
             "pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25 transition-opacity duration-300",
@@ -179,18 +168,30 @@ export default function SeriesCard({
         />
 
         <Link
-          href={href}
-          aria-label={show.title}
+          href={item.href}
+          aria-label={item.title}
           className="absolute inset-0 z-10 rounded-xl focus:outline-none focus-visible:nx-focus"
         />
 
-        {/* Persistent flags — readable without hovering. */}
+        {/* Kind is the one flag that has to be readable without hovering: this
+            is the row where a film and a series sit next to each other, and
+            "Play" means something different for each. */}
         <div className="pointer-events-none absolute left-2 top-2 z-20 flex flex-col items-start gap-1">
-          {hasNewEpisode(show) && <Pill tone="accent">New Episode</Pill>}
-          {show.status === "ended" && !hasNewEpisode(show) && (
-            <Pill tone="glass">Complete</Pill>
-          )}
+          <Pill tone="glass" className="gap-1">
+            {item.kind === "show" ? (
+              <FaTv className="text-[8px]" aria-hidden />
+            ) : (
+              <FaFilm className="text-[8px]" aria-hidden />
+            )}
+            {item.badge}
+          </Pill>
         </div>
+
+        {maturity && (
+          <span className="pointer-events-none absolute right-2 top-2 z-20 rounded border border-white/25 bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-nx-ink backdrop-blur-sm">
+            {maturity}
+          </span>
+        )}
 
         <div
           className={cn(
@@ -199,34 +200,35 @@ export default function SeriesCard({
           )}
         >
           <h3 className="mb-1 line-clamp-2 text-sm font-bold leading-tight text-nx-ink">
-            {show.title}
+            {item.title}
           </h3>
 
           <MetaLine
-            parts={showMeta(show).slice(0, 2)}
+            parts={mediaMeta(item).slice(0, 2)}
             className="mb-2.5 text-[11px] text-nx-muted"
           />
-          {match && <MatchScore score={match} className="mb-2.5 block text-[11px]" />}
+          {item.match !== null && (
+            <MatchScore score={item.match} className="mb-2.5 block text-[11px]" />
+          )}
 
           <div className="pointer-events-auto flex items-center gap-2">
             <Link
-              href={href}
+              href={item.playHref || item.href}
               tabIndex={active ? 0 : -1}
-              aria-label={`Play ${show.title}`}
+              aria-label={`Play ${item.title}`}
               className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[11px] text-black transition hover:bg-white/85 focus:outline-none focus-visible:nx-focus"
             >
               <FaPlay className="ml-0.5" />
             </Link>
-            <MyListButton
-              showId={show._id}
-              inMyList={show.inMyList}
+            <ListButton
+              item={item}
               onChange={onListChange}
               tabIndex={active ? 0 : -1}
             />
             <Link
-              href={href}
+              href={item.href}
               tabIndex={active ? 0 : -1}
-              aria-label={`More about ${show.title}`}
+              aria-label={`More about ${item.title}`}
               className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-black/50 text-[11px] text-white transition hover:border-white focus:outline-none focus-visible:nx-focus"
             >
               <FaChevronDown />

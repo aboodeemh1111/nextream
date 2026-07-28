@@ -3,16 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaCheck, FaPlus } from "react-icons/fa";
-import { tv } from "@/lib/tv";
+import { MediaItem, setInMyList } from "@/lib/home";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/cn";
-import { Spinner } from "./Bits";
+import { Spinner } from "@/components/series/Bits";
 
-interface MyListButtonProps {
-  showId: string;
-  inMyList?: boolean;
-  /** Lets a parent row keep its copy of the show in sync with the toggle. */
-  onChange?: (showId: string, inMyList: boolean) => void;
+interface ListButtonProps {
+  item: MediaItem;
+  /** Lets a parent row keep every copy of this title in sync with the toggle. */
+  onChange?: (uid: string, inMyList: boolean) => void;
   variant?: "icon" | "full";
   /** Cards pass -1 while the hover panel is hidden, so Tab skips a control
    *  nobody can see. */
@@ -21,27 +20,27 @@ interface MyListButtonProps {
 }
 
 /**
- * My List toggle.
+ * My List toggle for either collection.
  *
- * Optimistic: the icon flips immediately and rolls back if the request fails,
- * because on a card grid the round trip is long enough that a "pending" state
- * reads as an unresponsive button.
+ * Movies and shows are stored in different fields behind different endpoints;
+ * `setInMyList` hides that, so this component only has to care about the
+ * optimistic flip. Optimistic because the round trip is long enough on a card
+ * grid that a pending state reads as an unresponsive button.
  */
-export default function MyListButton({
-  showId,
-  inMyList = false,
+export default function ListButton({
+  item,
   onChange,
   variant = "icon",
   tabIndex,
   className,
-}: MyListButtonProps) {
-  const [active, setActive] = useState(inMyList);
+}: ListButtonProps) {
+  const [active, setActive] = useState(item.inMyList);
   const [busy, setBusy] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
 
   const toggle = async (event: React.MouseEvent) => {
-    // These buttons live inside a card that is itself a link.
+    // These buttons sit inside a card that is itself a link.
     event.preventDefault();
     event.stopPropagation();
 
@@ -55,9 +54,8 @@ export default function MyListButton({
     setActive(next);
     setBusy(true);
     try {
-      if (next) await tv.addToMyList(showId);
-      else await tv.removeFromMyList(showId);
-      onChange?.(showId, next);
+      await setInMyList(item, next);
+      onChange?.(item.uid, next);
     } catch {
       setActive(!next);
     } finally {
@@ -75,7 +73,7 @@ export default function MyListButton({
         aria-pressed={active}
         tabIndex={tabIndex}
         className={cn(
-          "inline-flex items-center gap-2 rounded-md border border-nx-line bg-white/10 px-5 py-2.5 text-sm font-semibold text-nx-ink backdrop-blur transition hover:bg-white/20",
+          "inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-nx-ink backdrop-blur transition hover:bg-white/20 focus:outline-none focus-visible:nx-focus",
           className
         )}
       >
