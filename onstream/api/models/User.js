@@ -8,6 +8,9 @@ const UserSchema = new mongoose.Schema(
     profilePic: { type: String, default: "" },
     isAdmin: { type: Boolean, default: false },
     myList: [{ type: mongoose.Schema.Types.ObjectId, ref: "Movie" }],
+    // myList refs Movie, so TV shows (a separate collection) need their own
+    // list rather than a mixed-ref array that would break every populate above.
+    myShows: [{ type: mongoose.Schema.Types.ObjectId, ref: "TVShow" }],
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Movie" }],
     watchHistory: [
       { 

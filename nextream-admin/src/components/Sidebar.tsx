@@ -11,7 +11,7 @@ import {
   FaChartLine,
   FaCog,
   FaSignOutAlt,
-  FaPlus,
+  FaTv,
   FaBars,
   FaTimes,
   FaChevronRight,
@@ -69,13 +69,8 @@ const Sidebar = () => {
     },
     {
       name: "TV Shows",
-      icon: <span className="text-lg">📺</span>,
+      icon: <FaTv className="text-lg" />,
       path: "/tv",
-    },
-    {
-      name: "Test Upload",
-      icon: <FaPlus className="text-lg" />,
-      path: "/test-upload",
     },
     {
       name: "Settings",

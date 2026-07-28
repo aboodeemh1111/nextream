@@ -20,6 +20,10 @@ const TVShowSchema = new Schema(
     seasonsCount: { type: Number, default: 0 },
     episodesCount: { type: Number, default: 0 },
     lastAirDate: Date,
+    // Incremented the first time a viewer starts an episode. Drives the
+    // trending row and the Top 10; without it "popular" could only ever mean
+    // "recently created", which never changes as the catalogue ages.
+    views: { type: Number, default: 0, index: true },
   },
   { timestamps: true }
 );

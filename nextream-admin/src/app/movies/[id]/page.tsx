@@ -8,11 +8,11 @@ import axios from "axios";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import AdminLayout from "@/components/AdminLayout";
+import VideoThumbnail from "@/components/VideoThumbnail";
 import {
   FaEdit,
   FaTrash,
   FaArrowLeft,
-  FaPlay,
   FaFilm,
   FaCalendar,
   FaClock,
@@ -205,45 +205,31 @@ export default function MovieDetailsPage() {
                   {movie.trailer && (
                     <div>
                       <h3 className="text-lg font-medium mb-2">Trailer</h3>
-                      <div className="aspect-video bg-background rounded-md overflow-hidden relative">
-                        {movie.trailer.includes("youtube") ? (
+                      {movie.trailer.includes("youtube") ? (
+                        <div className="aspect-video bg-background rounded-md overflow-hidden relative">
                           <iframe
                             src={movie.trailer}
                             title="Trailer"
                             className="w-full h-full"
                             allowFullScreen
                           ></iframe>
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <a
-                              href={movie.trailer}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center text-blue-600 hover:underline"
-                            >
-                              <FaPlay className="mr-2" /> Play Trailer
-                            </a>
-                          </div>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <VideoThumbnail
+                          src={movie.trailer}
+                          title={`${movie.title} trailer`}
+                        />
+                      )}
                     </div>
                   )}
 
                   {movie.video && (
                     <div>
                       <h3 className="text-lg font-medium mb-2">Video</h3>
-                      <div className="aspect-video bg-background rounded-md overflow-hidden relative">
-                        <div className="flex items-center justify-center h-full">
-                          <a
-                            href={movie.video}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center text-blue-600 hover:underline"
-                          >
-                            <FaPlay className="mr-2" /> Play Video
-                          </a>
-                        </div>
-                      </div>
+                      <VideoThumbnail
+                        src={movie.video}
+                        title={`${movie.title} video`}
+                      />
                     </div>
                   )}
                 </div>

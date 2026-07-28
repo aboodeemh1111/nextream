@@ -13,6 +13,7 @@
     "storage:verify-cors": "node scripts/verifyCors.js",
     "storage:smoke": "node scripts/smokeTest.js",
     "reap-orphans": "node scripts/reapOrphans.js",
+    "tv:recount": "node scripts/recountTv.js",
     "migrate-storage": "node scripts/migrateFirebaseToBucket.js"
   },
   "keywords": [],

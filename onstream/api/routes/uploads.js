@@ -37,6 +37,9 @@ const PART_TTL = 3600;
 const MIN_PART_SIZE = 5 * 1024 * 1024; // S3 floor for every part but the last
 const DEFAULT_PART_SIZE = 16 * 1024 * 1024;
 const MAX_PARTS = 10000;
+// At or below this a single presigned PUT is enough; larger files go multipart
+// so they can be paused, retried per part and resumed after a reload.
+const SIMPLE_MAX_BYTES = 16 * 1024 * 1024;
 
 function typeAllowed(prefix, contentType) {
   const allowed = POLICY[prefix].types;
@@ -113,6 +116,33 @@ function serverError(res, code, err) {
   console.error(`${code}:`, err);
   return res.status(500).json({ error: code, message: err.message });
 }
+
+// --- Policy -----------------------------------------------------------------
+//
+// The admin app used to hardcode a single 2 GB client-side cap for every field,
+// while the real limits are per prefix — so a 30 MB poster passed the browser
+// check and then failed at /presign with a server error. Serving the policy
+// means the two can never disagree.
+
+router.get("/policy", verify, (req, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json("You are not allowed!");
+  }
+
+  res.status(200).json({
+    prefixes: Object.keys(POLICY).reduce((out, prefix) => {
+      out[prefix] = {
+        accept: POLICY[prefix].types,
+        maxBytes: maxBytesFor(prefix),
+      };
+      return out;
+    }, {}),
+    simpleMaxBytes: SIMPLE_MAX_BYTES,
+    defaultPartSize: DEFAULT_PART_SIZE,
+    minPartSize: MIN_PART_SIZE,
+    maxParts: MAX_PARTS,
+  });
+});
 
 // --- Simple upload: images, subtitles, small video --------------------------
 
@@ -252,6 +282,38 @@ router.post("/multipart/complete", verify, async (req, res) => {
     res.status(200).json({ key, size: head.size });
   } catch (err) {
     return serverError(res, "MULTIPART_COMPLETE_FAILED", err);
+  }
+});
+
+/**
+ * Which parts the bucket already holds for an in-progress upload.
+ *
+ * The client persists its own part list, but only the bucket is authoritative:
+ * a part can be in flight when the tab closes, and a stale uploadId must be
+ * detectable rather than retried forever. `null` parts means the upload no
+ * longer exists and the transfer has to start over.
+ */
+router.post("/multipart/status", verify, async (req, res) => {
+  if (!req.user.isAdmin) {
+    return res.status(403).json("You are not allowed!");
+  }
+
+  const { key, uploadId } = req.body || {};
+  if (!isStorageKey(key)) {
+    return badRequest(res, new Error("A valid storage key is required"));
+  }
+  if (typeof uploadId !== "string" || !uploadId) {
+    return badRequest(res, new Error("uploadId is required"));
+  }
+
+  try {
+    const parts = await storage.listParts(key, uploadId);
+    if (parts === null) {
+      return res.status(200).json({ key, uploadId, active: false, parts: [] });
+    }
+    res.status(200).json({ key, uploadId, active: true, parts });
+  } catch (err) {
+    return serverError(res, "MULTIPART_STATUS_FAILED", err);
   }
 });
 

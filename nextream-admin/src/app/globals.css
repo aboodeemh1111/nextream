@@ -2,36 +2,108 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ---------------------------------------------------------------------------
+   Design tokens
+   ---------------------------------------------------------------------------
+   Every colour the UI uses is declared here twice, once per theme, and nowhere
+   else. The TV pages used to hardcode bg-black/30, text-red-400 and
+   text-blue-400 straight into the markup, which is why light mode rendered
+   near-black panels on a near-white page.
+
+   Surfaces are layered rather than ad-hoc: `background` is the page,
+   `card` sits on it, `surface-2` sits on the card (rows, wells, hover states).
+   Status colours come in a solid pair (for text/borders) and a `-soft` pair
+   (for tinted backgrounds) so a badge never has to invent an opacity.
+--------------------------------------------------------------------------- */
+
 :root {
-  --background: #f4f5f7;
-  --foreground: #111827;
+  --background: #f6f7f9;
+  --foreground: #0d1117;
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #0d1117;
+  --surface-2: #f1f3f6;
   --muted: #eef0f4;
-  --muted-foreground: #6b7280;
-  --border: #e5e7eb;
-  --accent: #dc2626;
-  --accent-foreground: #ffffff;
+  --muted-foreground: #5b6472;
+  --subtle-foreground: #838c9a;
+  --border: #e3e6eb;
+  --border-strong: #cfd4dc;
+  --input: #dfe3e9;
+
+  --primary: #dc2626;
+  --primary-hover: #b91c1c;
+  --primary-foreground: #ffffff;
+  --primary-soft: #fee2e2;
+  --primary-soft-foreground: #991b1b;
+
+  --accent: var(--primary);
+  --accent-foreground: var(--primary-foreground);
   --ring: #ef4444;
-  --input: #e5e7eb;
+
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --success-soft-foreground: #14532d;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --warning-soft-foreground: #78350f;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --danger-soft-foreground: #991b1b;
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+  --info-soft-foreground: #1e3a8a;
+
   --popover: #ffffff;
-  --popover-foreground: #111827;
+  --popover-foreground: #0d1117;
+  --overlay: rgb(9 11 16 / 0.5);
+
+  --elevation-card: 0 1px 2px rgb(9 11 16 / 0.06), 0 1px 3px rgb(9 11 16 / 0.04);
+  --elevation-raised: 0 4px 12px rgb(9 11 16 / 0.08), 0 2px 4px rgb(9 11 16 / 0.04);
+  --elevation-overlay: 0 24px 48px -12px rgb(9 11 16 / 0.25);
 }
 
 .dark {
-  --background: #0b0b0f;
-  --foreground: #e6e6e6;
-  --card: #111317;
-  --card-foreground: #e6e6e6;
-  --muted: #1a1d24;
-  --muted-foreground: #999fb3;
-  --border: #1f232b;
-  --accent: #dc2626;
-  --accent-foreground: #ffffff;
-  --ring: #ef4444;
-  --input: #1f232b;
-  --popover: #0f1115;
-  --popover-foreground: #e6e6e6;
+  --background: #08090c;
+  --foreground: #e8eaed;
+  --card: #101318;
+  --card-foreground: #e8eaed;
+  --surface-2: #171b22;
+  --muted: #1a1f27;
+  --muted-foreground: #9aa3b2;
+  --subtle-foreground: #6b7484;
+  --border: #212630;
+  --border-strong: #2f3742;
+  --input: #262c36;
+
+  --primary: #e11d29;
+  --primary-hover: #f43f4b;
+  --primary-foreground: #ffffff;
+  --primary-soft: #2a1114;
+  --primary-soft-foreground: #fca5a5;
+
+  --accent: var(--primary);
+  --accent-foreground: var(--primary-foreground);
+  --ring: #f43f4b;
+
+  --success: #4ade80;
+  --success-soft: #0d2418;
+  --success-soft-foreground: #86efac;
+  --warning: #fbbf24;
+  --warning-soft: #291d05;
+  --warning-soft-foreground: #fcd34d;
+  --danger: #f87171;
+  --danger-soft: #2a1114;
+  --danger-soft-foreground: #fca5a5;
+  --info: #60a5fa;
+  --info-soft: #0c1c33;
+  --info-soft-foreground: #93c5fd;
+
+  --popover: #12161c;
+  --popover-foreground: #e8eaed;
+  --overlay: rgb(0 0 0 / 0.7);
+
+  --elevation-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --elevation-raised: 0 4px 16px rgb(0 0 0 / 0.5);
+  --elevation-overlay: 0 24px 56px -12px rgb(0 0 0 / 0.7);
 }
 
 @theme inline {
@@ -39,15 +111,50 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-surface-2: var(--surface-2);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-ring: var(--ring);
-  --color-input: var(--input);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-soft-foreground: var(--success-soft-foreground);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-soft-foreground: var(--warning-soft-foreground);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-soft-foreground: var(--danger-soft-foreground);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-soft-foreground: var(--info-soft-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-overlay: var(--overlay);
+
+  /* Named apart from the utility namespace so the theme entry below never
+     resolves to itself. */
+  --shadow-card: var(--elevation-card);
+  --shadow-raised: var(--elevation-raised);
+  --shadow-overlay: var(--elevation-overlay);
+
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -55,9 +162,79 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
 
+/* One focus treatment for the whole app. Keyboard users get a visible ring;
+   pointer users do not get a ring on every click. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+}
+
+@layer utilities {
+  /* Wide content (tables, timelines) scrolls inside its own container instead
+     of pushing the page sideways. */
+  .scroll-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .scroll-x::-webkit-scrollbar,
+  .scroll-y::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .scroll-x::-webkit-scrollbar-thumb,
+  .scroll-y::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 9999px;
+  }
+
+  .animate-in {
+    animation: fade-in 150ms ease-out;
+  }
+
+  .animate-in-up {
+    animation: fade-in-up 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .animate-in-up {
+    animation: none;
+  }
+}
+
+/* Legacy helpers still referenced by older pages. */
 .card {
   background-color: var(--card);
   border-color: var(--border);

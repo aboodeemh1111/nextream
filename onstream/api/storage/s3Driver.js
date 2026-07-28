@@ -9,6 +9,7 @@ const {
   UploadPartCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  ListPartsCommand,
   ListObjectsV2Command,
   PutBucketCorsCommand,
 } = require("@aws-sdk/client-s3");
@@ -122,6 +123,47 @@ async function completeMultipart(key, uploadId, parts) {
       MultipartUpload: { Parts: ordered },
     })
   );
+}
+
+/**
+ * Parts the bucket has actually stored for an in-progress upload.
+ *
+ * This is what makes an upload resumable after a browser reload: the client
+ * remembers which parts it sent, but only the bucket knows which ones arrived.
+ * Returns null when the upload id is unknown or already aborted/completed, so
+ * callers can tell "nothing uploaded yet" from "there is nothing to resume".
+ */
+async function listParts(key, uploadId) {
+  const parts = [];
+  let marker;
+
+  try {
+    do {
+      const out = await client().send(
+        new ListPartsCommand({
+          Bucket: bucket(),
+          Key: key,
+          UploadId: uploadId,
+          PartNumberMarker: marker,
+        })
+      );
+      for (const part of out.Parts || []) {
+        parts.push({
+          PartNumber: part.PartNumber,
+          ETag: part.ETag,
+          Size: part.Size,
+        });
+      }
+      marker = out.IsTruncated ? out.NextPartNumberMarker : undefined;
+    } while (marker);
+  } catch (err) {
+    if (err?.name === "NoSuchUpload" || err?.$metadata?.httpStatusCode === 404) {
+      return null;
+    }
+    throw err;
+  }
+
+  return parts.sort((a, b) => a.PartNumber - b.PartNumber);
 }
 
 async function abortMultipart(key, uploadId) {
@@ -313,6 +355,7 @@ module.exports = {
   presignPart,
   completeMultipart,
   abortMultipart,
+  listParts,
   putObject,
   uploadStream,
   getObjectStream,
