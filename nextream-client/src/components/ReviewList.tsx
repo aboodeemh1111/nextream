@@ -154,164 +154,185 @@ const ReviewList: React.FC<ReviewListProps> = ({ movieId, className = '' }) => {
   );
 
   return (
-    <div className={`space-y-8 ${className}`}>
+    <div className={`space-y-10 ${className}`}>
       <div>
-        <h3 className="text-xl font-semibold text-white mb-4">Ratings & Reviews</h3>
-        
         {/* Show user's review at the top if it exists */}
         {userReview && editingReviewId !== userReview._id && (
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-white mb-2">Your Rating</h4>
-            <div className="bg-gray-800 rounded-lg p-4">
-              <div className="flex justify-between items-start">
+          <div className="mb-8">
+            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-nx-dim">
+              Your rating
+            </h4>
+            <div className="rounded-xl border border-nx-line bg-nx-surface p-5">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-center">
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span key={star} className="text-yellow-400 text-xl">
-                          {star <= userReview.rating ? '★' : '☆'}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="ml-2 text-white font-semibold">{userReview.rating}/5</span>
+                  <div className="flex items-center gap-2">
+                    <RatingStars rating={userReview.rating} size={18} />
+                    <span className="text-sm font-semibold text-nx-ink">
+                      {userReview.rating}/5
+                    </span>
                   </div>
-                  <div className="flex items-center text-gray-400 text-sm mt-1">
-                    <FaClock className="mr-1" />
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-nx-dim">
+                    <FaClock className="text-[10px]" />
                     <span>
                       {formatDistanceToNow(new Date(userReview.createdAt), { addSuffix: true })}
                     </span>
                   </div>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex gap-1">
                   <button
                     onClick={() => setEditingReviewId(userReview._id)}
-                    className="text-blue-400 hover:text-blue-300"
+                    className="rounded-md p-2 text-nx-muted transition hover:bg-white/10 hover:text-nx-ink"
                     title="Edit review"
                   >
                     <FaEdit />
                   </button>
                   <button
                     onClick={() => handleDeleteReview(userReview._id)}
-                    className="text-red-400 hover:text-red-300"
+                    className="rounded-md p-2 text-nx-muted transition hover:bg-nx-accent/15 hover:text-nx-accent-soft"
                     title="Delete review"
                   >
                     <FaTrash />
                   </button>
                 </div>
               </div>
-              {userReview.review && <p className="mt-2 text-gray-300">{userReview.review}</p>}
+              {userReview.review && (
+                <p className="mt-3 text-sm leading-relaxed text-nx-muted">{userReview.review}</p>
+              )}
             </div>
           </div>
         )}
-        
+
         {/* Edit form for user's review */}
         {userReview && editingReviewId === userReview._id && (
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-white mb-2">Edit Your Rating</h4>
-            <ReviewForm 
-              movieId={movieId} 
-              existingReview={userReview} 
-              onReviewSubmitted={handleReviewSubmitted} 
+          <div className="mb-8">
+            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-nx-dim">
+              Edit your rating
+            </h4>
+            <ReviewForm
+              movieId={movieId}
+              existingReview={userReview}
+              onReviewSubmitted={handleReviewSubmitted}
             />
           </div>
         )}
-        
+
         {/* Show review form only if user hasn't already reviewed */}
         {!userReview && (
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-white mb-2">Rate this title</h4>
-            <p className="text-gray-400 mb-4">
-              Share your rating to help others discover great content
+          <div className="mb-8">
+            <h4 className="text-lg font-semibold text-nx-ink">Rate this title</h4>
+            <p className="mb-4 mt-1 text-sm text-nx-muted">
+              Share your rating to help others discover great content.
             </p>
             <ReviewForm movieId={movieId} onReviewSubmitted={handleReviewSubmitted} />
           </div>
         )}
-        
+
         {/* Show other reviews */}
         {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="space-y-3">
+            {[0, 1, 2].map((row) => (
+              <div key={row} className="nx-skeleton h-28 w-full rounded-xl" />
+            ))}
           </div>
         ) : error ? (
-          <div className="bg-red-900 text-white p-4 rounded">{error}</div>
-        ) : otherReviews.length === 0 ? (
-          <div className="text-gray-400 text-center py-8">
-            No other reviews yet.
+          <div className="rounded-lg border border-nx-accent/40 bg-nx-accent/10 p-4 text-sm text-nx-ink">
+            {error}
           </div>
+        ) : otherReviews.length === 0 ? (
+          <p className="py-10 text-center text-sm text-nx-muted">No other reviews yet.</p>
         ) : (
           <div>
-            <h4 className="text-lg font-medium text-white mb-4">Other Ratings</h4>
-            <div className="space-y-4">
-              {otherReviews.map((review) => (
-                <div key={review._id} className="bg-gray-800 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold text-white">{review.username}</h4>
-                      <div className="flex items-center">
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <span key={star} className="text-yellow-400 text-xl">
-                              {star <= review.rating ? '★' : '☆'}
-                            </span>
-                          ))}
-                        </div>
-                        <span className="ml-2 text-white font-semibold">{review.rating}/5</span>
-                      </div>
-                      <div className="flex items-center text-gray-400 text-sm">
-                        <FaClock className="mr-1" />
-                        <span>
-                          {formatDistanceToNow(new Date(review.createdAt), { addSuffix: true })}
+            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-nx-dim">
+              {otherReviews.length} other {otherReviews.length === 1 ? 'rating' : 'ratings'}
+            </h4>
+            <div className="space-y-3">
+              {otherReviews.map((review) => {
+                const liked = Boolean(user && review.likedBy.includes(user.id));
+
+                return (
+                  <div
+                    key={review._id}
+                    className="rounded-xl border border-nx-line bg-nx-surface p-5 transition duration-300 hover:border-white/20 hover:bg-nx-elevated"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 gap-3">
+                        <span
+                          aria-hidden
+                          className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-nx-elevated text-sm font-bold uppercase text-nx-muted"
+                        >
+                          {review.username?.charAt(0) || '?'}
                         </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-nx-ink">{review.username}</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <RatingStars rating={review.rating} size={14} />
+                            <span className="text-xs font-semibold text-nx-muted">
+                              {review.rating}/5
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-1.5 text-xs text-nx-dim">
+                            <FaClock className="text-[10px]" />
+                            <span>
+                              {formatDistanceToNow(new Date(review.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    {user?.isAdmin && (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setEditingReviewId(review._id)}
-                          className="text-blue-400 hover:text-blue-300"
-                          title="Edit review (admin)"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteReview(review._id)}
-                          className="text-red-400 hover:text-red-300"
-                          title="Delete review (admin)"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {review.review && <p className="mt-2 text-gray-300">{review.review}</p>}
-                  <div className="mt-3 flex items-center">
-                    <button
-                      onClick={() => handleLikeReview(review._id)}
-                      className={`flex items-center space-x-1 ${
-                        user && review.likedBy.includes(user.id)
-                          ? 'text-blue-500'
-                          : 'text-gray-400 hover:text-blue-400'
-                      }`}
-                      disabled={!user || likingReview === review._id}
-                      title={user ? 'Like this review' : 'Sign in to like reviews'}
-                    >
-                      {likingReview === review._id ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
-                      ) : (
-                        <FaThumbsUp />
+                      {user?.isAdmin && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setEditingReviewId(review._id)}
+                            className="rounded-md p-2 text-nx-muted transition hover:bg-white/10 hover:text-nx-ink"
+                            title="Edit review (admin)"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(review._id)}
+                            className="rounded-md p-2 text-nx-muted transition hover:bg-nx-accent/15 hover:text-nx-accent-soft"
+                            title="Delete review (admin)"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
                       )}
-                      <span>{review.likes}</span>
-                    </button>
+                    </div>
+
+                    {review.review && (
+                      <p className="mt-3 text-sm leading-relaxed text-nx-muted">{review.review}</p>
+                    )}
+
+                    <div className="mt-4 flex items-center">
+                      <button
+                        onClick={() => handleLikeReview(review._id)}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          liked
+                            ? 'border-nx-cyan/50 bg-nx-cyan/10 text-nx-cyan'
+                            : 'border-nx-line text-nx-muted hover:border-white/25 hover:text-nx-ink'
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                        disabled={!user || likingReview === review._id}
+                        title={user ? 'Like this review' : 'Sign in to like reviews'}
+                      >
+                        {likingReview === review._id ? (
+                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <FaThumbsUp className="text-[11px]" />
+                        )}
+                        <span>{review.likes}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </div>
-      
+
       {/* Comments Section */}
-      <div className="mt-8 border-t border-gray-700 pt-8">
+      <div className="border-t border-nx-line pt-8">
         <CommentList movieId={movieId} />
       </div>
     </div>

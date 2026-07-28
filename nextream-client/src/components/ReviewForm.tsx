@@ -106,43 +106,48 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   };
 
   return (
-    <div className={`bg-gray-800 rounded-lg p-4 ${className}`}>
+    <div className={`rounded-xl border border-nx-line bg-nx-surface p-5 ${className}`}>
       {error && (
-        <div className="bg-red-900 text-white p-2 rounded mb-4 flex justify-between items-center">
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-nx-accent/40 bg-nx-accent/10 p-3 text-sm text-nx-ink">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-white">
+          <button onClick={() => setError(null)} className="text-nx-muted transition hover:text-nx-ink" aria-label="Dismiss">
             <FaTimes />
           </button>
         </div>
       )}
       {success && (
-        <div className="bg-green-900 text-white p-2 rounded mb-4 flex justify-between items-center">
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-nx-ink">
           <span>{success}</span>
-          <button onClick={() => setSuccess(null)} className="text-white">
+          <button onClick={() => setSuccess(null)} className="text-nx-muted transition hover:text-nx-ink" aria-label="Dismiss">
             <FaTimes />
           </button>
         </div>
       )}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-white mb-2">Your Rating</label>
-          <div className="flex items-center">
-            <RatingStars 
-              rating={rating} 
+          <label className="mb-2 block text-sm font-semibold text-nx-ink">Your rating</label>
+          <div className="flex flex-wrap items-center gap-3">
+            <RatingStars
+              rating={rating}
               interactive={true}
-              size={32} 
-              onRatingChange={handleRatingChange} 
+              size={32}
+              onRatingChange={handleRatingChange}
+              className="transition-transform duration-200 hover:scale-105"
             />
-            <span className="ml-2 text-white">{rating > 0 ? `${rating}/5` : 'Select a rating'}</span>
+            <span className="text-sm text-nx-muted">
+              {rating > 0 ? `${rating}/5` : 'Select a rating'}
+            </span>
           </div>
-          <p className="text-gray-400 text-sm mt-2">
+          <p className="mt-2 text-xs text-nx-dim">
             You can only rate a movie once, but you can edit your rating anytime.
           </p>
         </div>
         <div>
-          <label className="block text-white mb-2">Your Review (Optional)</label>
+          <label className="mb-2 block text-sm font-semibold text-nx-ink">
+            Your review <span className="font-normal text-nx-dim">(optional)</span>
+          </label>
           <textarea
-            className="w-full p-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-nx-line bg-nx-elevated p-3 text-sm text-nx-ink placeholder:text-nx-dim focus:outline-none focus-visible:nx-focus"
             rows={3}
             placeholder="Share your thoughts about this movie..."
             value={reviewText}
@@ -153,11 +158,11 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         <div className="flex justify-end">
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center space-x-2 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-md bg-nx-ink px-5 py-2.5 text-sm font-bold text-nx-black transition duration-200 hover:scale-[1.03] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:nx-focus"
             disabled={isSubmitting}
           >
-            <span>{isSubmitting ? 'Submitting...' : existingReview ? 'Update Rating' : 'Submit Rating'}</span>
-            <FaPaperPlane className="ml-2" />
+            <span>{isSubmitting ? 'Submitting...' : existingReview ? 'Update rating' : 'Submit rating'}</span>
+            <FaPaperPlane className="text-xs" />
           </button>
         </div>
       </form>

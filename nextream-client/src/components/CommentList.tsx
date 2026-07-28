@@ -98,87 +98,115 @@ const CommentList: React.FC<CommentListProps> = ({ movieId, className = '' }) =>
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      <h3 className="text-xl font-semibold text-white">Comments</h3>
-      
+    <div className={`space-y-5 ${className}`}>
+      <h3 className="text-lg font-semibold text-nx-ink">
+        Comments
+        {comments.length > 0 && (
+          <span className="ml-2 text-sm font-normal text-nx-dim">{comments.length}</span>
+        )}
+      </h3>
+
       <CommentForm movieId={movieId} onCommentSubmitted={handleCommentSubmitted} />
-      
+
       {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="space-y-3">
+          {[0, 1].map((row) => (
+            <div key={row} className="nx-skeleton h-24 w-full rounded-xl" />
+          ))}
         </div>
       ) : error ? (
-        <div className="bg-red-900 text-white p-4 rounded">{error}</div>
-      ) : comments.length === 0 ? (
-        <div className="text-gray-400 text-center py-8">
-          No comments yet. Be the first to comment!
+        <div className="rounded-lg border border-nx-accent/40 bg-nx-accent/10 p-4 text-sm text-nx-ink">
+          {error}
         </div>
+      ) : comments.length === 0 ? (
+        <p className="py-10 text-center text-sm text-nx-muted">
+          No comments yet. Be the first to comment!
+        </p>
       ) : (
-        <div className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment._id} className="bg-gray-800 rounded-lg p-4">
-              {editingCommentId === comment._id ? (
-                <CommentForm
-                  movieId={movieId}
-                  existingComment={comment}
-                  onCommentSubmitted={(updatedComment) => {
-                    setComments((prevComments) =>
-                      prevComments.map((c) => (c._id === updatedComment._id ? updatedComment : c))
-                    );
-                    setEditingCommentId(null);
-                  }}
-                />
-              ) : (
-                <>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold text-white">{comment.username}</h4>
-                      <div className="flex items-center text-gray-400 text-sm">
-                        <FaClock className="mr-1" />
-                        <span>
-                          {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+        <div className="space-y-3">
+          {comments.map((comment) => {
+            const liked = Boolean(user && comment.likedBy.includes(user.id));
+
+            return (
+              <div
+                key={comment._id}
+                className="rounded-xl border border-nx-line bg-nx-surface p-5 transition duration-300 hover:border-white/20 hover:bg-nx-elevated"
+              >
+                {editingCommentId === comment._id ? (
+                  <CommentForm
+                    movieId={movieId}
+                    existingComment={comment}
+                    onCommentSubmitted={(updatedComment) => {
+                      setComments((prevComments) =>
+                        prevComments.map((c) => (c._id === updatedComment._id ? updatedComment : c))
+                      );
+                      setEditingCommentId(null);
+                    }}
+                  />
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 gap-3">
+                        <span
+                          aria-hidden
+                          className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-nx-elevated text-sm font-bold uppercase text-nx-muted"
+                        >
+                          {comment.username?.charAt(0) || '?'}
                         </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-nx-ink">{comment.username}</p>
+                          <div className="mt-1 flex items-center gap-1.5 text-xs text-nx-dim">
+                            <FaClock className="text-[10px]" />
+                            <span>
+                              {formatDistanceToNow(new Date(comment.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          </div>
+                        </div>
                       </div>
+                      {user && user.id === comment.userId && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setEditingCommentId(comment._id)}
+                            className="rounded-md p-2 text-nx-muted transition hover:bg-white/10 hover:text-nx-ink"
+                            title="Edit comment"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComment(comment._id)}
+                            className="rounded-md p-2 text-nx-muted transition hover:bg-nx-accent/15 hover:text-nx-accent-soft"
+                            title="Delete comment"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {user && user.id === comment.userId && (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setEditingCommentId(comment._id)}
-                          className="text-blue-400 hover:text-blue-300"
-                          title="Edit comment"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteComment(comment._id)}
-                          className="text-red-400 hover:text-red-300"
-                          title="Delete comment"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <p className="mt-2 text-gray-300">{comment.comment}</p>
-                  <div className="mt-3 flex items-center">
-                    <button
-                      onClick={() => handleLikeComment(comment._id)}
-                      className={`flex items-center space-x-1 ${
-                        user && comment.likedBy.includes(user.id)
-                          ? 'text-blue-500'
-                          : 'text-gray-400 hover:text-blue-400'
-                      }`}
-                      disabled={!user}
-                      title={user ? 'Like this comment' : 'Sign in to like comments'}
-                    >
-                      <FaThumbsUp />
-                      <span>{comment.likes}</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+
+                    <p className="mt-3 text-sm leading-relaxed text-nx-muted">{comment.comment}</p>
+
+                    <div className="mt-4 flex items-center">
+                      <button
+                        onClick={() => handleLikeComment(comment._id)}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          liked
+                            ? 'border-nx-cyan/50 bg-nx-cyan/10 text-nx-cyan'
+                            : 'border-nx-line text-nx-muted hover:border-white/25 hover:text-nx-ink'
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                        disabled={!user}
+                        title={user ? 'Like this comment' : 'Sign in to like comments'}
+                      >
+                        <FaThumbsUp className="text-[11px]" />
+                        <span>{comment.likes}</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ import {
   FaTimes,
   FaFilter,
 } from "react-icons/fa";
-import axios from "axios";
+import api from "@/lib/axios";
 
 interface SearchSuggestion {
   _id: string;
@@ -99,14 +99,12 @@ const Navbar = () => {
     if (!user?.accessToken) return;
     try {
       setNotifLoading(true);
-      const res = await axios.get("/api/notifications", {
-        headers: { token: `Bearer ${user.accessToken}` },
-      });
+      const res = await api.get("/notifications");
       const items = Array.isArray(res.data) ? res.data : [];
       setNotifications(items);
       setNotifUnread(items.filter((n: any) => !n.read).length);
-    } catch (err) {
-      console.error("Failed to load notifications", err);
+    } catch {
+      // API may be offline in local dev — the shared axios client logs a warning.
     } finally {
       setNotifLoading(false);
     }
@@ -126,9 +124,7 @@ const Navbar = () => {
   }) => {
     try {
       if (!n.read) {
-        await axios.patch(`/api/notifications/${n._id}/read`, null, {
-          headers: { token: `Bearer ${user?.accessToken}` },
-        });
+        await api.patch(`/notifications/${n._id}/read`);
         setNotifications((prev) =>
           prev.map((it) => (it._id === n._id ? { ...it, read: true } : it))
         );
@@ -151,13 +147,8 @@ const Navbar = () => {
 
       try {
         setIsLoading(true);
-        const res = await axios.get(
-          `/api/movies/suggestions?q=${encodeURIComponent(searchTerm)}`,
-          {
-            headers: {
-              token: `Bearer ${user?.accessToken}`,
-            },
-          }
+        const res = await api.get(
+          `/movies/suggestions?q=${encodeURIComponent(searchTerm)}`
         );
         setSuggestions(res.data);
       } catch (err) {

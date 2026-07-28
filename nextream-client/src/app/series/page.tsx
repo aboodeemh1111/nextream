@@ -130,7 +130,10 @@ function SeriesBrowser() {
     tv.hub()
       .then((data) => {
         if (cancelled) return;
-        setHub(data);
+        setHub({
+          hero: data?.hero ?? null,
+          rows: Array.isArray(data?.rows) ? data.rows : [],
+        });
         setError(null);
       })
       .catch(() => {
@@ -310,7 +313,7 @@ function SeriesBrowser() {
           <RowSkeleton />
           <RowSkeleton />
         </div>
-      ) : hub?.rows.length ? (
+      ) : hub?.rows?.length ? (
         // Rows ride up over the billboard's fade, the way every streaming
         // landing page seats its first row.
         <div className="relative z-10 -mt-10 space-y-2 pb-20 sm:-mt-16">
