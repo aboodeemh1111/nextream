@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import StreamNetworkBackground from "@/components/StreamNetworkBackground";
 import Image from "next/image";
 import {
   FaLock,
@@ -47,11 +48,20 @@ export default function Login() {
   // Determine if we should show additional help based on login attempts
   const showAdditionalHelp = loginAttempts >= 2;
 
+  const glassField =
+    "appearance-none relative block w-full rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground bg-background/35 dark:bg-white/5 border border-white/40 dark:border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.35)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 disabled:opacity-60";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-card border border-border p-8 rounded-lg shadow-md">
-        <div className="text-center">
-          <Image src="/logo.png" alt="Nextream" width={140} height={50} className="h-12 w-auto mx-auto" />
+    <div className="relative isolate min-h-screen flex items-center justify-center overflow-hidden bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <StreamNetworkBackground />
+      <div className="relative z-10 max-w-md w-full space-y-8 overflow-hidden rounded-2xl border border-white/50 dark:border-white/10 bg-card/45 dark:bg-card/40 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_0_0_rgba(255,255,255,0.45)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-2xl supports-[backdrop-filter]:bg-card/35">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/50 to-transparent dark:from-white/10"
+        />
+
+        <div className="relative text-center">
+          <Image src="/logo.png" alt="Nextream" width={140} height={50} className="h-12 w-auto mx-auto drop-shadow-sm" />
           <h2 className="mt-4 text-xl font-bold text-foreground">
             Admin Dashboard
           </h2>
@@ -62,7 +72,7 @@ export default function Login() {
 
         {error && (
           <div
-            className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md"
+            className="relative rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-red-700 dark:text-red-300 backdrop-blur-md"
             role="alert"
           >
             <div className="flex items-center">
@@ -87,7 +97,7 @@ export default function Login() {
 
         {!error && showAdditionalHelp && (
           <div
-            className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-md"
+            className="relative rounded-xl border border-sky-400/30 bg-sky-500/10 p-4 text-sky-800 dark:text-sky-200 backdrop-blur-md"
             role="alert"
           >
             <div className="flex">
@@ -100,8 +110,8 @@ export default function Login() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+        <form className="relative mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div>
             <div className="mb-4">
               <label htmlFor="email-address" className="sr-only">
                 Email address
@@ -118,7 +128,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-input bg-background placeholder:text-muted-foreground text-foreground focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                  className={glassField}
                   placeholder="Email address"
                   disabled={isSubmitting}
                 />
@@ -140,7 +150,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-input bg-background placeholder:text-muted-foreground text-foreground focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                  className={glassField}
                   placeholder="Password"
                   disabled={isSubmitting}
                 />
@@ -156,7 +166,7 @@ export default function Login() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-red-600 focus:ring-red-500 border-input rounded"
+                className="h-4 w-4 rounded border-white/40 bg-background/40 text-red-600 focus:ring-primary/40 dark:border-white/15"
                 disabled={isSubmitting}
               />
               <label
@@ -181,7 +191,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isSubmitting || loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2.5 px-4 rounded-xl text-sm font-medium text-white bg-red-600/90 hover:bg-red-600 border border-white/20 shadow-[0_8px_24px_rgba(220,38,38,0.28),inset_0_1px_0_0_rgba(255,255,255,0.25)] backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {(isSubmitting || loading) && (
                 <FaSpinner className="animate-spin mr-2" />

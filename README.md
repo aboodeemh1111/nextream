@@ -48,6 +48,19 @@ A Netflix-like streaming platform with client and admin applications.
    ./start-dev.sh
    ```
 
+#### Backend in Docker
+
+Runs the API and its storage bucket as containers, so the only prerequisite is
+Docker. The API still comes up on http://localhost:8800, so the frontends stay
+on the host and need no changes.
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+See [onstream/api/DOCKER.md](onstream/api/DOCKER.md) for logs, scripts, running
+against a local MongoDB instead of Atlas, and production images.
+
 ### Manual Setup
 
 If you prefer to set up manually:

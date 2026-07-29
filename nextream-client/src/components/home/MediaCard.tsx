@@ -12,6 +12,8 @@ import {
 import { cn } from "@/lib/cn";
 import Art from "@/components/series/Art";
 import { MatchScore, MetaLine, Pill, RankNumeral } from "@/components/series/Bits";
+import { useTracking } from "@/lib/ml/observe";
+import type { Surface } from "@/lib/ml/types";
 import ListButton from "./ListButton";
 
 interface MediaCardProps {
@@ -21,6 +23,12 @@ interface MediaCardProps {
   onListChange?: (uid: string, inMyList: boolean) => void;
   priority?: boolean;
   className?: string;
+  /** Where this card is, for the on-device recommender. */
+  surface?: Surface;
+  /** Groups the row it belongs to, so its impressions form one slate. */
+  slate?: string;
+  /** 0-based, within the slate. */
+  position?: number;
 }
 
 /**
@@ -47,6 +55,9 @@ export default function MediaCard({
   onListChange,
   priority = false,
   className,
+  surface = "row",
+  slate,
+  position = -1,
 }: MediaCardProps) {
   const [active, setActive] = useState(false);
   const [previewReady, setPreviewReady] = useState(false);
@@ -57,14 +68,26 @@ export default function MediaCard({
   const ranked = rank !== undefined;
   const maturity = maturityLabel(item);
 
+  // Feeds the on-device recommender. Impressions are the reason this is here:
+  // this card is where a title is most often *not* chosen, and a ranker with no
+  // record of that has nothing to rank against.
+  const {
+    ref: trackRef,
+    onPointerEnter: enterCard,
+    onPointerLeave: leaveCard,
+    onSelect: selectCard,
+  } = useTracking({ uid: item.uid, surface, position, slate });
+
   // Hover previews are a desktop affordance; on touch the first tap should open
   // the title, not arm a preview nobody asked for.
   const open = () => {
+    enterCard();
     if (window.matchMedia("(hover: none)").matches) return;
     timerRef.current = setTimeout(() => setActive(true), 400);
   };
 
   const close = () => {
+    leaveCard();
     if (timerRef.current) clearTimeout(timerRef.current);
     setActive(false);
     setPreviewReady(false);
@@ -99,6 +122,7 @@ export default function MediaCard({
 
   return (
     <article
+      ref={trackRef as (node: HTMLElement | null) => void}
       className={cn(
         "group/card relative transition-[z-index]",
         active ? "z-20" : "z-0",
@@ -169,6 +193,7 @@ export default function MediaCard({
 
         <Link
           href={item.href}
+          onClick={selectCard}
           aria-label={item.title}
           className="absolute inset-0 z-10 rounded-xl focus:outline-none focus-visible:nx-focus"
         />

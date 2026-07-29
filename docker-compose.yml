@@ -1,0 +1,32 @@
+# Production-shaped run of the API: the built image, no bind mount, no source
+# reload, configuration supplied entirely from the environment.
+#
+#   cp onstream/api/.env.docker.example onstream/api/.env.docker   # then fill it in
+#   docker compose up -d --build
+#
+# This is what to point a VPS or a container host at. For the local stack with
+# MinIO and hot reload, use docker-compose.dev.yml instead.
+
+# Distinct from the dev stack's project ("nextream"), so the two can coexist
+# without either one adopting or replacing the other's containers.
+name: nextream-prod
+
+services:
+  api:
+    build:
+      context: ./onstream/api
+    image: nextream-api:latest
+    env_file:
+      - ./onstream/api/.env.docker
+    # Published on the host loopback only — in a real deployment a reverse proxy
+    # (Caddy/nginx/Traefik) terminates TLS in front of this. Drop the 127.0.0.1
+    # prefix to expose it directly.
+    ports: ["127.0.0.1:8800:8800"]
+    restart: unless-stopped
+    # The image's own HEALTHCHECK applies; it probes GET / and so reports
+    # "express is listening", not "mongo is reachable".
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

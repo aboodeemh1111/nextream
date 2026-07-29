@@ -178,6 +178,9 @@ function EpisodePlayer() {
     videoRef,
     enabled: ready,
     qualityLabel: activeSource?.label,
+    // The local recommender ranks shows, not episodes — its catalogue index has
+    // no row for an episode — so playback is attributed to the parent.
+    signalUid: data?.show?._id ? `show:${data.show._id}` : undefined,
   });
 
   // --- playback controls ----------------------------------------------------

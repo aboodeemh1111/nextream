@@ -1,4 +1,59 @@
+# Local development stack: the API plus the storage bucket it signs URLs against.
+#
+#   docker compose -f docker-compose.dev.yml up -d --build
+#   docker compose -f docker-compose.dev.yml logs -f api
+#
+# The API source is bind-mounted and run under nodemon, so edits on the host
+# restart the server in the container — no rebuild needed unless dependencies
+# change. Frontends stay on the host (`npm run client` / `npm run admin`) and
+# reach the API at http://localhost:8800 exactly as before.
+
+# No `name:` — the project stays the directory-derived "nextream", so a MinIO
+# container started by the earlier version of this file is adopted rather than
+# duplicated on the same ports.
+
 services:
+  api:
+    build:
+      context: ./onstream/api
+    # Reuses the credentials already on disk (MONGO_URL, SECRET_KEY, FIREBASE_*).
+    # Later files win, and anything under `environment:` below wins over both.
+    env_file:
+      - ./onstream/api/.env
+      - ./onstream/api/.env.development
+    environment:
+      NODE_ENV: development
+      PORT: 8800
+      STORAGE_DRIVER: s3
+      # Inside this container `localhost` is the API itself, so the bucket has to
+      # be addressed by its compose service name.
+      S3_ENDPOINT: http://minio:9000
+      # ...but presigned URLs are handed to the browser, and the signature covers
+      # the Host header. Sign them for the host the browser can actually reach,
+      # or every upload and every playback URL 403s on arrival.
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: nextream-media
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      S3_FORCE_PATH_STYLE: "true"
+    ports: ["8800:8800"]
+    volumes:
+      # Hot reload. The bare anonymous volume on node_modules is load-bearing:
+      # without it the host's Windows-built dependencies shadow the Linux ones
+      # installed during the image build.
+      - ./onstream/api:/app
+      - /app/node_modules
+    # -L polls instead of trusting inotify, which does not fire reliably for host
+    # edits crossing a Docker Desktop bind mount.
+    command: ["npx", "nodemon", "-L", "index.js"]
+    depends_on:
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
@@ -15,3 +70,42 @@ services:
       MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://localhost:3001,https://nextream-admin.vercel.app"
     ports: ["9000:9000", "9001:9001"]
     volumes: ["./.minio-data:/data"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Creates the bucket on a fresh ./.minio-data, then exits. Without it the API
+  # comes up against a bucket that does not exist and every media call fails
+  # NoSuchBucket. Idempotent, so it is safe on every `up`.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set local http://minio:9000 minioadmin minioadmin
+        mc mb --ignore-existing local/nextream-media
+        echo "bucket nextream-media ready"
+    restart: "no"
+
+  # Opt-in local database, for working without the Atlas cluster:
+  #   docker compose -f docker-compose.dev.yml --profile local-db up -d
+  # then point the API at it by adding to the api service's environment:
+  #   MONGO_URL: mongodb://mongo:27017
+  # (index.js hardcodes dbName 'streamo', so the URI needs no database path.)
+  mongo:
+    image: mongo:6
+    profiles: ["local-db"]
+    ports: ["27017:27017"]
+    volumes: ["mongo-data:/data/db"]
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

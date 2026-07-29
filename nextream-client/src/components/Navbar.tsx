@@ -29,6 +29,7 @@ const LINKS = [
   { href: "/", label: "Home" },
   { href: "/movies", label: "Movies" },
   { href: "/series", label: "Series" },
+  { href: "/discover", label: "Discover" },
   { href: "/mylist", label: "My List" },
 ];
 

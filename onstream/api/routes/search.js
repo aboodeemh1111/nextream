@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const mongoose = require("mongoose");
 const optionalAuth = require("../optionalAuth");
+const { catalogueSnapshot } = require("../services/corpus");
 const { browseSuggestions, search } = require("../services/search");
 
 /**
@@ -150,6 +151,38 @@ router.get("/suggest", async (req, res) => {
     });
   } catch (err) {
     return fail(res, "SEARCH_SUGGEST_FAILED", err);
+  }
+});
+
+/**
+ * The catalogue as data, for a client that ranks it itself.
+ *
+ * The browser recommender needs the whole pool to build embeddings over — it
+ * cannot learn that two titles are alike from a page of results that already
+ * decided they were. Served with a strong ETag because the body is identical
+ * for every caller: after the first visit this is a 304 and no bytes at all.
+ */
+router.get("/corpus", async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res
+        .status(200)
+        .json({ schema: 1, count: 0, items: [], degraded: "DB_UNAVAILABLE" });
+    }
+
+    const { payload, etag } = await catalogueSnapshot();
+
+    res.set("ETag", etag);
+    // `public`: no viewer state is in here, so a shared cache holding it is
+    // exactly what we want. `must-revalidate` keeps the ETag in play rather
+    // than letting a stale copy serve silently past the window.
+    res.set("Cache-Control", "public, max-age=300, must-revalidate");
+
+    if (req.headers["if-none-match"] === etag) return res.status(304).end();
+
+    res.json(payload);
+  } catch (err) {
+    return fail(res, "SEARCH_CORPUS_FAILED", err);
   }
 });
 

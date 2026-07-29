@@ -8,6 +8,9 @@
     "backend": "cd onstream/api && npm run dev",
     "client": "cd nextream-client && npm run dev",
     "admin": "cd nextream-admin && npm run dev",
+    "docker": "docker compose -f docker-compose.dev.yml up -d --build",
+    "docker:logs": "docker compose -f docker-compose.dev.yml logs -f api",
+    "docker:down": "docker compose -f docker-compose.dev.yml down",
     "seed": "cd onstream/api && npm run seed",
     "seed-content": "cd onstream/api && npm run seed-content",
     "setup-images": "cd onstream/api && npm run setup-images"

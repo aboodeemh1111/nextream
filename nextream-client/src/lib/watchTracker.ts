@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import api from "@/lib/axios";
+import { record } from "@/lib/ml/signals";
 
 /**
  * Playback telemetry for a single sitting.
@@ -100,6 +101,17 @@ export interface UseWatchTrackerOptions {
   enabled?: boolean;
   /** Current quality label, so switches can be counted. */
   qualityLabel?: string;
+  /**
+   * The catalogue entry this playback belongs to ("movie:<id>", "show:<id>"),
+   * for the on-device recommender.
+   *
+   * Deliberately not derived from `contentId`. An episode's id is not in the
+   * local catalogue index — the recommender works at the level of a show, not
+   * an episode — so only the page knows which title this session is evidence
+   * about. Left undefined, nothing is recorded locally and the server telemetry
+   * above is unaffected.
+   */
+  signalUid?: string;
 }
 
 export interface WatchTracker {
@@ -116,6 +128,7 @@ export function useWatchTracker({
   videoRef,
   enabled = true,
   qualityLabel = "",
+  signalUid,
 }: UseWatchTrackerOptions): WatchTracker {
   // Mirrored in state, not just held in the ref, because it is part of this
   // hook's return value: a ref updated from an effect never re-renders, so
@@ -245,6 +258,44 @@ export function useWatchTracker({
     state.qoe.lastError = String(message || "").slice(0, 200);
   }, []);
 
+  // --- local recommender signals --------------------------------------------
+
+  // Held in a ref so the media listeners can read the current title without
+  // being torn down and rebuilt when it changes — the same reason `targetRef`
+  // exists above.
+  const signalRef = useRef({ uid: signalUid, played: false });
+  useEffect(() => {
+    // A new title is a new session as far as the recommender is concerned, so
+    // "already recorded a play" resets with it.
+    if (signalRef.current.uid !== signalUid) signalRef.current = { uid: signalUid, played: false };
+  }, [signalUid]);
+
+  /**
+   * Reports how far this sitting got, to the on-device model.
+   *
+   * Position rather than watch time: the question the recommender is asking is
+   * "did they get through it", and someone who rewatched the first ten minutes
+   * three times has more watch time than position and did not.
+   */
+  const reportProgress = useCallback(
+    (kind: "progress" | "complete" | "abandon") => {
+      const uid = signalRef.current.uid;
+      if (!uid) return;
+
+      const video = videoRef.current;
+      const duration = Number.isFinite(video?.duration) ? video?.duration || 0 : 0;
+      const fraction = duration > 0 ? Math.min(1, (video?.currentTime || 0) / duration) : 0;
+
+      // Below a minute of position there is nothing to say — a mis-tap and a
+      // rejection look identical, and logging one as the other is worse than
+      // logging nothing.
+      if (kind !== "complete" && (video?.currentTime || 0) < 60) return;
+
+      record({ kind, uid, surface: "watch", weight: kind === "complete" ? 1 : fraction });
+    },
+    [videoRef]
+  );
+
   // A new title is a new sitting, even within the same mounted player — the
   // episode page swaps `contentId` without unmounting when the viewer hits
   // "next episode".
@@ -302,6 +353,14 @@ export function useWatchTracker({
         state.stalledSince = null;
       }
       if (state.playingSince === null) state.playingSince = Date.now();
+
+      // Once per title, on the first frame that actually rendered. `play`
+      // fires on a click that then fails to start, and a recommender that
+      // counts intent as consumption learns from sessions that never happened.
+      if (signalRef.current.uid && !signalRef.current.played) {
+        signalRef.current.played = true;
+        record({ kind: "play", uid: signalRef.current.uid, surface: "watch", weight: 1 });
+      }
     };
 
     const onWaiting = () => {
@@ -323,6 +382,7 @@ export function useWatchTracker({
       state.ended = true;
       settle();
       send({ completed: true, ended: true, target });
+      reportProgress("complete");
     };
 
     const onError = () => {
@@ -357,7 +417,7 @@ export function useWatchTracker({
     };
     // `videoRef.current` is read at effect time; the deps that matter are what
     // decides whether tracking runs at all and which element is mounted.
-  }, [videoRef, enabled, contentId, contentType, settle, send, reportError]);
+  }, [videoRef, enabled, contentId, contentType, settle, send, reportError, reportProgress]);
 
   // --- heartbeat ------------------------------------------------------------
 
@@ -377,6 +437,7 @@ export function useWatchTracker({
     const onHide = () => {
       settle();
       send({ beacon: true, target });
+      reportProgress("progress");
     };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") onHide();
@@ -391,8 +452,12 @@ export function useWatchTracker({
       // Unmount, or a switch to another title, ends this sitting.
       settle();
       send({ ended: true, beacon: true, target });
+      // Leaving mid-title. `valueOf` reads the fraction as how *little* was
+      // watched, so walking out ten minutes in is a strong negative and
+      // stopping during the credits is barely one.
+      if (!stateRef.current.ended) reportProgress("abandon");
     };
-  }, [enabled, contentId, contentType, send, settle]);
+  }, [enabled, contentId, contentType, send, settle, reportProgress]);
 
   // Stable identity: callers put this object in dependency arrays, and a fresh
   // literal each render would defeat every useCallback that closes over it.

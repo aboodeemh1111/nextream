@@ -7,6 +7,7 @@ import { MediaItem, setInMyList } from "@/lib/home";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/cn";
 import { Spinner } from "@/components/series/Bits";
+import { record } from "@/lib/ml/signals";
 
 interface ListButtonProps {
   item: MediaItem;
@@ -56,6 +57,15 @@ export default function ListButton({
     try {
       await setInMyList(item, next);
       onChange?.(item.uid, next);
+      // Recorded after the write succeeds, not on the optimistic flip: a toggle
+      // that failed and rolled back did not happen, and the recommender would
+      // have no way to un-learn it.
+      record({
+        kind: next ? "list_add" : "list_remove",
+        uid: item.uid,
+        surface: "row",
+        weight: 1,
+      });
     } catch {
       setActive(!next);
     } finally {

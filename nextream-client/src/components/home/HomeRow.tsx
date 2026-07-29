@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { ContinueItem, HomeRowData, MediaItem } from "@/lib/home";
 import { cn } from "@/lib/cn";
 import { GUTTER, ScrollDots } from "@/components/series/Bits";
+import { slateId } from "@/lib/ml/observe";
 import MediaCard from "./MediaCard";
 import ContinueTile from "./ContinueTile";
 
@@ -35,6 +36,16 @@ export default function HomeRow({ row, onListChange, onContinueRemoved }: HomeRo
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
   const [pages, setPages] = useState({ count: 1, active: 0 });
+
+  // One id per rendered ordering of this row. The listwise ranker learns from
+  // "these were shown together, that one was chosen", so the grouping has to
+  // survive a scroll and change when the feed re-ranks — which is exactly the
+  // lifetime of the row's item list.
+  const slate = useMemo(
+    () => slateId(row.key),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [row.key, row.items.length]
+  );
 
   const syncEdges = useCallback(() => {
     const el = scrollerRef.current;
@@ -176,6 +187,9 @@ export default function HomeRow({ row, onListChange, onContinueRemoved }: HomeRo
                     rank={ranked ? index + 1 : undefined}
                     onListChange={onListChange}
                     priority={index < 4}
+                    surface="home"
+                    slate={slate}
+                    position={index}
                   />
                 </div>
               ))}

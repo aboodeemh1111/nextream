@@ -189,6 +189,9 @@ export default function Watch() {
     contentId: trackable && isPlaying ? movieId : null,
     videoRef,
     enabled: Boolean(user) && trackable && isPlaying,
+    // Namespaced the way the local catalogue index keys a movie; see
+    // lib/ml/types.ts.
+    signalUid: movieId ? `movie:${movieId}` : undefined,
   });
 
   // Ask where the last sitting stopped before the element exists, so the seek

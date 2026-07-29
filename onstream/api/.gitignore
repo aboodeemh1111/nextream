@@ -18,6 +18,10 @@
 .env.test.local
 .env.production.local
 
+# Runtime config for the containerized API — holds live credentials.
+# .env.docker.example is the tracked template.
+.env.docker
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

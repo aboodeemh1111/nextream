@@ -34,6 +34,18 @@ This is the backend API for the Nextream streaming platform.
 3. Create a `.env` file with the required environment variables
 4. Run the development server: `npm run dev`
 
+## Docker
+
+See [DOCKER.md](DOCKER.md). From the repo root:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+Brings up the API with hot reload plus the MinIO bucket it signs media URLs
+against. `docker compose up -d` (root `docker-compose.yml`) runs the same image
+in its production shape instead.
+
 ## API Endpoints
 
 - `/api/auth` - Authentication routes

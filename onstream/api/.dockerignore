@@ -1,0 +1,35 @@
+# Build context is onstream/api. Anything not excluded here is copied into the
+# image by `COPY . .`, so this file is the only thing keeping host junk and
+# secrets out.
+
+# Host-installed dependencies: these are built for the host platform (Windows,
+# in this repo's usual case) and would shadow the Linux ones from `npm ci`.
+node_modules
+
+# Secrets. .env and .env.development are tracked in git and hold live
+# credentials; they must not be baked into an image layer. Supply configuration
+# at runtime instead, via compose `env_file:` or `docker run --env-file`.
+.env
+.env.*
+!.env.docker.example
+
+# Local runtime noise
+dev-server.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage
+.DS_Store
+Thumbs.db
+
+# Resolved by npm ci from package-lock.json; the yarn lockfile is unused here.
+yarn.lock
+
+# Docs and tooling with no role at runtime
+*.md
+Dockerfile
+.dockerignore
+.gitignore
+.git
+.idea
+.vscode

@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaExclamationTriangle, FaFilm } from "react-icons/fa";
 import Navbar from "@/components/Navbar";
+import NeuralRow from "@/components/discover/NeuralRow";
 import HomeBillboard from "@/components/home/HomeBillboard";
 import HomeRow from "@/components/home/HomeRow";
 import { BillboardSkeleton, RowSkeleton } from "@/components/series/Skeletons";
 import { useAuth } from "@/context/AuthContext";
+import { useDiscovery } from "@/context/DiscoveryContext";
 import {
   ContinueItem,
   HomeFeed,
@@ -52,6 +54,7 @@ function syncListState(feed: HomeFeed, uid: string, inMyList: boolean): HomeFeed
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
+  const { ready: modelReady, personalised } = useDiscovery();
   const router = useRouter();
 
   const [feed, setFeed] = useState<HomeFeed | null>(null);
@@ -178,13 +181,33 @@ export default function Home() {
           {/* Rows ride up over the billboard's fade, the way every streaming
               landing page seats its first row. */}
           <div className="relative z-10 -mt-10 space-y-3 pb-24 sm:-mt-16 md:-mt-24 md:space-y-6">
-            {feed?.rows.map((row) => (
-              <HomeRow
-                key={row.key}
-                row={row}
-                onListChange={handleListChange}
-                onContinueRemoved={handleContinueRemoved}
-              />
+            {feed?.rows.map((row, index) => (
+              <Fragment key={row.key}>
+                <HomeRow
+                  row={row}
+                  onListChange={handleListChange}
+                  onContinueRemoved={handleContinueRemoved}
+                />
+
+                {/* The on-device row sits second rather than first. The server
+                    knows about Continue Watching and about titles published
+                    minutes ago; the browser knows what was scrolled past and
+                    what was hovered. Leading with the one that cannot be wrong
+                    about what is unfinished, and following it with the one that
+                    learns, is the honest order — and it means a viewer whose
+                    engine has not booted yet sees no gap. */}
+                {index === 0 && modelReady && (
+                  <NeuralRow
+                    title={personalised ? "Learned from this device" : "Ranked on this device"}
+                    subtitle={
+                      personalised
+                        ? "Ranked in your browser from what you watched, hovered and skipped"
+                        : "Ranked in your browser — it starts learning as you watch"
+                    }
+                    options={{ limit: 20, surface: "home" }}
+                  />
+                )}
+              </Fragment>
             ))}
           </div>
 
