@@ -26,6 +26,7 @@ const tvMeRoute = require("./routes/tvMe");
 const homeRoute = require("./routes/home");
 const playbackRoute = require("./routes/playback");
 const uploadsRoute = require("./routes/uploads");
+const searchRoute = require("./routes/search");
 
 mongoose
   .connect(process.env.MONGO_URL, {
@@ -36,6 +37,11 @@ mongoose
   })
   .then(() => {
     console.log("DB Connection Successful");
+    // Started only after the connection is up: the deferred-push drain and the
+    // reminder sweep both query on their first tick, and a tick against a
+    // disconnected mongoose buffers rather than failing, which would hide a
+    // misconfiguration behind a silent queue.
+    require("./services/notifications/scheduler").start();
   })
   .catch((err) => {
     console.error("MongoDB connection error:", err);
@@ -123,6 +129,7 @@ app.use("/api/tv/admin", tvAdminRoute);
 app.use("/api/tv/me", tvMeRoute);
 app.use("/api/tv", tvRoute);
 app.use("/api/home", homeRoute);
+app.use("/api/search", searchRoute);
 app.use("/api/playback", playbackRoute);
 app.use("/api/uploads", uploadsRoute);
 app.use("/api/admin/alerts", alertsRoute);
@@ -144,6 +151,7 @@ app.use("/tv/admin", tvAdminRoute);
 app.use("/tv/me", tvMeRoute);
 app.use("/tv", tvRoute);
 app.use("/home", homeRoute);
+app.use("/search", searchRoute);
 app.use("/playback", playbackRoute);
 app.use("/uploads", uploadsRoute);
 

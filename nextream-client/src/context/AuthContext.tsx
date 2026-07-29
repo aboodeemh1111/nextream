@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import axios from 'axios';
 import api from '@/lib/axios'; // Import the custom axios instance
-import { initFcm } from '@/lib/fcm';
+import { storedToken } from '@/lib/fcm';
+import { unregisterDevice } from '@/lib/notifications';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -39,11 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
-        // Set the token in axios headers
+        // Set the token in axios headers.
+        //
+        // Push registration deliberately does *not* happen here any more. It used
+        // to, and it called Notification.requestPermission() on every page load —
+        // so the prompt appeared before the viewer had done anything to explain
+        // it, and a dismissal is a permanent `denied` that no API can re-ask.
+        // NotificationsProvider now refreshes an already-granted registration on
+        // load, and only the settings page can prompt. See lib/fcm.ts.
         if (parsedUser?.accessToken) {
           axios.defaults.headers.common['token'] = `Bearer ${parsedUser.accessToken}`;
-          // Initialize FCM in background (non-blocking)
-          initFcm(parsedUser.accessToken).catch(() => {});
         }
       } catch (err) {
         console.error('Error parsing stored user:', err);
@@ -64,11 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(res.data);
       localStorage.setItem('user', JSON.stringify(res.data));
       
-      // Set the token in axios headers
+      // Set the token in axios headers. NotificationsProvider picks the new token
+      // up and refreshes any push registration this browser already granted.
       if (res.data?.accessToken) {
         axios.defaults.headers.common['token'] = `Bearer ${res.data.accessToken}`;
-        // Initialize FCM after login
-        initFcm(res.data.accessToken).catch(() => {});
       }
       
       router.push('/');
@@ -110,12 +115,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Unhook this browser from the account's pushes *before* the credentials go,
+    // since the request needs them. Otherwise a signed-out device keeps buzzing
+    // with the previous account's notifications — on a shared computer, to
+    // whoever is sitting at it next.
+    //
+    // The FCM token itself is kept: the permission is still granted, so the next
+    // person to sign in is registered silently by NotificationsProvider.
+    const pushToken = storedToken();
+    if (pushToken) unregisterDevice(pushToken).catch(() => {});
+
     setUser(null);
     localStorage.removeItem('user');
-    
+
     // Remove the token from axios headers
     delete axios.defaults.headers.common['token'];
-    
+
     router.push('/login');
   };
 

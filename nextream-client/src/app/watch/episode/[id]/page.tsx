@@ -331,7 +331,7 @@ function EpisodePlayer() {
     // stretch would be attributed to the next episode instead.
     tracker.flush({ completed: true, ended: true });
     router.push(`/watch/episode/${data.next._id}`);
-  }, [data?.next, router, tracker]);
+  }, [data, router, tracker]);
 
   useEffect(() => {
     if (upNextIn === null) return;

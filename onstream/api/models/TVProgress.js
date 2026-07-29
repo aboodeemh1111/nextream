@@ -36,5 +36,10 @@ TVProgressSchema.index({ userId: 1, episodeId: 1 }, { unique: true });
 // "Continue watching" and next-up both read the newest rows for a show.
 TVProgressSchema.index({ userId: 1, showId: 1, watchedAt: -1 });
 TVProgressSchema.index({ userId: 1, watchedAt: -1 });
+// The notification scheduler sweeps unfinished episodes by how stale they are,
+// across all viewers — a scan the per-user indexes above cannot serve.
+TVProgressSchema.index({ completed: 1, watchedAt: -1 });
+// "Who is watching this show" for a new-episode fan-out, newest viewers first.
+TVProgressSchema.index({ showId: 1, watchedAt: -1 });
 
 module.exports = mongoose.model('TVProgress', TVProgressSchema);

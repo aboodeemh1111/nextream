@@ -9,6 +9,7 @@ const TVProgress = require("../models/TVProgress");
 const WatchSession = require("../models/WatchSession");
 const { parseUserAgent } = require("../services/deviceInfo");
 const { computeProgressUpdate } = require("../services/tvCatalog");
+const notify = require("../services/notifications/events");
 const {
   HEARTBEAT_INTERVAL_SEC,
   computePosition,
@@ -177,7 +178,14 @@ async function updateMovieProgress(userId, contentId, { percent, positionSec, co
   );
 }
 
-/** Episode resume state — the same upsert tvMe/progress performs. */
+/**
+ * Episode resume state — the same upsert tvMe/progress performs.
+ *
+ * Returns both transitions the caller acts on, because both are only knowable
+ * from the row as it was before this write: whether this is the first time the
+ * viewer has touched this episode (one view, counted once) and whether they just
+ * finished it (which is what queues up the next one).
+ */
 async function updateEpisodeProgress(userId, content, { positionSec, durationSec, completed }) {
   const existing = await TVProgress.findOne({ userId, episodeId: content.contentId })
     .select("_id completed")
@@ -209,7 +217,33 @@ async function updateEpisodeProgress(userId, content, { positionSec, durationSec
   // One view per viewer per episode. Guarded on the progress row rather than
   // on the session so this agrees with tvMe/progress: whichever path a client
   // uses, the second one to arrive counts nothing.
-  return !existing;
+  return {
+    firstRow: !existing,
+    // `completed` latches on, so without the previous value every heartbeat
+    // after the credits would re-announce the next episode.
+    justCompleted: Boolean(update.completed) && !existing?.completed,
+  };
+}
+
+/**
+ * The next published episode after the one just finished.
+ *
+ * Ordered by (season, episode) rather than by creation, and filtered to
+ * published, so "next up" cannot point at a draft the viewer would land on and
+ * find empty.
+ */
+async function nextPublishedEpisode(content) {
+  return Episode.findOne({
+    showId: content.showId,
+    published: true,
+    $or: [
+      { seasonNumber: content.seasonNumber, episodeNumber: { $gt: content.episodeNumber } },
+      { seasonNumber: { $gt: content.seasonNumber } },
+    ],
+  })
+    .sort({ seasonNumber: 1, episodeNumber: 1 })
+    .select("_id")
+    .lean();
 }
 
 // --- ingestion --------------------------------------------------------------
@@ -289,14 +323,20 @@ router.post("/heartbeat", async (req, res) => {
     let countedView = false;
 
     if (content.contentType === "episode") {
-      const isFirstProgressRow = await updateEpisodeProgress(userId, content, {
+      const { firstRow, justCompleted } = await updateEpisodeProgress(userId, content, {
         positionSec: position,
         durationSec: duration,
         completed: isComplete,
       });
-      if (isFirstProgressRow) {
+      if (firstRow) {
         await TVShow.updateOne({ _id: content.showId }, { $inc: { views: 1 } });
         countedView = true;
+      }
+      // Queues the next episode in the viewer's inbox. In-app only by design —
+      // they are looking at the screen, so a push would be noise.
+      if (justCompleted) {
+        const next = await nextPublishedEpisode(content);
+        if (next) notify.nextEpisodeReady(userId, content.showId, next._id);
       }
     } else {
       await updateMovieProgress(userId, content.contentId, {

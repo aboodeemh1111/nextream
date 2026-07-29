@@ -38,7 +38,9 @@ export default function SeriesGrid({
   // Read inside the observer callback so the effect does not resubscribe on
   // every state change — re-registering mid-scroll drops the intersection.
   const stateRef = useRef({ hasMore, loadingMore, onLoadMore });
-  stateRef.current = { hasMore, loadingMore, onLoadMore };
+  useEffect(() => {
+    stateRef.current = { hasMore, loadingMore, onLoadMore };
+  });
 
   useEffect(() => {
     const sentinel = sentinelRef.current;

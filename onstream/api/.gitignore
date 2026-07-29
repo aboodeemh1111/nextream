@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Written when the dev server is started detached rather than in a terminal.
+dev-server.log*

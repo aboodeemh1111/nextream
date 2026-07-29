@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import api from "@/lib/axios";
 
 /**
@@ -117,8 +117,14 @@ export function useWatchTracker({
   enabled = true,
   qualityLabel = "",
 }: UseWatchTrackerOptions): WatchTracker {
+  // Mirrored in state, not just held in the ref, because it is part of this
+  // hook's return value: a ref updated from an effect never re-renders, so
+  // callers would keep reading the id of the *previous* title while heartbeats
+  // went out under the new one.
+  const [sessionId, setSessionId] = useState(newSessionId);
+
   const stateRef = useRef<TrackerState>({
-    sessionId: newSessionId(),
+    sessionId,
     secondsWatched: 0,
     playingSince: null,
     requestedAt: null,
@@ -130,8 +136,12 @@ export function useWatchTracker({
 
   // Read inside callbacks that must not be re-created on every render — a new
   // identity there would tear down and re-attach the media listeners mid-play.
+  // Written from an effect rather than during render so that the value is only
+  // swapped after commit; see the note on `send`'s `target` option.
   const targetRef = useRef({ contentType, contentId, enabled });
-  targetRef.current = { contentType, contentId, enabled };
+  useEffect(() => {
+    targetRef.current = { contentType, contentId, enabled };
+  });
 
   /** Folds the in-flight playing stretch into the total. */
   const settle = useCallback(() => {
@@ -149,10 +159,12 @@ export function useWatchTracker({
         beacon?: boolean;
         /**
          * The title this heartbeat belongs to. Callers running from an effect
-         * cleanup must pass their own, captured from the effect's closure:
-         * `targetRef` is updated during render, so by the time a cleanup runs
-         * after a title change it already names the *next* title, and the
-         * final stretch of one episode would be credited to the following one.
+         * cleanup pass their own, captured from the effect's closure, rather
+         * than lean on `targetRef` — that ref is maintained by an effect of its
+         * own, and rather than reason about effect ordering at every call site
+         * it is simpler for a cleanup to name the title it was set up for. The
+         * cost of getting it wrong is the final stretch of one episode being
+         * credited to the following one.
          */
         target?: { contentType: WatchContentType; contentId: string };
       } = {}
@@ -237,8 +249,9 @@ export function useWatchTracker({
   // episode page swaps `contentId` without unmounting when the viewer hits
   // "next episode".
   useEffect(() => {
+    const id = newSessionId();
     stateRef.current = {
-      sessionId: newSessionId(),
+      sessionId: id,
       secondsWatched: 0,
       playingSince: null,
       requestedAt: null,
@@ -247,6 +260,7 @@ export function useWatchTracker({
       ended: false,
       qoe: emptyQoe(),
     };
+    setSessionId(id);
   }, [contentId, contentType]);
 
   // Quality switches are a QoE signal in their own right: a session that
@@ -380,7 +394,12 @@ export function useWatchTracker({
     };
   }, [enabled, contentId, contentType, send, settle]);
 
-  return { flush, reportError, sessionId: stateRef.current.sessionId };
+  // Stable identity: callers put this object in dependency arrays, and a fresh
+  // literal each render would defeat every useCallback that closes over it.
+  return useMemo(
+    () => ({ flush, reportError, sessionId }),
+    [flush, reportError, sessionId]
+  );
 }
 
 /** Where the viewer left off, for players that need to seek before first play. */

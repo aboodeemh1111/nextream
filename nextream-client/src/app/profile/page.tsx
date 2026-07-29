@@ -16,9 +16,11 @@ import {
   FaList,
   FaEye,
   FaClock,
+  FaBell,
+  FaChevronRight,
 } from "react-icons/fa";
 import MovieCard from "@/components/MovieCard";
-import { initFcm } from "@/lib/fcm";
+import Link from "next/link";
 
 interface Movie {
   _id: string;
@@ -83,9 +85,6 @@ export default function Profile() {
   const [error, setError] = useState<string | null>(null);
   const { user, logout } = useAuth();
   const router = useRouter();
-  const [notifPrefs, setNotifPrefs] = useState<any>(null);
-  const [notifSaving, setNotifSaving] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -116,15 +115,6 @@ export default function Profile() {
     };
 
     fetchUserProfile();
-    // Load notification preferences
-    (async () => {
-      try {
-        const res = await axios.get("/api/notifications/prefs", {
-          headers: { token: `Bearer ${user.accessToken}` },
-        });
-        setNotifPrefs(res.data || {});
-      } catch {}
-    })();
   }, [user, router]);
 
   const formatDate = (dateString: string) => {
@@ -225,95 +215,28 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Notification Preferences */}
-        {user && (
-          <div className="bg-gray-800 rounded-lg p-4 mb-8">
-            <h2 className="text-white text-lg font-semibold mb-3">
-              Notification Preferences
-            </h2>
-            <div className="flex items-center gap-3 mb-4">
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                onClick={async () => {
-                  const token = await initFcm(user.accessToken);
-                  if (token) setPushEnabled(true);
-                }}
-              >
-                {pushEnabled ? "Push Enabled" : "Enable Push Notifications"}
-              </button>
-              <p className="text-gray-300 text-sm">
-                Enable browser push to receive updates.
-              </p>
-            </div>
-            {notifPrefs && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <label className="flex items-center gap-2 text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={!!notifPrefs.marketing}
-                    onChange={async (e) => {
-                      try {
-                        setNotifSaving(true);
-                        const res = await axios.post(
-                          "/api/notifications/prefs",
-                          { marketing: e.target.checked },
-                          { headers: { token: `Bearer ${user.accessToken}` } }
-                        );
-                        setNotifPrefs(res.data || {});
-                      } finally {
-                        setNotifSaving(false);
-                      }
-                    }}
-                    disabled={notifSaving}
-                  />
-                  Marketing
-                </label>
-                <label className="flex items-center gap-2 text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={!!notifPrefs.product}
-                    onChange={async (e) => {
-                      try {
-                        setNotifSaving(true);
-                        const res = await axios.post(
-                          "/api/notifications/prefs",
-                          { product: e.target.checked },
-                          { headers: { token: `Bearer ${user.accessToken}` } }
-                        );
-                        setNotifPrefs(res.data || {});
-                      } finally {
-                        setNotifSaving(false);
-                      }
-                    }}
-                    disabled={notifSaving}
-                  />
-                  Product Updates
-                </label>
-                <label className="flex items-center gap-2 text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={!!notifPrefs.reminders}
-                    onChange={async (e) => {
-                      try {
-                        setNotifSaving(true);
-                        const res = await axios.post(
-                          "/api/notifications/prefs",
-                          { reminders: e.target.checked },
-                          { headers: { token: `Bearer ${user.accessToken}` } }
-                        );
-                        setNotifPrefs(res.data || {});
-                      } finally {
-                        setNotifSaving(false);
-                      }
-                    }}
-                    disabled={notifSaving}
-                  />
-                  Watch Reminders
-                </label>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Notification settings.
+
+            Previously three checkboxes (Marketing / Product / Watch Reminders)
+            posting to the old flat preferences endpoint. Those switches no longer
+            map one-to-one onto anything — "Marketing" governed two categories —
+            and duplicating a worse version of the settings page here would let the
+            two disagree. This links to the real one. */}
+        <Link
+          href="/settings/notifications"
+          className="mb-8 flex items-center justify-between gap-4 rounded-lg bg-gray-800 p-4 transition hover:bg-gray-700"
+        >
+          <span className="flex items-center gap-3">
+            <FaBell className="text-red-500" aria-hidden />
+            <span>
+              <span className="block font-semibold text-white">Notifications</span>
+              <span className="block text-sm text-gray-400">
+                Choose what reaches you, set quiet hours, and manage this device.
+              </span>
+            </span>
+          </span>
+          <FaChevronRight className="shrink-0 text-gray-500" aria-hidden />
+        </Link>
 
         {/* Quick Stats + Top Genres */}
         {summary && (

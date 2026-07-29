@@ -13,6 +13,8 @@
     "storage:verify-cors": "node scripts/verifyCors.js",
     "storage:smoke": "node scripts/smokeTest.js",
     "playback:smoke": "node scripts/playbackSmoke.js",
+    "notify:smoke": "node scripts/notificationsSmoke.js",
+    "notify:sync-indexes": "node scripts/syncNotificationIndexes.js",
     "reap-orphans": "node scripts/reapOrphans.js",
     "tv:recount": "node scripts/recountTv.js",
     "migrate-storage": "node scripts/migrateFirebaseToBucket.js"

@@ -179,32 +179,34 @@ function SeriesBrowser() {
   // Read through a ref: the observer in SeriesGrid holds this callback across
   // renders, and a stale copy would refetch page 2 forever.
   const loadMoreRef = useRef<() => void>(() => {});
-  loadMoreRef.current = async () => {
-    if (!browse?.hasMore || loadingMore) return;
+  useEffect(() => {
+    loadMoreRef.current = async () => {
+      if (!browse?.hasMore || loadingMore) return;
 
-    setLoadingMore(true);
-    try {
-      const res = await tv.browse({
-        ...effective,
-        page: browse.page + 1,
-        pageSize: PAGE_SIZE,
-      });
-      setBrowse((prev) =>
-        prev
-          ? {
-              items: [...prev.items, ...res.data],
-              page: res.page,
-              hasMore: res.hasMore,
-              total: res.total,
-            }
-          : prev
-      );
-    } catch {
-      // Leave what is already on screen; the sentinel retries on next scroll.
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+      setLoadingMore(true);
+      try {
+        const res = await tv.browse({
+          ...effective,
+          page: browse.page + 1,
+          pageSize: PAGE_SIZE,
+        });
+        setBrowse((prev) =>
+          prev
+            ? {
+                items: [...prev.items, ...res.data],
+                page: res.page,
+                hasMore: res.hasMore,
+                total: res.total,
+              }
+            : prev
+        );
+      } catch {
+        // Leave what is already on screen; the sentinel retries on next scroll.
+      } finally {
+        setLoadingMore(false);
+      }
+    };
+  });
   const loadMore = useCallback(() => loadMoreRef.current(), []);
 
   const handleListChange = useCallback((showId: string, inMyList: boolean) => {

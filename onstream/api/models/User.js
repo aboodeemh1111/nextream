@@ -64,15 +64,38 @@ const UserSchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now }
       }
     ],
-    notificationPrefs: {
-      marketing: { type: Boolean, default: true },
-      product: { type: Boolean, default: true },
-      reminders: { type: Boolean, default: true },
-      quietHours: {
-        start: { type: String, default: null }, // e.g., '22:00'
-        end: { type: String, default: null } // e.g., '08:00'
+    /**
+     * Notification preferences.
+     *
+     * Deliberately schemaless (`Object`) rather than a nested path per switch.
+     * The shape is owned by services/notifications/catalog.js — one category per
+     * switch — and every read goes through `policy.resolvePreferences`, which
+     * fills in defaults for categories a stored document predates. Pinning the
+     * shape here as well would mean adding a category required a schema change
+     * *and* a migration, and a Mongoose default of `false` on a new path would
+     * silently opt every existing viewer out of it.
+     *
+     * The three legacy booleans (`marketing`, `product`, `reminders`) and the
+     * old flat `quietHours` are still read by `resolvePreferences`, so an opt-out
+     * recorded years ago survives.
+     */
+    notificationPrefs: { type: Object, default: {} },
+    /**
+     * Device fingerprints this account has signed in from before.
+     *
+     * Kept so a sign-in alert can distinguish "a device we have seen" from "a new
+     * one", which is the only thing that makes the alert worth sending. A hash of
+     * the device class rather than the raw user-agent, so a browser bumping its
+     * version number is not reported as a new machine.
+     */
+    knownDevices: [
+      {
+        fingerprint: { type: String },
+        label: { type: String },
+        firstSeenAt: { type: Date, default: Date.now },
+        lastSeenAt: { type: Date, default: Date.now }
       }
-    },
+    ],
     // User preferences for UI/Playback/Accessibility
     preferences: {
       autoplayPreviews: { type: Boolean, default: true },
@@ -91,11 +114,18 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Performance indexes
-UserSchema.index({ email: 1 });
-UserSchema.index({ username: 1 });
+// Performance indexes.
+//
+// `email` and `username` are deliberately absent: both paths declare
+// `unique: true`, which already creates `email_1` and `username_1`. Declaring
+// them again asked for a *non-unique* index under the same auto-generated name,
+// which MongoDB rejects as a name conflict — an error autoIndex swallows, so it
+// failed silently on every startup and made `syncIndexes()` unusable.
 UserSchema.index({ 'watchHistory.movie': 1 });
 UserSchema.index({ 'currentlyWatching.movie': 1 });
 UserSchema.index({ 'deviceTokens.token': 1 });
+// Admin audience segments filter on recency; the heartbeat rollup keeps this
+// field moving, so it is the closest thing the User document has to "active".
+UserSchema.index({ updatedAt: -1 });
 
 module.exports = mongoose.model("User", UserSchema);

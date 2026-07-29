@@ -8,8 +8,12 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { FaEnvelope, FaLock } from 'react-icons/fa';
 
+// Module scope, not inside the component: dynamic() returns a fresh component
+// type each time it runs, so calling it during render remounts the background
+// on every keystroke in the form.
+const AnimatedBackground = dynamic(() => import('@/components/AnimatedBackground'), { ssr: false });
+
 export default function Login() {
-  const AnimatedBackground = dynamic(() => import('@/components/AnimatedBackground'), { ssr: false });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);

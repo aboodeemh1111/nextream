@@ -3,6 +3,7 @@ const Comment = require("../models/Comment");
 const Movie = require("../models/Movie");
 const User = require("../models/User");
 const verify = require("../verifyToken");
+const notify = require("../services/notifications/events");
 
 // Create a comment
 router.post("/", verify, async (req, res) => {
@@ -26,7 +27,11 @@ router.post("/", verify, async (req, res) => {
     });
 
     const savedComment = await newComment.save();
-    
+
+    // Tells everyone else already in this title's conversation. Fire-and-forget
+    // by contract — posting a comment must not fail because a notification did.
+    notify.commentPosted(savedComment);
+
     res.status(201).json(savedComment);
   } catch (err) {
     res.status(500).json(err);

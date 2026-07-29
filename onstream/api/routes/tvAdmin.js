@@ -11,6 +11,7 @@ const Season = require("../models/Season");
 const Episode = require("../models/Episode");
 const TVProgress = require("../models/TVProgress");
 const User = require("../models/User");
+const notify = require("../services/notifications/events");
 
 // Admin TV routes live in their own router, mounted at /api/tv/admin *before*
 // the public router. The previous layout interleaved them with public routes in
@@ -182,6 +183,9 @@ router.post("/shows", async (req, res) => {
     if (!payload.slug) payload.slug = slugify(payload.title);
 
     const created = await TVShow.create(payload);
+    // A show created already published is visible from this moment, so the
+    // transition happened here rather than in a later patch.
+    if (created.published) notify.showPublished(created._id);
     res.status(201).json(created);
   } catch (err) {
     if (err?.code === 11000) {
@@ -242,12 +246,25 @@ router.patch("/shows/:showId", async (req, res) => {
       return badRequest(res, "Title cannot be empty");
     }
 
+    // The *transition* is the event, not the final state: re-saving an already
+    // published show must not announce it again, and only the previous value can
+    // tell the two apart.
+    const wasPublished =
+      payload.published === undefined
+        ? null
+        : (await TVShow.findById(showId).select("published").lean())?.published;
+
     const updated = await TVShow.findByIdAndUpdate(
       showId,
       { $set: payload },
       { new: true }
     );
     if (!updated) return res.status(404).json({ message: "Show not found" });
+
+    if (wasPublished === false && updated.published === true) {
+      notify.showPublished(updated._id);
+    }
+
     res.json(updated);
   } catch (err) {
     if (err?.code === 11000) {
@@ -626,6 +643,9 @@ router.post("/seasons/:seasonId/episodes", async (req, res) => {
 
     const episode = await Episode.create(doc);
     await Promise.all([syncSeasonCount(seasonId), syncShowCounts(season.showId)]);
+    // Buffered on the way out: an admin adding episodes one at a time down a
+    // list would otherwise produce one push per click. See events.js.
+    if (episode.published) notify.episodePublished(episode._id);
     res.status(201).json(episode);
   } catch (err) {
     if (err?.code === 11000) {
@@ -679,6 +699,11 @@ router.post("/seasons/:seasonId/episodes/bulk", async (req, res) => {
     }
 
     await Promise.all([syncSeasonCount(seasonId), syncShowCounts(season.showId)]);
+    // The case the coalescing window exists for: a whole season arriving at once
+    // becomes one "Season N is here" rather than ten new-episode alerts.
+    for (const episode of created) {
+      if (episode.published) notify.episodePublished(episode._id);
+    }
     res.status(created.length ? 201 : 400).json({ created, failed });
   } catch (err) {
     return fail(res, "EPISODE_BULK_CREATE_FAILED", err);
@@ -766,8 +791,20 @@ router.patch("/episodes/:episodeId", async (req, res) => {
       }
     }
 
+    // As with shows: the transition is the event. The publish toggle is the most
+    // common way an episode goes live, since the create wizard leaves drafts.
+    const wasPublished =
+      payload.published === undefined
+        ? null
+        : (await Episode.findById(episodeId).select("published").lean())?.published;
+
     const updated = await Episode.findByIdAndUpdate(episodeId, { $set: payload }, { new: true });
     if (!updated) return res.status(404).json({ message: "Episode not found" });
+
+    if (wasPublished === false && updated.published === true) {
+      notify.episodePublished(updated._id);
+    }
+
     res.json(updated);
   } catch (err) {
     if (err?.code === 11000) {

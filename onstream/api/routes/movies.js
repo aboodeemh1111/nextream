@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { validateMediaFields } = require("../storage/mediaFields");
 const { reapDocumentMedia } = require("../storage/cleanup");
+const notify = require("../services/notifications/events");
 
 // CREATE MOVIE
 router.post("/", verify, async (req, res) => {
@@ -24,6 +25,9 @@ router.post("/", verify, async (req, res) => {
   const newMovie = new Movie(req.body);
   try {
     const savedMovie = await newMovie.save();
+    // Movies have no draft state — creating one publishes it. Reaches viewers
+    // who saved it already, plus those whose taste matches; nobody else.
+    notify.moviePublished(savedMovie._id);
     res.status(201).json(savedMovie);
   } catch (err) {
     res.status(500).json({

@@ -4,6 +4,7 @@ const Movie = require("../models/Movie");
 const User = require("../models/User");
 const verify = require("../verifyToken");
 const AuditLog = require("../models/AuditLog");
+const notify = require("../services/notifications/events");
 
 // Helper function to update movie ratings
 async function updateMovieRatings(movieId) {
@@ -192,6 +193,9 @@ router.put("/:id/like", verify, async (req, res) => {
         $push: { likedBy: req.user.id },
         $inc: { likes: 1 },
       });
+      // Only on the like, never the unlike, and deduped per (review, liker) in
+      // the catalog — so a like/unlike/like loop is still one notification.
+      notify.reviewLiked(review, req.user.id);
       res.status(200).json("The review has been liked");
     }
   } catch (err) {

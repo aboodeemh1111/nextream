@@ -3,6 +3,7 @@ const User = require("../models/User");
 const CryptoJS = require("crypto-js");
 const jwt = require("jsonwebtoken");
 const { parseUserAgent, describeDevice } = require("../services/deviceInfo");
+const notify = require("../services/notifications/events");
 
 /**
  * Records a successful sign-in.
@@ -89,6 +90,10 @@ router.post("/login", async (req, res) => {
     // write here loses the very first login of every new account to the race
     // against the redirect that follows this response.
     await recordLogin(user._id, req);
+
+    // Alerts only on a device this account has not used before, and never on the
+    // first one — see events.signedIn. Detached, so a sign-in never waits on it.
+    notify.signedIn(user, req.headers["user-agent"]);
 
     const { password, ...info } = user._doc;
 
